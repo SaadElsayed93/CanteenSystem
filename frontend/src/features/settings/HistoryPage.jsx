@@ -30,17 +30,61 @@ const entityMap = {
   'RETURN': 'المرتجعات'
 };
 
-const formatDetails = (newValues) => {
+const keyTranslationMap = {
+  totalAmount: 'إجمالي الفاتورة',
+  type: 'النوع',
+  itemCount: 'عدد الأصناف',
+  patientName: 'العميل/المريض',
+  itemNames: 'الأصناف',
+  invoiceId: 'رقم الفاتورة',
+  reason: 'السبب',
+  paymentMethodId: 'طريقة الدفع (كود)',
+  amount: 'المبلغ',
+  description: 'البيان',
+  supplierId: 'رقم المورد',
+  referenceNo: 'الرقم المرجعي',
+  paidAmount: 'المبلغ المدفوع',
+  patientId: 'رقم المريض',
+  categoryId: 'التصنيف',
+  quantity: 'الكمية',
+  isActive: 'مفعل',
+  source: 'المصدر',
+  name: 'الاسم'
+};
+
+const valueTranslationMap = {
+  'CASH': 'نقدي',
+  'CREDIT': 'آجل',
+  'FULL': 'كلي',
+  'PARTIAL': 'جزئي',
+  'DEPOSIT': 'إيداع',
+  'WITHDRAWAL': 'سحب',
+  'IN': 'إضافة',
+  'OUT': 'صرف'
+};
+
+const formatDetails = (newValues, isInline = false) => {
   if (!newValues) return 'لا توجد تفاصيل';
   try {
     const data = typeof newValues === 'string' ? JSON.parse(newValues) : newValues;
     return Object.entries(data)
       .filter(([key]) => key !== 'id' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'password')
+      // If inline, hide complex arrays/objects or noisy IDs to make it clean
+      .filter(([key]) => !isInline || (key !== 'items' && key !== 'returnItems' && key !== 'paymentMethodId' && key !== 'patientId' && key !== 'supplierId' && key !== 'categoryId'))
       .map(([key, value]) => {
-        if (typeof value === 'object' && value !== null) return `${key}: ${JSON.stringify(value)}`;
-        if (typeof value === 'boolean') return `${key}: ${value ? 'نعم' : 'لا'}`;
-        return `${key}: ${value}`;
+        const arKey = keyTranslationMap[key] || key;
+        
+        let arValue = value;
+        if (typeof value === 'boolean') arValue = value ? 'نعم' : 'لا';
+        else if (valueTranslationMap[value]) arValue = valueTranslationMap[value];
+        else if (typeof value === 'object' && value !== null) arValue = isInline ? '[تفاصيل...]' : JSON.stringify(value);
+        
+        // Hide empty fields inline
+        if (isInline && (arValue === '' || arValue === null)) return null;
+
+        return `${arKey}: ${arValue}`;
       })
+      .filter(Boolean)
       .join(' | ');
   } catch (e) {
     return newValues;
@@ -105,7 +149,7 @@ const HistoryPage = () => {
     const matchesSearch = 
       (log.user?.fullName?.toLowerCase() || '').includes(search.toLowerCase()) ||
       (log.user?.username?.toLowerCase() || '').includes(search.toLowerCase()) ||
-      formatDetails(log.newValues).toLowerCase().includes(search.toLowerCase());
+      formatDetails(log.newValues, true).toLowerCase().includes(search.toLowerCase());
       
     const matchesAction = !actionFilter || log.action === actionFilter;
     const matchesEntity = !entityFilter || log.entityType === entityFilter;
@@ -119,15 +163,25 @@ const HistoryPage = () => {
       return (
         <table className="w-full text-right border-collapse text-sm">
           <tbody>
-            {Object.entries(data).filter(([key]) => key !== 'password').map(([key, value]) => (
-              <tr key={key} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="p-3 font-bold text-gray-700 bg-gray-50 w-1/3">{key}</td>
-                <td className="p-3 text-gray-800 font-bold" dir="ltr">
-                  {typeof value === 'object' && value !== null ? JSON.stringify(value, null, 2) : 
-                   typeof value === 'boolean' ? (value ? 'نعم' : 'لا') : String(value)}
-                </td>
-              </tr>
-            ))}
+            {Object.entries(data).filter(([key]) => key !== 'password').map(([key, value]) => {
+              const arKey = keyTranslationMap[key] || key;
+              let arValue = value;
+              if (typeof value === 'boolean') arValue = value ? 'نعم' : 'لا';
+              else if (valueTranslationMap[value]) arValue = valueTranslationMap[value];
+              
+              return (
+                <tr key={key} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="p-3 font-bold text-gray-700 bg-gray-50 w-1/3">{arKey}</td>
+                  <td className="p-3 text-gray-800 font-bold" dir="ltr">
+                    {typeof value === 'object' && value !== null ? (
+                      <pre className="text-xs bg-gray-100 p-2 rounded text-left overflow-x-auto m-0">
+                        {JSON.stringify(value, null, 2)}
+                      </pre>
+                    ) : String(arValue)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       );
@@ -223,7 +277,7 @@ const HistoryPage = () => {
                       {entityName} {log.entityId ? `(#${log.entityId})` : ''}
                     </td>
                     <td className="p-4 text-sm font-bold text-gray-600 max-w-md truncate" title="اضغط لعرض التفاصيل الكاملة">
-                      {formatDetails(log.newValues)}
+                      {formatDetails(log.newValues, true)}
                     </td>
                   </tr>
                 );

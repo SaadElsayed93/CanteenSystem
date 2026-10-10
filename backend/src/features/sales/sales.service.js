@@ -188,7 +188,7 @@ const createSale = async (data, userId) => {
         action: 'SALE',
         entityType: 'INVOICE',
         entityId: invoice.id,
-        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? (await tx.patient.findUnique({where: {id: patientId}})).fullName : '????', itemNames: invoiceItems.map(i => i.productName).join('? ') }),
+        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? (await tx.patient.findUnique({where: {id: patientId}})).fullName : 'غير محدد (نقدي)', itemNames: invoiceItems.map(i => i.productName).join('، ') }),
         userId: userId
       }
     });
