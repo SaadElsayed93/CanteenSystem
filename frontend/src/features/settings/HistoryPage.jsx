@@ -10,7 +10,11 @@ const actionMap = {
   'LOGIN': { label: 'تسجيل دخول', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   'SALE': { label: 'عملية بيع', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
   'ADJUST_INVENTORY': { label: 'تسوية مخزون', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  'PURCHASE': { label: 'عملية شراء', color: 'bg-teal-100 text-teal-800 border-teal-200' }
+  'PURCHASE': { label: 'عملية شراء', color: 'bg-teal-100 text-teal-800 border-teal-200' },
+  'UPDATE_STATUS': { label: 'تغيير حالة', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  'PAY': { label: 'دفع مالي', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  'WITHDRAW': { label: 'سحب', color: 'bg-red-100 text-red-800 border-red-200' },
+  'DEPOSIT': { label: 'إيداع', color: 'bg-green-100 text-green-800 border-green-200' },
 };
 
 const entityMap = {
@@ -20,7 +24,12 @@ const entityMap = {
   'SUPPLIER': 'الموردين',
   'PURCHASE': 'فواتير المشتريات',
   'PATIENT': 'المرضى/العملاء',
-  'SYSTEM': 'النظام'
+  'SYSTEM': 'النظام',
+  'EXPENSE': 'المصروفات',
+  'TREASURY': 'الخزينة',
+  'CATEGORY': 'الأقسام والتصنيفات',
+  'SUPPLIER_PAYMENT': 'مدفوعات الموردين',
+  'PATIENT_TX': 'معاملات المرضى'
 };
 
 const fieldTranslations = {
@@ -38,24 +47,56 @@ const fieldTranslations = {
   alertThreshold: 'حد التنبيه',
   isActive: 'مفعل',
   totalAmount: 'إجمالي الفاتورة',
-  type: 'نوع الدفع',
+  type: 'نوع الحركة/الدفع',
   itemCount: 'عدد الأصناف',
+  patientName: 'اسم المريض (للآجل)',
   address: 'العنوان',
   notes: 'ملاحظات',
   roleId: 'الصلاحية',
+  supplierId: 'كود المورد',
+  referenceNo: 'الرقم المرجعي',
+  paidAmount: 'المبلغ المدفوع',
+  paymentMethodId: 'كود الخزينة',
+  categoryId: 'كود تصنيف المصروف',
+  amount: 'المبلغ',
+  description: 'البيان',
+  quantity: 'الكمية',
+  reason: 'السبب',
+  patientId: 'كود المريض',
+  initialBalance: 'الرصيد الافتتاحي',
+  source: 'المصدر',
+  balanceAfter: 'الرصيد بعد الحركة',
+  fileNumber: 'رقم الملف',
+  internalNumber: 'الرقم الداخلي (السرير)',
+  items: 'الأصناف',
+  IN: 'إيداع/دخول',
+  OUT: 'سحب/خروج',
   CASH: 'نقدي',
   CREDIT: 'آجل'
 };
 
 const formatDetails = (jsonStr) => {
-  if (!jsonStr) return 'لا توجد تفاصيل';
+  if (!jsonStr || jsonStr === 'null' || jsonStr === '{}') return 'لا توجد تفاصيل إضافية';
   try {
     const parsed = JSON.parse(jsonStr);
     if (typeof parsed !== 'object') return String(parsed);
     
     return Object.entries(parsed).map(([key, val]) => {
       const translatedKey = fieldTranslations[key] || key;
-      const translatedVal = typeof val === 'boolean' ? (val ? 'نعم' : 'لا') : (fieldTranslations[val] || val);
+      let translatedVal = val;
+      
+      if (val === null || val === 'null' || val === '') {
+        translatedVal = 'لا يوجد';
+      } else if (typeof val === 'boolean') {
+        translatedVal = val ? 'نعم' : 'لا';
+      } else if (key === 'items' && Array.isArray(val)) {
+        translatedVal = '(مرفقة داخل الفاتورة)';
+      } else if (typeof val === 'object') {
+        translatedVal = '(تفاصيل معقدة)';
+      } else if (fieldTranslations[val]) {
+        translatedVal = fieldTranslations[val];
+      }
+      
       return `${translatedKey}: ${translatedVal}`;
     }).join(' | ');
   } catch {
