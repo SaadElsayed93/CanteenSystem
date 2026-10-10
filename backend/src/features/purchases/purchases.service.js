@@ -26,7 +26,7 @@ const updateSupplierStatus = async (id, isActive) => {
 
 // === Purchases ===
 const createPurchase = async (data, userId) => {
-  const { supplierId, referenceNo, items } = data;
+  const { supplierId, referenceNo, items, paidAmount, paymentMethodId } = data;
   
   // check supplier
   const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
@@ -42,7 +42,7 @@ const createPurchase = async (data, userId) => {
         referenceNo,
         supplierId,
         totalAmount: 0, // will update later
-        paidAmount: 0,
+        paidAmount: 0,  // will update later
         status: 'PENDING',
         createdBy: userId
       }
@@ -99,10 +99,55 @@ const createPurchase = async (data, userId) => {
       });
     }
 
-    // Update total amount of purchase
+    let pAmount = Number(paidAmount || 0);
+    let status = 'PENDING';
+    
+    // If user paid something at creation
+    if (pAmount > 0) {
+      if (!paymentMethodId) throw new Error('يجب تحديد الخزينة لخصم المبلغ المدفوع');
+      
+      const method = await tx.paymentMethod.findUnique({ where: { id: Number(paymentMethodId) } });
+      if (!method) throw new Error('الخزينة غير صحيحة');
+      
+      status = pAmount >= totalAmount ? 'PAID' : 'PARTIAL';
+
+      // 1. Log Payment
+      const payment = await tx.supplierPayment.create({
+        data: {
+          purchaseId: purchase.id,
+          supplierId,
+          amount: pAmount,
+          paymentMethodId: Number(paymentMethodId),
+          createdBy: userId
+        }
+      });
+
+      // 2. Reduce from Payment Method (Treasury Out)
+      await tx.paymentMethod.update({
+        where: { id: Number(paymentMethodId) },
+        data: { currentBalance: Number(method.currentBalance) - pAmount }
+      });
+
+      // 3. Log Treasury Transaction
+      await tx.treasuryTransaction.create({
+        data: {
+          paymentMethodId: Number(paymentMethodId),
+          type: 'OUT',
+          amount: pAmount,
+          description: `دفع فاتورة مشتريات #${purchase.id} للمورد (${supplier.name})`,
+          referenceType: 'SUPPLIER_PAYMENT',
+          referenceId: payment.id,
+          createdBy: userId
+        }
+      });
+      
+      // Audit log the payment addition specifically (optional, since purchase creation logs itself)
+    }
+
+    // Update total amount and paid amount of purchase
     const finalPurchase = await tx.supplierPurchase.update({
       where: { id: purchase.id },
-      data: { totalAmount }
+      data: { totalAmount, paidAmount: pAmount, status }
     });
 
     return finalPurchase;
@@ -162,5 +207,19 @@ const paySupplier = async (data, userId) => {
   });
 };
 
-module.exports = { getAllSuppliers, createSupplier, updateSupplierStatus, createPurchase, paySupplier };
+
+const getPurchaseById = async (id) => {
+  const purchase = await prisma.supplierPurchase.findUnique({
+    where: { id: Number(id) },
+    include: {
+      items: { include: { product: true } },
+      supplier: true,
+      user: { select: { fullName: true } }
+    }
+  });
+  if (!purchase) throw new Error('الفاتورة غير موجودة');
+  return purchase;
+};
+
+module.exports = { getAllSuppliers, createSupplier, updateSupplierStatus, createPurchase, paySupplier, getPurchaseById };
 

@@ -162,7 +162,7 @@ const PatientsPage = () => {
       {/* Add Patient Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">👤 إضافة مريض جديد</h3>
             <form onSubmit={handleAddSubmit} className="flex flex-col gap-5">
               <div>
@@ -206,7 +206,7 @@ const PatientsPage = () => {
       {/* Transaction Modal */}
       {isTransactModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">💰 معاملة مالية (سداد / سحب)</h3>
             <form onSubmit={handleTransactSubmit} className="flex flex-col gap-5">
               <div>
@@ -389,6 +389,7 @@ const PatientsPage = () => {
 };
 
 export default PatientsPage;
+
 
 
 

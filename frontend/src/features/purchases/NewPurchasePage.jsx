@@ -6,10 +6,13 @@ import { useNavigate } from 'react-router-dom';
 const NewPurchasePage = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ supplierId: '', referenceNo: '' });
+  const [paidAmount, setPaidAmount] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState('');
   const [items, setItems] = useState([]);
   
   // Package logic added: user can choose package or base unit
@@ -28,12 +31,18 @@ const NewPurchasePage = () => {
 
   const fetchData = async () => {
     try {
-      const [suppRes, prodRes] = await Promise.all([
+      const [suppRes, prodRes, posRes] = await Promise.all([
         client.get('/purchases/suppliers'),
-        client.get('/products')
+        client.get('/products'),
+        client.get('/sales/pos-data')
       ]);
       setSuppliers(suppRes.data.data.filter(s => s.isActive));
       setProducts(prodRes.data.data.filter(p => p.isActive));
+      
+      const methods = posRes.data.data.paymentMethods;
+      setPaymentMethods(methods);
+      const cash = methods.find(m => m.name === 'نقدية');
+      if (cash) setPaymentMethodId(cash.id);
     } catch (err) {
       toast.error('فشل جلب البيانات');
     } finally {
@@ -117,6 +126,8 @@ const NewPurchasePage = () => {
       await client.post('/purchases', {
         supplierId: Number(form.supplierId),
         referenceNo: form.referenceNo || `PUR-${Date.now()}`,
+        paidAmount: paidAmount ? Number(paidAmount) : 0,
+        paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
         // Send base quantity and base unit cost to backend
         items: items.map(i => ({ 
           productId: i.productId, 
@@ -244,10 +255,36 @@ const NewPurchasePage = () => {
         </table>
       </div>
 
-      <div className="flex justify-end mt-8">
-        <button onClick={handleSavePurchase} className="bg-green-600 text-white px-10 py-3.5 rounded-xl font-black text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition-all flex items-center gap-2">
-          ✅ تأكيد وحفظ الفاتورة
-        </button>
+      <div className="bg-gray-50 p-6 border-2 border-gray-200 rounded-2xl flex flex-col md:flex-row gap-6 justify-between items-center mb-10">
+        <div className="flex gap-6 w-full md:w-2/3">
+          <div className="flex-1">
+            <label className="block mb-2 font-bold text-gray-700 text-sm">المبلغ المدفوع للتاجر:</label>
+            <input type="number" step="0.01" min="0" placeholder="مثال: 500" className="w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-indigo-700" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} />
+          </div>
+          {Number(paidAmount) > 0 && (
+            <div className="flex-1">
+              <label className="block mb-2 font-bold text-gray-700 text-sm">الخزينة (لسحب المبلغ):</label>
+              <select className="w-full border-2 border-gray-300 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" value={paymentMethodId} onChange={e => setPaymentMethodId(e.target.value)}>
+                {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-3 items-end w-full md:w-auto mt-4 md:mt-0">
+          <div className="text-left w-full">
+            <div className="text-gray-500 text-sm font-bold mb-1">إجمالي الفاتورة</div>
+            <div className="text-3xl font-black text-indigo-700">{totalInvoice.toFixed(2)} جنية</div>
+            {Number(paidAmount) > 0 && Number(paidAmount) < totalInvoice && (
+              <div className="text-sm text-red-600 font-bold mt-1">الباقي مديونية: {(totalInvoice - Number(paidAmount)).toFixed(2)} جنية</div>
+            )}
+            {Number(paidAmount) > totalInvoice && (
+              <div className="text-sm text-green-600 font-bold mt-1">المتبقي لك: {(Number(paidAmount) - totalInvoice).toFixed(2)} جنية (يُخصم من ديون سابقة)</div>
+            )}
+          </div>
+          <button onClick={handleSavePurchase} disabled={items.length === 0} className="w-full bg-green-600 text-white px-10 py-3.5 rounded-xl font-black text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            ✅ تأكيد وحفظ الفاتورة
+          </button>
+        </div>
       </div>
     </div>
   );
