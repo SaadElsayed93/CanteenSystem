@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -61,10 +62,10 @@ const ReturnsPage = () => {
 
   const handleReturnSubmit = async () => {
     const itemsToReturn = returnCart.filter(i => i.returnQty > 0);
-    if (itemsToReturn.length === 0) return alert('لم تقم بتحديد أي كميات للاسترجاع');
+    if (itemsToReturn.length === 0) return toast.error('لم تقم بتحديد أي كميات للاسترجاع');
     
     if (invoice.paymentType === 'CASH' && !selectedMethodId) {
-      return alert('يجب اختيار الخزينة لرد المبلغ النقدي منها');
+      return toast.error('يجب اختيار الخزينة لرد المبلغ النقدي منها');
     }
 
     const isFull = itemsToReturn.length === returnCart.length && itemsToReturn.every(i => {
@@ -87,12 +88,12 @@ const ReturnsPage = () => {
           quantity: i.returnQty
         }))
       });
-      alert('تم تنفيذ المرتجع بنجاح');
+      toast.error('تم تنفيذ المرتجع بنجاح');
       setInvoice(null);
       setInvoiceNumber('');
       setReason('');
     } catch (err) {
-      alert(err.response?.data?.message || 'خطأ في الاسترجاع');
+      toast.error(err.response?.data?.message || 'خطأ في الاسترجاع');
     }
   };
 
@@ -233,3 +234,5 @@ const ReturnsPage = () => {
 };
 
 export default ReturnsPage;
+
+

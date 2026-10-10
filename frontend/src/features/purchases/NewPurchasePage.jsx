@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +11,16 @@ const NewPurchasePage = () => {
 
   const [form, setForm] = useState({ supplierId: '', referenceNo: '' });
   const [items, setItems] = useState([]);
-  const [currentItem, setCurrentItem] = useState({ productId: '', quantity: '', unitCost: '' });
+  
+  // Package logic added: user can choose package or base unit
+  const [currentItem, setCurrentItem] = useState({ 
+    productId: '', 
+    buyInPackage: false, 
+    quantity: '', 
+    unitCost: '', // this will be either per package or per base unit depending on buyInPackage
+  });
+
+  const [selectedProductInfo, setSelectedProductInfo] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -25,19 +35,74 @@ const NewPurchasePage = () => {
       setSuppliers(suppRes.data.data.filter(s => s.isActive));
       setProducts(prodRes.data.data.filter(p => p.isActive));
     } catch (err) {
-      alert('فشل جلب البيانات');
+      toast.error('فشل جلب البيانات');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProductSelect = (pid) => {
+    const prod = products.find(p => p.id === Number(pid));
+    if (prod) {
+      setSelectedProductInfo(prod);
+      setCurrentItem({
+        ...currentItem,
+        productId: pid,
+        buyInPackage: false,
+        unitCost: prod.purchasePrice,
+        quantity: ''
+      });
+    } else {
+      setSelectedProductInfo(null);
+      setCurrentItem({ ...currentItem, productId: '', unitCost: '', quantity: '' });
+    }
+  };
+
+  const toggleBuyMode = (isPackage) => {
+    if (!selectedProductInfo) return;
+    
+    // If switching to package, suggest a package price (base price * pieces per package)
+    let newCost = currentItem.unitCost;
+    if (isPackage && selectedProductInfo.piecesPerPackage) {
+      newCost = Number(selectedProductInfo.purchasePrice) * Number(selectedProductInfo.piecesPerPackage);
+    } else {
+      newCost = selectedProductInfo.purchasePrice;
+    }
+
+    setCurrentItem({
+      ...currentItem,
+      buyInPackage: isPackage,
+      unitCost: newCost
+    });
   };
 
   const handleAddItem = (e) => {
     e.preventDefault();
     if (!currentItem.productId || !currentItem.quantity || !currentItem.unitCost) return;
     
-    const product = products.find(p => p.id === Number(currentItem.productId));
-    setItems([...items, { ...currentItem, productId: Number(currentItem.productId), productName: product.name }]);
-    setCurrentItem({ productId: '', quantity: '', unitCost: '' });
+    // Calculate final base quantity and base unit cost
+    let finalBaseQuantity = Number(currentItem.quantity);
+    let finalBaseUnitCost = Number(currentItem.unitCost);
+
+    if (currentItem.buyInPackage && selectedProductInfo && selectedProductInfo.piecesPerPackage) {
+      finalBaseQuantity = Number(currentItem.quantity) * Number(selectedProductInfo.piecesPerPackage);
+      finalBaseUnitCost = Number(currentItem.unitCost) / Number(selectedProductInfo.piecesPerPackage);
+    }
+
+    setItems([...items, { 
+      productId: Number(currentItem.productId), 
+      productName: selectedProductInfo.name, 
+      displayQty: currentItem.quantity,
+      isPackage: currentItem.buyInPackage,
+      displayUnit: currentItem.buyInPackage ? selectedProductInfo.packageUnit : selectedProductInfo.unit,
+      displayCost: currentItem.unitCost,
+      baseQuantity: finalBaseQuantity,
+      baseUnitCost: finalBaseUnitCost,
+      subtotal: Number(currentItem.quantity) * Number(currentItem.unitCost)
+    }]);
+    
+    setCurrentItem({ productId: '', buyInPackage: false, quantity: '', unitCost: '' });
+    setSelectedProductInfo(null);
   };
 
   const removeItem = (index) => {
@@ -45,109 +110,143 @@ const NewPurchasePage = () => {
   };
 
   const handleSavePurchase = async () => {
-    if (!form.supplierId) return alert('اختر المورد');
-    if (items.length === 0) return alert('أضف أصناف للفاتورة');
+    if (!form.supplierId) return toast.error('اختر المورد');
+    if (items.length === 0) return toast.error('أضف أصناف للفاتورة');
 
     try {
       await client.post('/purchases', {
         supplierId: Number(form.supplierId),
         referenceNo: form.referenceNo || `PUR-${Date.now()}`,
-        items: items.map(i => ({ productId: i.productId, quantity: Number(i.quantity), unitCost: Number(i.unitCost) }))
+        // Send base quantity and base unit cost to backend
+        items: items.map(i => ({ 
+          productId: i.productId, 
+          quantity: i.baseQuantity, 
+          unitCost: i.baseUnitCost 
+        }))
       });
-      alert('تم حفظ الفاتورة وإضافة المخزون بنجاح');
+      toast.success('تم حفظ الفاتورة وإضافة المخزون بنجاح');
       navigate('/purchases/suppliers');
     } catch (err) {
-      alert(err.response?.data?.message || 'حدث خطأ في حفظ الفاتورة');
+      toast.error(err.response?.data?.message || 'حدث خطأ في حفظ الفاتورة');
     }
   };
 
-  const totalInvoice = items.reduce((sum, item) => sum + (Number(item.quantity) * Number(item.unitCost)), 0);
+  const totalInvoice = items.reduce((sum, item) => sum + item.subtotal, 0);
 
-  if (loading) return <div>جاري التحميل...</div>;
+  if (loading) return <div className="text-center mt-10 font-bold text-gray-500">جاري التحميل...</div>;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-6">فاتورة مشتريات جديدة</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">
+        <h2 className="text-2xl font-bold text-gray-800">فاتورة مشتريات جديدة 🛒</h2>
+        <button onClick={() => navigate('/purchases/suppliers')} className="text-gray-500 hover:text-gray-800 font-bold underline">
+          العودة للموردين
+        </button>
+      </div>
 
-      <div className="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block mb-1">المورد</label>
-          <select className="w-full border rounded p-2" value={form.supplierId} onChange={e=>setForm({...form, supplierId: e.target.value})}>
+          <label className="block mb-2 font-bold text-gray-700">المورد</label>
+          <select className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={form.supplierId} onChange={e=>setForm({...form, supplierId: e.target.value})}>
             <option value="">اختر المورد...</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block mb-1">رقم الفاتورة (المرجعي)</label>
-          <input type="text" placeholder="اختياري (سيتولد تلقائياً إذا تُرك فارغاً)" className="w-full border rounded p-2" value={form.referenceNo} onChange={e=>setForm({...form, referenceNo: e.target.value})}/>
+          <label className="block mb-2 font-bold text-gray-700">رقم الفاتورة المرجعي (اختياري)</label>
+          <input type="text" placeholder="سيتولد تلقائياً إذا تُرك فارغاً" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.referenceNo} onChange={e=>setForm({...form, referenceNo: e.target.value})}/>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-4 rounded border mb-6">
-        <h3 className="font-bold mb-4">إضافة صنف للفاتورة</h3>
-        <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="block mb-1 text-sm">الصنف</label>
-            <select required className="w-full border rounded p-2" value={currentItem.productId} onChange={e=> {
-              const pid = e.target.value;
-              const prod = products.find(p => p.id === Number(pid));
-              setCurrentItem({...currentItem, productId: pid, unitCost: prod ? prod.purchasePrice : ''});
-            }}>
-              <option value="">اختر...</option>
+      <div className="bg-indigo-50 p-6 rounded-2xl border-2 border-indigo-100">
+        <h3 className="font-bold mb-4 text-indigo-900 flex items-center gap-2">➕ إضافة صنف للفاتورة</h3>
+        <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div className="md:col-span-2">
+            <label className="block mb-2 font-bold text-gray-700 text-sm">الصنف</label>
+            <select required className="w-full border-2 border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" value={currentItem.productId} onChange={e => handleProductSelect(e.target.value)}>
+              <option value="">اختر الصنف...</option>
               {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
-          <div>
-            <label className="block mb-1 text-sm">الكمية المستلمة</label>
-            <input required type="number" min="0.01" step="0.01" className="w-full border rounded p-2" value={currentItem.quantity} onChange={e=>setCurrentItem({...currentItem, quantity: e.target.value})}/>
+
+          {selectedProductInfo && selectedProductInfo.packageUnit && (
+            <div className="md:col-span-3 flex gap-3 items-center bg-white p-3 rounded-xl border border-indigo-100 mt-2 md:mt-0">
+              <span className="text-sm font-bold text-gray-600 ml-2">طريقة الشراء:</span>
+              <button type="button" onClick={() => toggleBuyMode(false)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${!currentItem.buyInPackage ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                بالوحدة ({selectedProductInfo.unit})
+              </button>
+              <button type="button" onClick={() => toggleBuyMode(true)} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${currentItem.buyInPackage ? 'bg-indigo-600 text-white shadow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                بالكرتونة ({selectedProductInfo.packageUnit})
+              </button>
+            </div>
+          )}
+
+          <div className="md:col-span-2">
+            <label className="block mb-2 font-bold text-gray-700 text-sm">
+              الكمية {currentItem.buyInPackage ? `(بـ ${selectedProductInfo?.packageUnit})` : (selectedProductInfo ? `(بـ ${selectedProductInfo?.unit})` : '')}
+            </label>
+            <input required type="number" min="0.01" step="0.01" className="w-full border-2 border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" value={currentItem.quantity} onChange={e=>setCurrentItem({...currentItem, quantity: e.target.value})}/>
           </div>
-          <div>
-            <label className="block mb-1 text-sm">سعر الشراء للوحدة</label>
-            <input required type="number" min="0.01" step="0.01" className="w-full border rounded p-2" value={currentItem.unitCost} onChange={e=>setCurrentItem({...currentItem, unitCost: e.target.value})}/>
+
+          <div className="md:col-span-2">
+            <label className="block mb-2 font-bold text-gray-700 text-sm">
+              سعر الشراء للـ {currentItem.buyInPackage ? selectedProductInfo?.packageUnit : (selectedProductInfo ? selectedProductInfo?.unit : 'وحدة')}
+            </label>
+            <input required type="number" min="0.01" step="0.01" className="w-full border-2 border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" value={currentItem.unitCost} onChange={e=>setCurrentItem({...currentItem, unitCost: e.target.value})}/>
           </div>
-          <div>
-            <button type="submit" className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700">إضافة</button>
+
+          <div className="md:col-span-1">
+            <button type="submit" className="w-full bg-indigo-600 text-white font-bold rounded-xl p-3 hover:bg-indigo-700 shadow-md transition-all">إضافة</button>
           </div>
         </form>
+
+        {selectedProductInfo && currentItem.buyInPackage && currentItem.quantity && (
+          <div className="mt-4 text-sm text-indigo-700 font-bold bg-indigo-100/50 p-3 rounded-lg border border-indigo-200 inline-block">
+            💡 التوضيح: سيتم إضافة {Number(currentItem.quantity) * Number(selectedProductInfo.piecesPerPackage)} {selectedProductInfo.unit} للمخزون، بناءً على أن الـ {selectedProductInfo.packageUnit} يحتوي على {selectedProductInfo.piecesPerPackage} {selectedProductInfo.unit}.
+          </div>
+        )}
       </div>
 
-      <div className="bg-white rounded shadow overflow-x-auto mb-6">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden mb-6">
         <table className="w-full text-right border-collapse">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 border-b">الصنف</th>
-              <th className="p-3 border-b">الكمية</th>
-              <th className="p-3 border-b">السعر</th>
-              <th className="p-3 border-b">الإجمالي</th>
-              <th className="p-3 border-b"></th>
+              <th className="p-4 border-b text-gray-700 font-bold">الصنف</th>
+              <th className="p-4 border-b text-gray-700 font-bold">الكمية المشراة</th>
+              <th className="p-4 border-b text-gray-700 font-bold">سعر الشراء</th>
+              <th className="p-4 border-b text-gray-700 font-bold">إجمالي الصنف</th>
+              <th className="p-4 border-b text-gray-700 font-bold text-center">الإجراء</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item, idx) => (
-              <tr key={idx}>
-                <td className="p-3 border-b">{item.productName}</td>
-                <td className="p-3 border-b">{item.quantity}</td>
-                <td className="p-3 border-b">{item.unitCost}</td>
-                <td className="p-3 border-b">{(Number(item.quantity) * Number(item.unitCost)).toFixed(2)}</td>
-                <td className="p-3 border-b">
-                  <button onClick={() => removeItem(idx)} className="text-red-600 hover:underline">حذف</button>
+              <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                <td className="p-4 border-b font-bold text-gray-800">{item.productName}</td>
+                <td className="p-4 border-b font-bold">
+                  {item.displayQty} <span className="text-sm font-normal text-gray-500">{item.displayUnit}</span>
+                  {item.isPackage && <div className="text-xs text-indigo-600 mt-1">(= {item.baseQuantity} وحدة أساسية)</div>}
+                </td>
+                <td className="p-4 border-b">{item.displayCost}</td>
+                <td className="p-4 border-b font-bold text-indigo-700">{item.subtotal.toFixed(2)}</td>
+                <td className="p-4 border-b text-center">
+                  <button onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-all font-bold">حذف</button>
                 </td>
               </tr>
             ))}
-            {items.length === 0 && <tr><td colSpan="5" className="p-4 text-center text-gray-500">لم يتم إضافة أصناف</td></tr>}
+            {items.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-400 font-bold">لم يتم إضافة أصناف للفاتورة بعد</td></tr>}
           </tbody>
-          <tfoot className="bg-gray-50 font-bold text-lg">
+          <tfoot className="bg-gray-50 font-bold text-xl border-t-2 border-gray-200">
             <tr>
-              <td colSpan="3" className="p-3 text-left">إجمالي الفاتورة:</td>
-              <td colSpan="2" className="p-3 text-blue-600">{totalInvoice.toFixed(2)} جنية</td>
+              <td colSpan="3" className="p-5 text-left text-gray-600">إجمالي الفاتورة:</td>
+              <td colSpan="2" className="p-5 text-indigo-700">{totalInvoice.toFixed(2)} جنية</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <div className="flex justify-end">
-        <button onClick={handleSavePurchase} className="bg-green-600 text-white px-8 py-3 rounded text-lg hover:bg-green-700 shadow">
-          تأكيد وحفظ الفاتورة
+      <div className="flex justify-end mt-8">
+        <button onClick={handleSavePurchase} className="bg-green-600 text-white px-10 py-3.5 rounded-xl font-black text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition-all flex items-center gap-2">
+          ✅ تأكيد وحفظ الفاتورة
         </button>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -46,7 +47,7 @@ const PatientsPage = () => {
       setAddForm({ fullName: '', fileNumber: '', internalNumber: '', notes: '' });
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || 'خطأ في الإضافة');
+      toast.error(err.response?.data?.message || 'خطأ في الإضافة');
     }
   };
 
@@ -60,7 +61,7 @@ const PatientsPage = () => {
       setIsTransactModalOpen(false);
       fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || 'خطأ في المعاملة');
+      toast.error(err.response?.data?.message || 'خطأ في المعاملة');
     }
   };
 
@@ -69,7 +70,7 @@ const PatientsPage = () => {
       const res = await client.get(`/patients/${id}`);
       setStatementModal(res.data.data);
     } catch (err) {
-      alert('خطأ في جلب الكشف');
+      toast.error('خطأ في جلب الكشف');
     }
   };
 
@@ -308,3 +309,5 @@ const PatientsPage = () => {
 };
 
 export default PatientsPage;
+
+

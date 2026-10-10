@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
@@ -129,6 +130,7 @@ function MainLayout({ children }) {
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} toastOptions={{ className: 'font-bold font-sans text-right' }} />
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

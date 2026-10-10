@@ -14,7 +14,7 @@ const ProductsPage = () => {
   const [currentId, setCurrentId] = useState(null);
   
   const [form, setForm] = useState({
-    name: '', internalCode: '', barcode: '', sellingPrice: '', purchasePrice: '', unit: '', conversionFactor: 1, alertThreshold: 0, isActive: true
+    name: '', internalCode: '', barcode: '', sellingPrice: '', purchasePrice: '', unit: '', packageUnit: '', piecesPerPackage: 1, conversionFactor: 1, alertThreshold: 0, isActive: true
   });
 
   const [adjustModal, setAdjustModal] = useState(false);
@@ -43,7 +43,7 @@ const ProductsPage = () => {
 
   const openAddModal = () => {
     setIsEditMode(false);
-    setForm({ name: '', internalCode: '', barcode: '', sellingPrice: '', purchasePrice: '', unit: '', conversionFactor: 1, alertThreshold: 0, isActive: true });
+    setForm({ name: '', internalCode: '', barcode: '', sellingPrice: '', purchasePrice: '', unit: '', packageUnit: '', piecesPerPackage: 1, conversionFactor: 1, alertThreshold: 0, isActive: true });
     setIsModalOpen(true);
   };
 
@@ -57,6 +57,8 @@ const ProductsPage = () => {
       sellingPrice: product.sellingPrice,
       purchasePrice: product.purchasePrice,
       unit: product.unit,
+      packageUnit: product.packageUnit || '',
+      piecesPerPackage: product.piecesPerPackage || 1,
       conversionFactor: product.conversionFactor,
       alertThreshold: product.alertThreshold,
       isActive: product.isActive
@@ -208,8 +210,18 @@ const ProductsPage = () => {
                 <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={form.sellingPrice} onChange={e=>setForm({...form,sellingPrice:e.target.value})}/>
               </div>
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">الوحدة (مثل: قطعة، كرتونة)</label>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الوحدة الأساسية (مثل: قطعة، كيس)</label>
                 <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
+              </div>
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-2 font-bold text-indigo-900 text-sm">وحدة التعبئة / الكرتونة (اختياري)</label>
+                  <input type="text" placeholder="مثل: كرتونة، باكتة" className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.packageUnit} onChange={e=>setForm({...form,packageUnit:e.target.value})}/>
+                </div>
+                <div>
+                  <label className="block mb-2 font-bold text-indigo-900 text-sm">الكمية داخل {form.packageUnit || 'الكرتونة'} (بالوحدة الأساسية)</label>
+                  <input type="number" min="1" className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.piecesPerPackage} onChange={e=>setForm({...form,piecesPerPackage:e.target.value})} disabled={!form.packageUnit}/>
+                </div>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الحد الأدنى للتنبيه</label>

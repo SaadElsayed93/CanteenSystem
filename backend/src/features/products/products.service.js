@@ -23,7 +23,7 @@ const getProductById = async (id) => {
 };
 
 const createProduct = async (data, userId) => {
-  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, conversionFactor, alertThreshold } = data;
+  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, packageUnit, piecesPerPackage, conversionFactor, alertThreshold } = data;
   
   const existingCode = await prisma.product.findUnique({ where: { internalCode } });
   if (existingCode) throw new Error('الكود الداخلي مستخدم مسبقاً');
@@ -36,6 +36,8 @@ const createProduct = async (data, userId) => {
       sellingPrice: Number(sellingPrice),
       purchasePrice: Number(purchasePrice),
       unit,
+      packageUnit: packageUnit || null,
+      piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
       conversionFactor: Number(conversionFactor || 1),
       alertThreshold: Number(alertThreshold || 0),
       priceHistory: {
@@ -53,7 +55,7 @@ const updateProduct = async (id, data, userId) => {
   const product = await prisma.product.findUnique({ where: { id } });
   if (!product) throw new Error('الصنف غير موجود');
 
-  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, conversionFactor, alertThreshold, isActive } = data;
+  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, packageUnit, piecesPerPackage, conversionFactor, alertThreshold, isActive } = data;
   
   if (internalCode !== product.internalCode) {
     const existingCode = await prisma.product.findUnique({ where: { internalCode } });
@@ -65,8 +67,10 @@ const updateProduct = async (id, data, userId) => {
   
   let updateData = {
     name, internalCode, barcode, unit, 
-    conversionFactor: Number(conversionFactor), 
-    alertThreshold: Number(alertThreshold), 
+    packageUnit: packageUnit || null,
+    piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
+    conversionFactor: Number(conversionFactor || 1), 
+    alertThreshold: Number(alertThreshold || 0), 
     isActive,
     purchasePrice: Number(purchasePrice)
   };

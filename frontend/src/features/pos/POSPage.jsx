@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -38,7 +39,7 @@ const POSPage = () => {
       
       setPatients(res.data.data.patients);
     } catch (err) {
-      alert('فشل في جلب بيانات البيع');
+      toast.error('فشل في جلب بيانات البيع');
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ const POSPage = () => {
       // If it's a manual search and they press enter, but there's no exact match,
       // just let them see the filtered grid. If grid is empty, alert.
       if (filteredProducts.length === 0) {
-        alert('صنف غير موجود');
+        toast.error('صنف غير موجود');
       }
     }
   };
@@ -101,9 +102,9 @@ const POSPage = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return alert('الفاتورة فارغة');
-    if (invoiceType === 'CASH' && !paymentMethodId) return alert('اختر طريقة الدفع النقدية');
-    if (invoiceType === 'CREDIT' && !patientId) return alert('اختر المريض للبيع الآجل');
+    if (cart.length === 0) return toast.error('الفاتورة فارغة');
+    if (invoiceType === 'CASH' && !paymentMethodId) return toast.error('اختر طريقة الدفع النقدية');
+    if (invoiceType === 'CREDIT' && !patientId) return toast.error('اختر المريض للبيع الآجل');
 
     try {
       const res = await client.post('/sales/checkout', {
@@ -135,7 +136,7 @@ const POSPage = () => {
       fetchPosData(); // update stock
       
     } catch (err) {
-      alert(err.response?.data?.message || 'حدث خطأ في الحفظ');
+      toast.error(err.response?.data?.message || 'حدث خطأ في الحفظ');
     }
   };
 
@@ -326,3 +327,5 @@ const POSPage = () => {
 };
 
 export default POSPage;
+
+

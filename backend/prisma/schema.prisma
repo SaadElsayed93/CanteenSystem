@@ -54,7 +54,9 @@ model Product {
   barcode          String?
   sellingPrice     Decimal   
   purchasePrice    Decimal   
-  unit             String
+  unit             String    // Base unit (e.g. كيس, قطعة, زجاجة)
+  packageUnit      String?   // Package unit (e.g. كرتونة, باكتة)
+  piecesPerPackage Int       @default(1) // Number of base units in a package
   conversionFactor Decimal   @default(1.00) 
   alertThreshold   Int       @default(0)
   isActive         Boolean   @default(true)
