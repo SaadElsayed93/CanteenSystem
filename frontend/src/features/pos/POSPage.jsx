@@ -11,6 +11,7 @@ const POSPage = () => {
   const [cart, setCart] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Checkout Form
   const [invoiceType, setInvoiceType] = useState('CASH'); // CASH or CREDIT
@@ -102,6 +103,8 @@ const POSPage = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleCheckout = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     if (cart.length === 0) return toast.error('الفاتورة فارغة');
     if (invoiceType === 'CASH' && !paymentMethodId) return toast.error('اختر طريقة الدفع النقدية');
     if (invoiceType === 'CREDIT' && !patientId) return toast.error('اختر المريض للبيع الآجل');
@@ -126,8 +129,10 @@ const POSPage = () => {
       setCart([]);
       setPatientId('');
       fetchPosData(); // update stock
+      setIsSubmitting(false);
       
     } catch (err) {
+      setIsSubmitting(false);
       toast.error(err.response?.data?.message || 'حدث خطأ في الحفظ');
     }
   };
@@ -307,7 +312,7 @@ const POSPage = () => {
 
           <button 
             onClick={handleCheckout} 
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || isSubmitting}
             className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 mt-2"
           >
             تأكيد الدفع وطباعة
@@ -319,6 +324,7 @@ const POSPage = () => {
 };
 
 export default POSPage;
+
 
 
 

@@ -8,6 +8,7 @@ const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   
@@ -43,18 +44,24 @@ const PatientsPage = () => {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await client.post('/patients', addForm);
       setIsAddModalOpen(false);
       setAddForm({ fullName: '', fileNumber: '', internalNumber: '', notes: '', initialBalance: '', paymentMethodId: '' });
       fetchData();
+      setIsSubmitting(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'خطأ في الإضافة');
+      setIsSubmitting(false);
     }
   };
 
   const handleTransactSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await client.post('/patients/transaction', {
         ...transactForm,
@@ -62,8 +69,10 @@ const PatientsPage = () => {
       });
       setIsTransactModalOpen(false);
       fetchData();
+      setIsSubmitting(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'خطأ في المعاملة');
+      setIsSubmitting(false);
     }
   };
 
@@ -196,7 +205,7 @@ const PatientsPage = () => {
               </div>
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">حفظ المريض</button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50">حفظ المريض</button>
               </div>
             </form>
           </div>
@@ -239,7 +248,7 @@ const PatientsPage = () => {
               
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setIsTransactModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" className={`px-6 py-2.5 text-white font-bold rounded-xl transition-colors shadow-lg ${transactForm.type === 'DEPOSIT' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>تأكيد المعاملة</button>
+                <button type="submit" disabled={isSubmitting} className={`px-6 py-2.5 text-white font-bold rounded-xl transition-colors shadow-lg disabled:opacity-50 ${transactForm.type === 'DEPOSIT' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>تأكيد المعاملة</button>
               </div>
             </form>
           </div>

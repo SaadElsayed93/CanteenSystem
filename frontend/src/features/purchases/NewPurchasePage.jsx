@@ -8,6 +8,7 @@ const NewPurchasePage = () => {
   const [products, setProducts] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ supplierId: '', referenceNo: '' });
@@ -119,6 +120,8 @@ const NewPurchasePage = () => {
   };
 
   const handleSavePurchase = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     if (!form.supplierId) return toast.error('اختر المورد');
     if (items.length === 0) return toast.error('أضف أصناف للفاتورة');
 
@@ -136,8 +139,10 @@ const NewPurchasePage = () => {
         }))
       });
       toast.success('تم حفظ الفاتورة وإضافة المخزون بنجاح');
+      setIsSubmitting(false);
       navigate('/purchases/suppliers');
     } catch (err) {
+      setIsSubmitting(false);
       toast.error(err.response?.data?.message || 'حدث خطأ في حفظ الفاتورة');
     }
   };
@@ -281,7 +286,7 @@ const NewPurchasePage = () => {
               <div className="text-sm text-green-600 font-bold mt-1">المتبقي لك: {(Number(paidAmount) - totalInvoice).toFixed(2)} جنية (يُخصم من ديون سابقة)</div>
             )}
           </div>
-          <button onClick={handleSavePurchase} disabled={items.length === 0} className="w-full bg-green-600 text-white px-10 py-3.5 rounded-xl font-black text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={handleSavePurchase} disabled={items.length === 0 || isSubmitting} className="w-full bg-green-600 text-white px-10 py-3.5 rounded-xl font-black text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             ✅ تأكيد وحفظ الفاتورة
           </button>
         </div>
