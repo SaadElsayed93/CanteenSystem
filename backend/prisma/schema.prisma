@@ -1,0 +1,369 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// User & Auth Management
+// ==========================================
+
+model User {
+  id            Int       @id @default(autoincrement())
+  username      String    @unique
+  passwordHash  String
+  fullName      String
+  roleId        Int
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  lastLogin     DateTime?
+
+  role                  Role                   @relation(fields: [roleId], references: [id])
+  priceChanges          PriceHistory[]
+  createdPurchases      Purchase[]
+  createdPayments       SupplierPayment[]
+  createdTransactions   PatientTransaction[]
+  createdInvoices       Invoice[]
+  createdTreasuryTx     TreasuryTransaction[]
+  createdExpenses       Expense[]
+  inventoryCounts       InventoryCount[]
+  inventoryMovements    InventoryMovement[]
+  createdReturns        Return[]
+  createdBackups        Backup[]
+  auditLogs             AuditLog[]
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  permissions Json     // يخزن الصلاحيات كـ JSON array (مثال: ["CREATE_INVOICE", "VIEW_PATIENTS"])
+  users       User[]
+}
+
+// ==========================================
+// Products & Inventory
+// ==========================================
+
+model Product {
+  id               Int       @id @default(autoincrement())
+  name             String
+  internalCode     String    @unique
+  barcode          String?
+  sellingPrice     Decimal   @db.Decimal(10, 2)
+  purchasePrice    Decimal   @db.Decimal(10, 2)
+  unit             String
+  conversionFactor Decimal   @default(1.00) @db.Decimal(10, 4)
+  alertThreshold   Int       @default(0)
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  batches            Batch[]
+  priceHistory       PriceHistory[]
+  purchaseItems      PurchaseItem[]
+  invoiceItems       InvoiceItem[]
+  inventoryMovements InventoryMovement[]
+  inventoryCounts    InventoryCount[]
+  returnItems        ReturnItem[]
+}
+
+model Batch {
+  id                Int      @id @default(autoincrement())
+  productId         Int
+  purchaseItemId    Int?
+  quantityRemaining Decimal  @db.Decimal(10, 4)
+  unitCost          Decimal  @db.Decimal(10, 2)
+  expiryDate        DateTime?
+  receivedAt        DateTime @default(now())
+
+  product             Product              @relation(fields: [productId], references: [id])
+  purchaseItem        PurchaseItem?        @relation(fields: [purchaseItemId], references: [id])
+  inventoryMovements  InventoryMovement[]
+}
+
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  oldPrice  Decimal  @db.Decimal(10, 2)
+  newPrice  Decimal  @db.Decimal(10, 2)
+  changedBy Int
+  changedAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [changedBy], references: [id])
+}
+
+// ==========================================
+// Suppliers & Purchases
+// ==========================================
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  purchases SupplierPurchase[]
+  payments  SupplierPayment[]
+}
+
+model SupplierPurchase {
+  id          Int      @id @default(autoincrement())
+  referenceNo String   @unique
+  supplierId  Int
+  totalAmount Decimal  @db.Decimal(10, 2)
+  paidAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  status      String   // مثلاً: "PENDING", "PARTIAL", "PAID"
+  createdBy   Int
+  createdAt   DateTime @default(now())
+
+  supplier    Supplier          @relation(fields: [supplierId], references: [id])
+  user        User              @relation(fields: [createdBy], references: [id])
+  items       PurchaseItem[]
+  payments    SupplierPayment[]
+}
+
+model PurchaseItem {
+  id           Int      @id @default(autoincrement())
+  purchaseId   Int
+  productId    Int
+  quantity     Decimal  @db.Decimal(10, 4)
+  unitCost     Decimal  @db.Decimal(10, 2)
+  subtotal     Decimal  @db.Decimal(10, 2)
+
+  purchase     SupplierPurchase @relation(fields: [purchaseId], references: [id])
+  product      Product          @relation(fields: [productId], references: [id])
+  batches      Batch[]
+}
+
+model SupplierPayment {
+  id              Int      @id @default(autoincrement())
+  purchaseId      Int?
+  supplierId      Int
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentMethodId Int
+  createdBy       Int
+  createdAt       DateTime @default(now())
+
+  purchase        SupplierPurchase? @relation(fields: [purchaseId], references: [id])
+  supplier        Supplier          @relation(fields: [supplierId], references: [id])
+  paymentMethod   PaymentMethod     @relation(fields: [paymentMethodId], references: [id])
+  user            User              @relation(fields: [createdBy], references: [id])
+}
+
+// ==========================================
+// Patients & Accounts
+// ==========================================
+
+model Patient {
+  id             Int      @id @default(autoincrement())
+  fileNumber     String   @unique
+  fullName       String
+  internalNumber String   @unique
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  transactions PatientTransaction[]
+  invoices     Invoice[]
+}
+
+model PatientTransaction {
+  id            Int      @id @default(autoincrement())
+  patientId     Int
+  type          String   // "DEPOSIT", "WITHDRAWAL", "PURCHASE", "REFUND", "ADJUSTMENT"
+  amount        Decimal  @db.Decimal(10, 2) // موجب = دائن (للمريض), سالب = مدين (عليه)
+  source        String?  // مثل "فودافون كاش", "نقدية", الخ
+  description   String?
+  referenceId   Int?     // رقم الفاتورة أو المرتجع المرتبط إن وجد
+  referenceType String?  // نوع المرجع "INVOICE", "RETURN"
+  createdBy     Int
+  createdAt     DateTime @default(now())
+
+  patient       Patient  @relation(fields: [patientId], references: [id])
+  user          User     @relation(fields: [createdBy], references: [id])
+}
+
+// ==========================================
+// Sales & Invoices
+// ==========================================
+
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  invoiceNumber String   @unique
+  patientId     Int?
+  paymentType   String   // "CASH", "ACCOUNT", "MIXED"
+  cashAmount    Decimal  @default(0) @db.Decimal(10, 2)
+  accountAmount Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  status        String   // "COMPLETED", "CANCELLED", "REFUNDED"
+  createdBy     Int
+  createdAt     DateTime @default(now())
+
+  patient       Patient?      @relation(fields: [patientId], references: [id])
+  user          User          @relation(fields: [createdBy], references: [id])
+  items         InvoiceItem[]
+  returns       Return[]
+}
+
+model InvoiceItem {
+  id         Int      @id @default(autoincrement())
+  invoiceId  Int
+  productId  Int
+  quantity   Decimal  @db.Decimal(10, 4)
+  unitPrice  Decimal  @db.Decimal(10, 2) // Snapshot السعر وقت البيع
+  subtotal   Decimal  @db.Decimal(10, 2)
+
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Return {
+  id                Int      @id @default(autoincrement())
+  originalInvoiceId Int
+  type              String   // "FULL", "PARTIAL"
+  amount            Decimal  @db.Decimal(10, 2)
+  reason            String?
+  status            String   // "COMPLETED"
+  createdBy         Int
+  createdAt         DateTime @default(now())
+
+  invoice           Invoice      @relation(fields: [originalInvoiceId], references: [id])
+  user              User         @relation(fields: [createdBy], references: [id])
+  items             ReturnItem[]
+}
+
+model ReturnItem {
+  id         Int      @id @default(autoincrement())
+  returnId   Int
+  productId  Int
+  quantity   Decimal  @db.Decimal(10, 4)
+  unitPrice  Decimal  @db.Decimal(10, 2)
+
+  returnRec  Return   @relation(fields: [returnId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+// ==========================================
+// Treasury & Expenses
+// ==========================================
+
+model PaymentMethod {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique // "نقدية", "فودافون كاش", "تحويل"
+  currentBalance Decimal  @default(0) @db.Decimal(15, 2)
+  isActive       Boolean  @default(true)
+
+  treasuryTransactions TreasuryTransaction[]
+  expenses             Expense[]
+  supplierPayments     SupplierPayment[]
+}
+
+model TreasuryTransaction {
+  id              Int      @id @default(autoincrement())
+  paymentMethodId Int
+  type            String   // "IN", "OUT"
+  amount          Decimal  @db.Decimal(15, 2)
+  description     String?
+  referenceId     Int?
+  referenceType   String?  // "INVOICE", "EXPENSE", "TRANSFER", "DEPOSIT"
+  createdBy       Int
+  createdAt       DateTime @default(now())
+
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  user            User          @relation(fields: [createdBy], references: [id])
+}
+
+model ExpenseCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isDefault Boolean  @default(false)
+
+  expenses  Expense[]
+}
+
+model Expense {
+  id              Int      @id @default(autoincrement())
+  categoryId      Int
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentMethodId Int
+  description     String?
+  createdBy       Int
+  createdAt       DateTime @default(now())
+
+  category        ExpenseCategory @relation(fields: [categoryId], references: [id])
+  paymentMethod   PaymentMethod   @relation(fields: [paymentMethodId], references: [id])
+  user            User            @relation(fields: [createdBy], references: [id])
+}
+
+// ==========================================
+// Inventory Tracking & Auditing
+// ==========================================
+
+model InventoryMovement {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  batchId       Int?
+  type          String   // "IN", "OUT", "ADJUSTMENT"
+  quantity      Decimal  @db.Decimal(10, 4)
+  balanceAfter  Decimal  @db.Decimal(10, 4)
+  referenceId   Int?
+  referenceType String?  // "INVOICE", "PURCHASE", "RETURN", "COUNT"
+  createdBy     Int
+  createdAt     DateTime @default(now())
+
+  product       Product  @relation(fields: [productId], references: [id])
+  batch         Batch?   @relation(fields: [batchId], references: [id])
+  user          User     @relation(fields: [createdBy], references: [id])
+}
+
+model InventoryCount {
+  id             Int      @id @default(autoincrement())
+  productId      Int
+  systemQuantity Decimal  @db.Decimal(10, 4)
+  actualQuantity Decimal  @db.Decimal(10, 4)
+  difference     Decimal  @db.Decimal(10, 4)
+  reason         String?
+  createdBy      Int
+  createdAt      DateTime @default(now())
+
+  product        Product  @relation(fields: [productId], references: [id])
+  user           User     @relation(fields: [createdBy], references: [id])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String   // "CREATE", "UPDATE", "DELETE", "LOGIN"
+  entityType String   // "PRODUCT", "INVOICE", "USER"
+  entityId   Int?
+  oldValues  Json?
+  newValues  Json?
+  userId     Int
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Backup {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  filepath  String
+  type      String   // "AUTO", "MANUAL"
+  sizeBytes BigInt
+  createdBy Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [createdBy], references: [id])
+}
+
+model Setting {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
