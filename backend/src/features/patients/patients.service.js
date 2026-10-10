@@ -146,6 +146,24 @@ const addTransaction = async (data, userId) => {
       }
     }
 
+    const auditNewValues = {
+      'المريض': patient.fullName,
+      'نوع المعاملة': type === 'DEPOSIT' ? 'إيداع نقدي (له)' : 'سحب نقدي (عليه)',
+      'المبلغ': `${pAmount} ج.م`,
+      'الرصيد بعد المعاملة': `${newBalance} ج.م`,
+      'الوصف / المصدر': description || source || 'بدون وصف'
+    };
+
+    await tx.auditLog.create({
+      data: {
+        action: 'TRANSACT',
+        entityType: 'PATIENT_TX',
+        entityId: transaction.id,
+        newValues: JSON.stringify(auditNewValues),
+        userId: userId
+      }
+    });
+
     return transaction;
   });
 };
