@@ -46,5 +46,14 @@ const transact = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, getById, create, toggleStatus, transact };
+const discharge = async (req, res, next) => {
+  try {
+    const patient = await patientsService.dischargePatient(req.params.id, req.body.paymentMethodId, req.user.id);
+    res.json({ success: true, message: 'تم تصفية حساب المريض ومغادرته بنجاح', data: patient });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getAll, getById, create, toggleStatus, transact, discharge };
 

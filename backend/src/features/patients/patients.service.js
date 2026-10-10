@@ -150,4 +150,70 @@ const addTransaction = async (data, userId) => {
   });
 };
 
-module.exports = { getAllPatients, getPatientById, createPatient, updatePatientStatus, addTransaction };
+const dischargePatient = async (id, paymentMethodId, userId) => {
+  return prisma.$transaction(async (tx) => {
+    const patient = await tx.patient.findUnique({ where: { id: Number(id) } });
+    if (!patient) throw new Error('المريض غير موجود');
+    if (!patient.isActive) throw new Error('المريض مغادر بالفعل');
+
+    const currentDebt = Number(patient.currentDebt);
+    
+    // If there is a balance to settle
+    if (currentDebt !== 0) {
+      if (!paymentMethodId) throw new Error('يجب تحديد الخزينة لتسوية الحساب المتبقي للمريض');
+      
+      const method = await tx.paymentMethod.findUnique({ where: { id: Number(paymentMethodId) } });
+      if (!method) throw new Error('الخزينة غير صحيحة');
+      
+      // If currentDebt > 0 (We owe the patient money -> Refund -> Decrease Treasury)
+      // If currentDebt < 0 (Patient owes us money -> Settle Debt -> Increase Treasury)
+      
+      const isRefund = currentDebt > 0; // we refund the deposit back to them
+      const absAmount = Math.abs(currentDebt);
+      
+      // 1. Log Patient Transaction
+      const transaction = await tx.patientTransaction.create({
+        data: {
+          patientId: patient.id,
+          type: isRefund ? 'WITHDRAWAL' : 'DEPOSIT',
+          amount: absAmount,
+          source: 'تصفية حساب مغادرة',
+          description: isRefund ? 'رد الرصيد المتبقي للمريض عند المغادرة' : 'تحصيل المديونية المتبقية عند المغادرة',
+          createdBy: userId
+        }
+      });
+      
+      // 2. Adjust Treasury
+      const treasuryType = isRefund ? 'OUT' : 'IN';
+      const balanceChange = isRefund ? -absAmount : absAmount;
+      
+      await tx.paymentMethod.update({
+        where: { id: Number(paymentMethodId) },
+        data: { currentBalance: Number(method.currentBalance) + balanceChange }
+      });
+
+      // 3. Log Treasury Transaction
+      await tx.treasuryTransaction.create({
+        data: {
+          paymentMethodId: Number(paymentMethodId),
+          type: treasuryType,
+          amount: absAmount,
+          description: `تصفية حساب مريض مغادر (${patient.fullName}) - ${isRefund ? 'رد رصيد' : 'تحصيل مديونية'}`,
+          referenceType: 'PATIENT_TX',
+          referenceId: transaction.id,
+          createdBy: userId
+        }
+      });
+    }
+
+    // Mark as inactive/discharged and zero balance
+    const updatedPatient = await tx.patient.update({
+      where: { id: patient.id },
+      data: { isActive: false, currentDebt: 0 }
+    });
+
+    return updatedPatient;
+  });
+};
+
+module.exports = { getAllPatients, getPatientById, createPatient, updatePatientStatus, addTransaction, dischargePatient };
