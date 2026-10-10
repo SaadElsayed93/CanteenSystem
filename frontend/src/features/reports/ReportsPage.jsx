@@ -349,7 +349,7 @@ const ReportsPage = () => {
                       {reportType === 'INVENTORY' && (
                         <>
                           <th className="p-3 font-bold text-indigo-800">الصنف</th>
-                          <th className="p-3 font-bold text-indigo-800">التصنيف</th>
+                          <th className="p-3 font-bold text-indigo-800">الوحدة</th>
                           <th className="p-3 font-bold text-indigo-800">الكمية الحالية</th>
                           <th className="p-3 font-bold text-indigo-800">سعر الشراء (التكلفة)</th>
                           <th className="p-3 font-bold text-indigo-800">القيمة الإجمالية</th>

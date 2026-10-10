@@ -270,9 +270,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
 
   if (type === 'EXPENSES') {
     const expenses = await prisma.expense.findMany({
-      where: { date: { gte: startDate, lte: endDate } },
+      where: { createdAt: { gte: startDate, lte: endDate } },
       include: { category: true, paymentMethod: true },
-      orderBy: { date: 'desc' }
+      orderBy: { createdAt: 'desc' }
     });
 
     let totalExpenses = 0;
@@ -281,7 +281,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       totalExpenses += Number(exp.amount);
       return {
         id: exp.id,
-        date: exp.date,
+        date: exp.createdAt,
         category: exp.category.name,
         amount: Number(exp.amount),
         description: exp.description || 'بدون وصف',
@@ -298,7 +298,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
   if (type === 'INVENTORY') {
     // Inventory is a snapshot, no date filtering applies usually, but we return current state
     const products = await prisma.product.findMany({
-      include: { batches: true, category: true },
+      include: { batches: true },
       orderBy: { name: 'asc' }
     });
 
@@ -314,7 +314,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       return {
         id: p.id,
         name: p.name,
-        category: p.category.name,
+        category: p.unit || '-',
         quantity: qty,
         purchasePrice: Number(p.purchasePrice),
         sellingPrice: Number(p.sellingPrice),
