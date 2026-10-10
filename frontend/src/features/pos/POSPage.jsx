@@ -101,7 +101,7 @@ const POSPage = () => {
         type: invoiceType,
         total: totalAmount,
         items: [...cart],
-        patientName: invoiceType === 'CREDIT' ? patients.find(p => p.id === Number(patientId))?.name : null
+        patientName: invoiceType === 'CREDIT' ? patients.find(p => p.id === Number(patientId))?.fullName : null
       });
 
       // Reset
@@ -277,12 +277,15 @@ const POSPage = () => {
               <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
                 <option value="">اختر العسكري...</option>
                 {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} - (مديونية: {p.currentDebt})</option>
+                  <option key={p.id} value={p.id}>{p.name || p.fullName} - (مديونية: {p.currentDebt})</option>
                 ))}
               </select>
               {patientId && (
-                <div className="text-sm text-red-600 mt-1">
-                  * سيتم إضافة الفاتورة لمديونية العسكري.
+                <div className="text-sm mt-1">
+                  {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
+                    <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: مديونية هذا العسكري تتجاوز الـ 500 جنية!</span>
+                  ) : null}
+                  <span className="text-gray-600">* سيتم إضافة الفاتورة لمديونية العسكري.</span>
                 </div>
               )}
             </div>

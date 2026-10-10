@@ -5,11 +5,13 @@ const usersRoutes = require('./features/users/users.routes');
 const productsRoutes = require('./features/products/products.routes');
 const purchasesRoutes = require('./features/purchases/purchases.routes');
 const salesRoutes = require('./features/sales/sales.routes');
+const patientsRoutes = require('./features/patients/patients.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
 router.use('/products', productsRoutes);
 router.use('/purchases', purchasesRoutes);
 router.use('/sales', salesRoutes);
+router.use('/patients', patientsRoutes);
 
 module.exports = router;
