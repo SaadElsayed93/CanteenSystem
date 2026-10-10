@@ -5,6 +5,8 @@ import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import UserManagement from './features/settings/UserManagement';
 import ProductsPage from './features/products/ProductsPage';
+import SuppliersPage from './features/purchases/SuppliersPage';
+import NewPurchasePage from './features/purchases/NewPurchasePage';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
@@ -12,10 +14,13 @@ function MainLayout({ children }) {
     <div className="min-h-screen bg-gray-50 text-gray-900" dir="rtl">
       <header className="bg-white shadow p-4 mb-4 flex justify-between items-center">
         <div className="flex items-center gap-6">
-          <h1 className="text-xl font-bold">نظام إدارة الكانتين</h1>
+          <h1 className="text-xl font-bold">المنظومة المتكاملة لأدارة الكانتين :__:</h1>
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-blue-600">الرئيسية</Link>
             <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
+            {hasPermission('MANAGE_PURCHASES') && (
+              <Link to="/purchases/suppliers" className="text-gray-600 hover:text-blue-600">الموردين والمشتريات</Link>
+            )}
             {hasPermission('MANAGE_USERS') && (
               <Link to="/settings/users" className="text-gray-600 hover:text-blue-600">المستخدمين</Link>
             )}
@@ -54,6 +59,22 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <ProductsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/purchases/suppliers" element={
+            <ProtectedRoute requiredPermission="MANAGE_PURCHASES">
+              <MainLayout>
+                <SuppliersPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/purchases/new" element={
+            <ProtectedRoute requiredPermission="MANAGE_PURCHASES">
+              <MainLayout>
+                <NewPurchasePage />
               </MainLayout>
             </ProtectedRoute>
           } />
