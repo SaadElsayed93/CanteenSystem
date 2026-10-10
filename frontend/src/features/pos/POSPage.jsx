@@ -44,27 +44,38 @@ const POSPage = () => {
     }
   };
 
+  const filteredProducts = products.filter(p => {
+    if (!search) return p.totalStock > 0;
+    const match = p.name.includes(search) || p.internalCode.includes(search) || (p.barcode && p.barcode.includes(search));
+    return match;
+  });
+
   const handleBarcodeSearch = (e) => {
     e.preventDefault();
     if (!search) return;
     
-    // Find by barcode or internal code
-    const product = products.find(p => p.barcode === search || p.internalCode === search);
-    if (product) {
-      if (product.totalStock <= 0) {
-        if (!window.confirm(`⚠️ هذا الصنف (${product.name}) انتهى من المخزون! هل أنت متأكد من بيعه وتخفيض المخزون بالسالب؟`)) {
-          setSearch('');
-          return;
-        }
-      }
-      addToCart(product);
-      setSearch('');
+    // For scanners: exact match on barcode or internal code
+    const exactProduct = products.find(p => p.barcode === search || p.internalCode === search);
+    
+    if (exactProduct) {
+      const added = addToCart(exactProduct);
+      if (added) setSearch('');
     } else {
-      alert('صنف غير موجود');
+      // If it's a manual search and they press enter, but there's no exact match,
+      // just let them see the filtered grid. If grid is empty, alert.
+      if (filteredProducts.length === 0) {
+        alert('صنف غير موجود');
+      }
     }
   };
 
   const addToCart = (product) => {
+    if (product.totalStock <= 0) {
+      if (!window.confirm(`⚠️ هذا الصنف (${product.name}) انتهى من المخزون! هل أنت متأكد من بيعه وتخفيض المخزون بالسالب؟`)) {
+        return false;
+      }
+    }
+
     setCart(prev => {
       const existing = prev.find(i => i.productId === product.id);
       if (existing) {
@@ -72,6 +83,7 @@ const POSPage = () => {
       }
       return [...prev, { productId: product.id, name: product.name, price: product.sellingPrice, quantity: 1, maxStock: product.totalStock }];
     });
+    return true;
   };
 
   const updateQuantity = (productId, qty) => {
@@ -201,7 +213,7 @@ const POSPage = () => {
         <div className="bg-white p-4 shadow rounded flex-1 overflow-y-auto">
           <h3 className="font-bold mb-4">الأصناف المتوفرة (نقرة للإضافة)</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {products.filter(p => p.totalStock > 0).map(p => (
+            {filteredProducts.map(p => (
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}
