@@ -21,7 +21,7 @@ async function main() {
     update: {},
     create: {
       name: 'مبيعات',
-      permissions: JSON.stringify(['CREATE_INVOICE', 'VIEW_PRODUCTS', 'VIEW_PATIENTS', 'CREATE_DEPOSIT']),
+      permissions: JSON.stringify(['CREATE_INVOICE', 'VIEW_PRODUCTS', 'VIEW_PATIENTS', 'CREATE_DEPOSIT', 'VIEW_TREASURY', 'VIEW_REPORTS', 'MANAGE_PURCHASES']),
     },
   });
 

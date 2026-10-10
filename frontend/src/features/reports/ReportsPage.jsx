@@ -8,6 +8,32 @@ import {
   ShoppingCart, Calendar, AlertTriangle, Download, Printer, Filter
 } from 'lucide-react';
 
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  
+  let hours = d.getHours();
+  const ampm = hours >= 12 ? 'م' : 'ص';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} - ${hours}:${minutes} ${ampm}`;
+};
+
 const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel }) => (
   <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-colors">
     <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform`}></div>
@@ -230,6 +256,7 @@ const ReportsPage = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">من تاريخ</label>
               <input 
                 type="date"
+                lang="en-GB"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
@@ -241,6 +268,7 @@ const ReportsPage = () => {
               <label className="block text-sm font-bold text-gray-700 mb-2">إلى تاريخ</label>
               <input 
                 type="date"
+                lang="en-GB"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
@@ -272,12 +300,12 @@ const ReportsPage = () => {
                 </h1>
                 {reportType !== 'INVENTORY' && (
                   <p className="text-lg font-bold text-gray-500">
-                    عن الفترة من {new Date(startDate).toLocaleDateString('ar-EG')} إلى {new Date(endDate).toLocaleDateString('ar-EG')}
+                    عن الفترة من {formatDate(startDate)} إلى {formatDate(endDate)}
                   </p>
                 )}
                 {reportType === 'INVENTORY' && (
                   <p className="text-lg font-bold text-gray-500">
-                    التاريخ: {new Date().toLocaleDateString('ar-EG')}
+                    التاريخ: {formatDate(new Date())}
                   </p>
                 )}
               </div>
@@ -372,7 +400,7 @@ const ReportsPage = () => {
                         {reportType === 'PURCHASES' && (
                           <>
                             <td className="p-3 font-bold text-gray-700">{row.id}</td>
-                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleString('ar-EG')}</td>
+                            <td className="p-3 text-gray-600">{formatDateTime(row.date)}</td>
                             <td className="p-3 font-bold text-gray-800">{row.supplierName}</td>
                             <td className="p-3 text-sm text-gray-500">{row.itemsSummary}</td>
                             <td className="p-3 font-black text-indigo-600">{row.total} ج</td>
@@ -381,7 +409,7 @@ const ReportsPage = () => {
                         )}
                         {reportType === 'EXPENSES' && (
                           <>
-                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleDateString('ar-EG')}</td>
+                            <td className="p-3 text-gray-600">{formatDate(row.date)}</td>
                             <td className="p-3 font-bold text-gray-800">{row.category}</td>
                             <td className="p-3 text-gray-600">{row.description}</td>
                             <td className="p-3 font-bold text-gray-600">{row.paymentMethod}</td>

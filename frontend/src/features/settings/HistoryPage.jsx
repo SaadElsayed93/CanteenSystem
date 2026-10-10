@@ -91,6 +91,23 @@ const formatDetails = (newValues, isInline = false) => {
   }
 };
 
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  
+  let hours = d.getHours();
+  const ampm = hours >= 12 ? 'م' : 'ص';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${day}/${month}/${year} - ${hours}:${minutes} ${ampm}`;
+};
+
 const HistoryPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -263,7 +280,7 @@ const HistoryPage = () => {
                     className="border-b border-gray-50 transition-colors cursor-pointer hover:bg-indigo-50"
                   >
                     <td className="p-4 text-sm font-bold text-gray-500" dir="ltr">
-                      {new Date(log.createdAt).toLocaleString('ar-EG')}
+                      {formatDateTime(log.createdAt)}
                     </td>
                     <td className="p-4 font-bold text-gray-800">
                       {log.user?.fullName || log.user?.username || 'مجهول'}
