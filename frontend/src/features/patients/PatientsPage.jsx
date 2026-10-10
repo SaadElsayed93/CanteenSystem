@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
+import { X } from 'lucide-react';
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -19,6 +20,7 @@ const PatientsPage = () => {
   const [transactForm, setTransactForm] = useState({ patientId: null, type: 'DEPOSIT', amount: '', source: '', description: '', paymentMethodId: '' });
   
   const [statementModal, setStatementModal] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -71,6 +73,16 @@ const PatientsPage = () => {
       setStatementModal(res.data.data);
     } catch (err) {
       toast.error('خطأ في جلب الكشف');
+    }
+  };
+
+  
+  const viewInvoice = async (id) => {
+    try {
+      const res = await client.get(`/sales/invoices/${id}`);
+      setSelectedInvoice(res.data.data);
+    } catch (err) {
+      toast.error('خطأ في جلب تفاصيل الفاتورة');
     }
   };
 
@@ -291,8 +303,8 @@ const PatientsPage = () => {
                 <tbody className="text-gray-600">
                   {statementModal.invoices.length === 0 && <tr><td colSpan="3" className="p-8 text-center text-gray-500 bg-white">لا توجد مسحوبات</td></tr>}
                   {statementModal.invoices.map(inv => (
-                    <tr key={inv.id} className="bg-white hover:bg-gray-50 transition-colors">
-                      <td className="p-4 border-b font-bold text-indigo-600">{inv.invoiceNumber}</td>
+                    <tr key={inv.id} onClick={() => viewInvoice(inv.id)} className="bg-white hover:bg-indigo-50 transition-colors cursor-pointer group">
+                      <td className="p-4 border-b font-bold text-indigo-600 group-hover:underline">{inv.invoiceNumber} (عرض)</td>
                       <td className="p-4 border-b">{new Date(inv.createdAt).toLocaleString('ar-EG')}</td>
                       <td className="p-4 border-b font-bold text-red-600">{inv.totalAmount}</td>
                     </tr>
@@ -304,6 +316,61 @@ const PatientsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Details Modal */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+              <h3 className="text-2xl font-bold text-gray-800">
+                تفاصيل فاتورة المبيعات #{selectedInvoice.id}
+              </h3>
+              <button onClick={() => setSelectedInvoice(null)} className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <div>
+                <p className="text-gray-500 text-sm mb-1">المستخدم / الكاشير:</p>
+                <p className="font-bold text-gray-800">{selectedInvoice.user?.fullName || 'مجهول'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-sm mb-1">التاريخ:</p>
+                <p className="font-bold text-gray-800">{new Date(selectedInvoice.createdAt).toLocaleString('ar-EG')}</p>
+              </div>
+            </div>
+
+            <h4 className="font-bold text-gray-700 mb-3">الأصناف المطلوبة:</h4>
+            <table className="w-full text-right mb-6 border border-gray-200 rounded-xl overflow-hidden">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="p-3 border-b font-bold">الصنف</th>
+                  <th className="p-3 border-b font-bold">الكمية</th>
+                  <th className="p-3 border-b font-bold">السعر</th>
+                  <th className="p-3 border-b font-bold">الإجمالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedInvoice.items?.map(item => (
+                  <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-3 font-bold text-gray-800">{item.product?.name || 'صنف محذوف'}</td>
+                    <td className="p-3 font-bold">{item.quantity}</td>
+                    <td className="p-3">{item.unitPrice}</td>
+                    <td className="p-3 font-bold text-indigo-600">{item.subtotal}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <span className="font-bold text-indigo-900 text-lg">إجمالي الفاتورة:</span>
+              <span className="font-black text-2xl text-indigo-700">{selectedInvoice.totalAmount} جنية</span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
