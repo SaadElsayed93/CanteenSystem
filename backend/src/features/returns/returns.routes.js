@@ -8,6 +8,6 @@ const { logAudit } = require('../../common/middleware/audit');
 router.use(authMiddleware);
 
 router.get('/invoice/:invoiceNumber', checkPermission('CREATE_INVOICE'), returnsController.getInvoice);
-router.post('/', checkPermission('CREATE_INVOICE'), logAudit('CREATE', 'RETURN'), returnsController.makeReturn);
+router.post('/', checkPermission('CREATE_INVOICE'), logAudit('RETURN', 'RETURN'), returnsController.makeReturn);
 
 module.exports = router;

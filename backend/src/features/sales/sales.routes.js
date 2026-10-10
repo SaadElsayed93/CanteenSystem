@@ -11,7 +11,7 @@ router.use(authMiddleware);
 router.get('/pos-data', checkPermission('CREATE_INVOICE'), salesController.getPosData);
 
 // Checkout
-router.post('/checkout', checkPermission('CREATE_INVOICE'), logAudit('CREATE', 'INVOICE'), salesController.checkout);
+router.post('/checkout', checkPermission('CREATE_INVOICE'), salesController.checkout);
 
 router.get('/invoices', salesController.getRecentInvoices);
 router.get('/invoices/:id', salesController.getInvoiceById);

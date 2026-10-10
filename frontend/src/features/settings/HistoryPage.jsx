@@ -15,6 +15,7 @@ const actionMap = {
   'PAY': { label: 'دفع مالي', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   'WITHDRAW': { label: 'سحب', color: 'bg-red-100 text-red-800 border-red-200' },
   'DEPOSIT': { label: 'إيداع', color: 'bg-green-100 text-green-800 border-green-200' },
+  'RETURN': { label: 'عملية استرجاع', color: 'bg-red-100 text-red-800 border-red-200' }
 };
 
 const entityMap = {
@@ -29,7 +30,8 @@ const entityMap = {
   'TREASURY': 'الخزينة',
   'CATEGORY': 'الأقسام والتصنيفات',
   'SUPPLIER_PAYMENT': 'مدفوعات الموردين',
-  'PATIENT_TX': 'معاملات المرضى'
+  'PATIENT_TX': 'معاملات المرضى',
+  'RETURN': 'المرتجعات'
 };
 
 const fieldTranslations = {

@@ -11,7 +11,7 @@ router.get('/suppliers', checkPermission('MANAGE_PURCHASES'), purchasesControlle
 router.post('/suppliers', checkPermission('MANAGE_PURCHASES'), logAudit('CREATE', 'SUPPLIER'), purchasesController.createSupplier);
 router.patch('/suppliers/:id/status', checkPermission('MANAGE_PURCHASES'), logAudit('UPDATE', 'SUPPLIER'), purchasesController.toggleSupplierStatus);
 
-router.post('/', checkPermission('MANAGE_PURCHASES'), logAudit('CREATE', 'PURCHASE'), purchasesController.createPurchase);
+router.post('/', checkPermission('MANAGE_PURCHASES'), logAudit('PURCHASE', 'PURCHASE'), purchasesController.createPurchase);
 router.post('/payment', checkPermission('MANAGE_PURCHASES'), logAudit('PAY', 'SUPPLIER'), purchasesController.paySupplier);
 
 router.get('/:id', purchasesController.getPurchaseById);
