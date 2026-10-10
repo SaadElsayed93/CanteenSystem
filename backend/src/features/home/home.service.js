@@ -1,3 +1,4 @@
+const reportsService = require('../reports/reports.service');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -114,29 +115,18 @@ const getHomeDashboardData = async (userId, userRole) => {
     treasuryBalance: Number(treasuryTotal._sum.amount || 0)
   };
 
-  // 4. Sensitive Logs
-  const sensitiveLogs = await prisma.auditLog.findMany({
-    where: {
-      action: { in: ['RETURN', 'DELETE', 'UPDATE', 'EXPENSE_ADDED'] }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 6,
-    include: { user: { select: { fullName: true } } }
-  });
+
+  // 4. Performance Metrics (Instead of sensitive logs)
+  const chartData = await reportsService.getSalesChartData(7);
+  const topProducts = await reportsService.getTopProducts();
 
   return {
     lowStockItems,
     shiftStats,
     adminStats,
     topDebtors,
-    sensitiveLogs: sensitiveLogs.map(log => ({
-      id: log.id,
-      action: log.action,
-      entity: log.entityType,
-      user: log.user.fullName,
-      time: log.createdAt,
-      details: log.newValues
-    }))
+    chartData,
+    topProducts
   };
 };
 

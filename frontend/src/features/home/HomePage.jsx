@@ -7,6 +7,7 @@ import {
   Users, Activity, Wallet, Search
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -208,45 +209,53 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Live Feed (Sensitive Logs) */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-hidden">
-              <div className="bg-gray-50 p-4 border-b border-gray-100">
-                <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
-                  <Activity className="text-rose-500 animate-pulse" />
-                  رادار الرقابة (أحدث العمليات الحساسة)
-                </h3>
-              </div>
-              <div className="p-4">
-                {data.sensitiveLogs.length === 0 ? (
-                  <p className="text-gray-400 font-bold text-center py-6">لا توجد حركات حساسة حديثة</p>
-                ) : (
-                  <div className="space-y-4">
-                    {data.sensitiveLogs.map(log => (
-                      <div key={log.id} className="flex gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          log.action === 'RETURN' ? 'bg-orange-100 text-orange-600' :
-                          log.action === 'DELETE' ? 'bg-red-100 text-red-600' :
-                          'bg-indigo-100 text-indigo-600'
-                        }`}>
-                          <AlertTriangle size={18} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-800">
-                            {log.user} قام بعمل <span className="text-indigo-600">{log.action}</span> في {log.entity}
-                          </p>
-                          <p className="text-sm text-gray-500 font-bold mt-1 line-clamp-1">{log.details}</p>
-                          <p className="text-xs text-gray-400 mt-1">{new Date(log.time).toLocaleString('ar-EG')}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="mt-4 text-center">
-                  <Link to="/settings/history" className="text-indigo-600 font-bold text-sm hover:underline">عرض كل السجلات »</Link>
+            {/* Performance Metrics: Chart and Top Products */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Sales Chart */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 col-span-1 md:col-span-2">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-black text-gray-800">مبيعات آخر 7 أيام</h3>
+                  <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold">آخر أسبوع</div>
+                </div>
+                <div className="h-72 w-full" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={data.chartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontWeight: 'bold' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontWeight: 'bold' }} />
+                      <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                      <Line type="monotone" dataKey="المبيعات" stroke="#4f46e5" strokeWidth={4} dot={{ r: 4, fill: '#4f46e5', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, fill: '#4f46e5', strokeWidth: 0 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
-            </div>
 
+              {/* Top Products */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 col-span-1 md:col-span-2">
+                <h3 className="text-lg font-black text-gray-800 mb-6">الأصناف الأكثر مبيعاً (هذا الشهر)</h3>
+                <div className="space-y-4">
+                  {data.topProducts.map((p, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-gray-100 text-gray-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-indigo-50 text-indigo-600'}`}>
+                          {i + 1}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">{p.name}</p>
+                          <p className="text-xs text-gray-400 font-bold">{p.quantity} قطعة مباعة</p>
+                        </div>
+                      </div>
+                      <div className="font-black text-indigo-600">{p.revenue} ج</div>
+                    </div>
+                  ))}
+                  {data.topProducts.length === 0 && (
+                    <div className="text-center text-gray-400 font-bold py-8">لا توجد مبيعات هذا الشهر حتى الآن</div>
+                  )}
+                </div>
+              </div>
+
+            </div>
             {/* Top Debtors */}
             <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-hidden flex flex-col">
               <div className="bg-gray-50 p-4 border-b border-gray-100">
