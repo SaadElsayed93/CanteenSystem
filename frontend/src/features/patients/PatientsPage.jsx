@@ -148,17 +148,29 @@ const PatientsPage = () => {
 
       {/* Add Patient Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">إضافة مريض جديد</h3>
-            <form onSubmit={handleAddSubmit} className="flex flex-col gap-4">
-              <input required type="text" placeholder="الاسم الرباعي" className="border p-2 rounded" value={addForm.fullName} onChange={e=>setAddForm({...addForm, fullName: e.target.value})}/>
-              <input required type="text" placeholder="رقم الملف الطبي" className="border p-2 rounded" value={addForm.fileNumber} onChange={e=>setAddForm({...addForm, fileNumber: e.target.value})}/>
-              <input required type="text" placeholder="الرقم الداخلي" className="border p-2 rounded" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
-              <textarea placeholder="ملاحظات" className="border p-2 rounded" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">حفظ</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">👤 إضافة مريض جديد</h3>
+            <form onSubmit={handleAddSubmit} className="flex flex-col gap-5">
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الاسم الرباعي</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.fullName} onChange={e=>setAddForm({...addForm, fullName: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">رقم الملف الطبي</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.fileNumber} onChange={e=>setAddForm({...addForm, fileNumber: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الرقم الداخلي</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
+                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
+              </div>
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">حفظ المريض</button>
               </div>
             </form>
           </div>
@@ -167,41 +179,41 @@ const PatientsPage = () => {
 
       {/* Transaction Modal */}
       {isTransactModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">معاملة مالية (سداد / سحب)</h3>
-            <form onSubmit={handleTransactSubmit} className="flex flex-col gap-4">
-              <div className="mb-2">
-                <label className="block mb-1 font-bold">نوع المعاملة:</label>
-                <select className="w-full border p-2 rounded" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">💰 معاملة مالية (سداد / سحب)</h3>
+            <form onSubmit={handleTransactSubmit} className="flex flex-col gap-5">
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">نوع المعاملة:</label>
+                <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
                   <option value="DEPOSIT">إيداع في حساب المريض (الرصيد يزيد)</option>
                   <option value="WITHDRAWAL">خصم فلوس من المريض (خصم أو جزاء، الرصيد يقل)</option>
                 </select>
                 {transactForm.type === 'DEPOSIT' ? (
-                  <p className="text-xs text-green-600 mt-1 font-bold">💡 رصيد المريض سيزيد. (وإذا اخترت خزينة، سيتم إيداع المبلغ فيها).</p>
+                  <p className="text-xs text-green-600 mt-2 font-bold bg-green-50 p-2 rounded-lg border border-green-100">💡 رصيد المريض سيزيد. (وإذا اخترت خزينة، سيتم إيداع المبلغ فيها).</p>
                 ) : (
-                  <p className="text-xs text-red-600 mt-1 font-bold">💡 رصيد المريض سيقل. (وإذا اخترت خزينة، سيتم سحب المبلغ منها).</p>
+                  <p className="text-xs text-red-600 mt-2 font-bold bg-red-50 p-2 rounded-lg border border-red-100">💡 رصيد المريض سيقل. (وإذا اخترت خزينة، سيتم سحب المبلغ منها).</p>
                 )}
               </div>
-              <div className="mb-2">
-                <label className="block mb-1 font-bold">المبلغ:</label>
-                <input required type="number" step="0.01" min="0.01" placeholder="مثال: 100" className="w-full border p-2 rounded" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})}/>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">المبلغ:</label>
+                <input required type="number" step="0.01" min="0.01" placeholder="مثال: 100" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})}/>
               </div>
-              <div className="mb-2">
-                <label className="block mb-1 font-bold">الخزينة المرتبطة (اختياري):</label>
-                <select className="w-full border p-2 rounded" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الخزينة المرتبطة (اختياري):</label>
+                <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
                   <option value="">-- بدون خزينة (تعديل رصيد فقط) --</option>
                   {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
-              <div className="mb-2">
-                <label className="block mb-1 font-bold">المصدر / الملاحظات:</label>
-                <input type="text" placeholder="مثال: تحويل فودافون كاش من والده" className="w-full border p-2 rounded" value={transactForm.source} onChange={e=>setTransactForm({...transactForm, source: e.target.value})}/>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">المصدر / الملاحظات:</label>
+                <input type="text" placeholder="مثال: تحويل فودافون كاش من والده" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={transactForm.source} onChange={e=>setTransactForm({...transactForm, source: e.target.value})}/>
               </div>
               
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setIsTransactModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
-                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded">تأكيد</button>
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                <button type="button" onClick={() => setIsTransactModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+                <button type="submit" className={`px-6 py-2.5 text-white font-bold rounded-xl transition-colors shadow-lg ${transactForm.type === 'DEPOSIT' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>تأكيد المعاملة</button>
               </div>
             </form>
           </div>
@@ -210,69 +222,83 @@ const PatientsPage = () => {
 
       {/* Statement Modal */}
       {statementModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">كشف حساب: {statementModal.fullName}</h3>
-              <button onClick={() => setStatementModal(null)} className="text-gray-600 hover:text-red-600 font-bold text-2xl">×</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+              <h3 className="text-2xl font-bold text-gray-800">📄 كشف حساب: <span className="text-indigo-700">{statementModal.fullName}</span></h3>
+              <button onClick={() => setStatementModal(null)} className="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 w-10 h-10 rounded-full flex items-center justify-center transition-all font-bold text-xl">×</button>
             </div>
             
-            <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
-              <div><strong>رقم الملف:</strong> {statementModal.fileNumber}</div>
-              <div><strong>الرقم الداخلي:</strong> {statementModal.internalNumber}</div>
-              <div>
-                <strong>الرصيد الحالي:</strong> 
-                <span className={`mr-2 font-bold ${statementModal.currentDebt > 0 ? 'text-green-600' : statementModal.currentDebt < 0 ? 'text-red-600' : ''}`}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <div className="text-xs text-gray-500 mb-1">رقم الملف</div>
+                <div className="font-bold text-gray-800">{statementModal.fileNumber}</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <div className="text-xs text-gray-500 mb-1">الرقم الداخلي</div>
+                <div className="font-bold text-gray-800">{statementModal.internalNumber}</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg shadow-sm border border-indigo-50">
+                <div className="text-xs text-gray-500 mb-1">الرصيد الحالي</div>
+                <div className={`font-bold text-xl ${statementModal.currentDebt > 0 ? 'text-green-600' : statementModal.currentDebt < 0 ? 'text-red-600' : 'text-gray-800'}`}>
                   {statementModal.currentDebt}
-                </span>
+                </div>
               </div>
             </div>
 
-            <h4 className="font-bold mb-2">حركات السداد والإيداع</h4>
-            <table className="w-full text-right border-collapse mb-6 text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2 border-b">التاريخ</th>
-                  <th className="p-2 border-b">النوع</th>
-                  <th className="p-2 border-b">المبلغ</th>
-                  <th className="p-2 border-b">المصدر</th>
-                  <th className="p-2 border-b">البيان</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statementModal.transactions.length === 0 && <tr><td colSpan="5" className="p-2 text-center text-gray-500">لا توجد حركات</td></tr>}
-                {statementModal.transactions.map(t => (
-                  <tr key={t.id}>
-                    <td className="p-2 border-b">{new Date(t.createdAt).toLocaleString('ar-EG')}</td>
-                    <td className="p-2 border-b">{t.type === 'DEPOSIT' ? 'سداد/إيداع' : 'سحب'}</td>
-                    <td className="p-2 border-b font-bold">{t.amount}</td>
-                    <td className="p-2 border-b">{t.source || '-'}</td>
-                    <td className="p-2 border-b">{t.description || '-'}</td>
+            <h4 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2"><span>💵</span> حركات السداد والإيداع</h4>
+            <div className="overflow-hidden rounded-xl border border-gray-200 mb-8 shadow-sm">
+              <table className="w-full text-right border-collapse text-sm">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    <th className="p-4 border-b font-bold">التاريخ</th>
+                    <th className="p-4 border-b font-bold">النوع</th>
+                    <th className="p-4 border-b font-bold">المبلغ</th>
+                    <th className="p-4 border-b font-bold">المصدر</th>
+                    <th className="p-4 border-b font-bold">البيان</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-gray-600">
+                  {statementModal.transactions.length === 0 && <tr><td colSpan="5" className="p-8 text-center text-gray-500 bg-white">لا توجد حركات مالية</td></tr>}
+                  {statementModal.transactions.map(t => (
+                    <tr key={t.id} className="bg-white hover:bg-gray-50 transition-colors">
+                      <td className="p-4 border-b">{new Date(t.createdAt).toLocaleString('ar-EG')}</td>
+                      <td className="p-4 border-b">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${t.type === 'DEPOSIT' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {t.type === 'DEPOSIT' ? 'إيداع/سداد' : 'سحب/خصم'}
+                        </span>
+                      </td>
+                      <td className={`p-4 border-b font-bold ${t.type === 'DEPOSIT' ? 'text-green-600' : 'text-red-600'}`}>{t.amount}</td>
+                      <td className="p-4 border-b">{t.source || '-'}</td>
+                      <td className="p-4 border-b">{t.description || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            <h4 className="font-bold mb-2">آخر 10 فواتير مشتريات من الكانتين</h4>
-            <table className="w-full text-right border-collapse text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-2 border-b">رقم الفاتورة</th>
-                  <th className="p-2 border-b">التاريخ</th>
-                  <th className="p-2 border-b">المبلغ الإجمالي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statementModal.invoices.length === 0 && <tr><td colSpan="3" className="p-2 text-center text-gray-500">لا توجد مسحوبات</td></tr>}
-                {statementModal.invoices.map(inv => (
-                  <tr key={inv.id}>
-                    <td className="p-2 border-b">{inv.invoiceNumber}</td>
-                    <td className="p-2 border-b">{new Date(inv.createdAt).toLocaleString('ar-EG')}</td>
-                    <td className="p-2 border-b font-bold text-red-600">{inv.totalAmount}</td>
+            <h4 className="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2"><span>🛍️</span> آخر فواتير المشتريات من الكانتين</h4>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-right border-collapse text-sm">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    <th className="p-4 border-b font-bold">رقم الفاتورة</th>
+                    <th className="p-4 border-b font-bold">التاريخ</th>
+                    <th className="p-4 border-b font-bold">المبلغ الإجمالي</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-gray-600">
+                  {statementModal.invoices.length === 0 && <tr><td colSpan="3" className="p-8 text-center text-gray-500 bg-white">لا توجد مسحوبات</td></tr>}
+                  {statementModal.invoices.map(inv => (
+                    <tr key={inv.id} className="bg-white hover:bg-gray-50 transition-colors">
+                      <td className="p-4 border-b font-bold text-indigo-600">{inv.invoiceNumber}</td>
+                      <td className="p-4 border-b">{new Date(inv.createdAt).toLocaleString('ar-EG')}</td>
+                      <td className="p-4 border-b font-bold text-red-600">{inv.totalAmount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
           </div>
         </div>

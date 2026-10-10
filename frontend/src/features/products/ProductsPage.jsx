@@ -183,28 +183,49 @@ const ProductsPage = () => {
 
       {/* Product Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">{isEditMode ? 'تعديل الصنف' : 'إضافة صنف جديد'}</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="block mb-1">اسم الصنف</label><input required type="text" className="w-full border rounded p-2" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></div>
-              <div><label className="block mb-1">الكود الداخلي</label><input required type="text" className="w-full border rounded p-2" value={form.internalCode} onChange={e=>setForm({...form,internalCode:e.target.value})}/></div>
-              <div><label className="block mb-1">الباركود (اختياري)</label><input type="text" className="w-full border rounded p-2" value={form.barcode} onChange={e=>setForm({...form,barcode:e.target.value})}/></div>
-              <div><label className="block mb-1">سعر الشراء</label><input required type="number" step="0.01" className="w-full border rounded p-2" value={form.purchasePrice} onChange={e=>setForm({...form,purchasePrice:e.target.value})}/></div>
-              <div><label className="block mb-1">سعر البيع</label><input required type="number" step="0.01" className="w-full border rounded p-2" value={form.sellingPrice} onChange={e=>setForm({...form,sellingPrice:e.target.value})}/></div>
-              <div><label className="block mb-1">الوحدة (مثل: قطعة، كرتونة)</label><input required type="text" className="w-full border rounded p-2" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/></div>
-              <div><label className="block mb-1">الحد الأدنى للتنبيه</label><input required type="number" className="w-full border rounded p-2" value={form.alertThreshold} onChange={e=>setForm({...form,alertThreshold:e.target.value})}/></div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">{isEditMode ? '✏️ تعديل الصنف' : '📦 إضافة صنف جديد'}</h3>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">اسم الصنف</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الكود الداخلي</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.internalCode} onChange={e=>setForm({...form,internalCode:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الباركود (اختياري)</label>
+                <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.barcode} onChange={e=>setForm({...form,barcode:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر الشراء</label>
+                <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.purchasePrice} onChange={e=>setForm({...form,purchasePrice:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر البيع</label>
+                <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={form.sellingPrice} onChange={e=>setForm({...form,sellingPrice:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الوحدة (مثل: قطعة، كرتونة)</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الحد الأدنى للتنبيه</label>
+                <input required type="number" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.alertThreshold} onChange={e=>setForm({...form,alertThreshold:e.target.value})}/>
+              </div>
               
               {isEditMode && (
-                <div className="md:col-span-2 flex items-center gap-2 mt-4">
-                  <input type="checkbox" id="isActive" checked={form.isActive} onChange={e=>setForm({...form,isActive:e.target.checked})} className="w-4 h-4" />
-                  <label htmlFor="isActive">الصنف نشط (يظهر في المبيعات)</label>
+                <div className="md:col-span-2 flex items-center gap-3 mt-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                  <input type="checkbox" id="isActive" checked={form.isActive} onChange={e=>setForm({...form,isActive:e.target.checked})} className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500" />
+                  <label htmlFor="isActive" className="font-bold text-gray-700 cursor-pointer">الصنف نشط (يظهر في المبيعات)</label>
                 </div>
               )}
 
-              <div className="md:col-span-2 flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">إلغاء</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">حفظ</button>
+              <div className="md:col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+                <button type="submit" className="px-8 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">حفظ الصنف</button>
               </div>
             </form>
           </div>
@@ -213,24 +234,24 @@ const ProductsPage = () => {
 
       {/* Adjust Inventory Modal */}
       {adjustModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-xl font-bold mb-4">تسوية المخزون (إدخال/إخراج يدوي)</h3>
-            <form onSubmit={handleAdjustSubmit} className="flex flex-col gap-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">⚖️ تسوية المخزون</h3>
+            <form onSubmit={handleAdjustSubmit} className="flex flex-col gap-5">
               <div>
-                <label className="block mb-1">نوع الحركة</label>
-                <select className="w-full border rounded p-2" value={adjustForm.type} onChange={e=>setAdjustForm({...adjustForm, type: e.target.value})}>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">نوع الحركة</label>
+                <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={adjustForm.type} onChange={e=>setAdjustForm({...adjustForm, type: e.target.value})}>
                   <option value="IN">إضافة للمخزون (+)</option>
                   <option value="OUT">خصم من المخزون (-)</option>
                 </select>
               </div>
               <div>
-                <label className="block mb-1">الكمية</label>
-                <input required type="number" min="0.01" step="0.01" className="w-full border rounded p-2" value={adjustForm.quantity} onChange={e=>setAdjustForm({...adjustForm, quantity: e.target.value})}/>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الكمية</label>
+                <input required type="number" min="0.01" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={adjustForm.quantity} onChange={e=>setAdjustForm({...adjustForm, quantity: e.target.value})}/>
               </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <button type="button" onClick={() => setAdjustModal(false)} className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">إلغاء</button>
-                <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">تأكيد التسوية</button>
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                <button type="button" onClick={() => setAdjustModal(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">تأكيد التسوية</button>
               </div>
             </form>
           </div>
