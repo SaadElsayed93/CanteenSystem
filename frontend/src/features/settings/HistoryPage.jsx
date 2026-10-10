@@ -326,10 +326,18 @@ const HistoryPage = () => {
                     <span className="font-bold text-emerald-800">المبلغ المدفوع (أثناء الإنشاء):</span>
                     <span className="font-bold text-emerald-600">{selectedInvoice.paidAmount} جنية</span>
                   </div>
-                  <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
-                    <span className="font-bold text-red-800">الباقي مديونية:</span>
-                    <span className="font-bold text-red-600">{(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2)} جنية</span>
-                  </div>
+                                    {selectedInvoice.totalAmount > selectedInvoice.paidAmount && (
+                    <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                      <span className="font-bold text-red-800">الباقي مديونية (عليك):</span>
+                      <span className="font-bold text-red-600">{(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2)} جنية</span>
+                    </div>
+                  )}
+                  {selectedInvoice.paidAmount > selectedInvoice.totalAmount && (
+                    <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                      <span className="font-bold text-green-800">الزيادة المدفوعة (تُخصم من ديون أخرى):</span>
+                      <span className="font-bold text-green-600">{(selectedInvoice.paidAmount - selectedInvoice.totalAmount).toFixed(2)} جنية</span>
+                    </div>
+                  )}
                 </>
               )}
             </div>
