@@ -187,7 +187,7 @@ const createSale = async (data, userId) => {
         action: 'SALE',
         entityType: 'INVOICE',
         entityId: invoice.id,
-        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? patient.fullName : '?? ????' }),
+        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? (await tx.patient.findUnique({where: {id: patientId}})).fullName : '????' }),
         userId: userId
       }
     });
@@ -210,6 +210,7 @@ const getInvoiceById = async (id) => {
 };
 
 module.exports = { getPosData, getCategories, createSale, getInvoiceById };
+
 
 
 
