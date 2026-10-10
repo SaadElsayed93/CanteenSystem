@@ -8,8 +8,10 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res, next) => {
   try {
-    const logs = await auditService.getAuditLogs();
-    res.json({ success: true, data: logs });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const result = await auditService.getAuditLogs(page, limit);
+    res.json({ success: true, ...result }); // data, pagination
   } catch (err) {
     next(err);
   }
