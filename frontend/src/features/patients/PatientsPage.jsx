@@ -111,7 +111,7 @@ const PatientsPage = () => {
               <th className="p-3 border-b">رقم الملف</th>
               <th className="p-3 border-b">الاسم</th>
               <th className="p-3 border-b">الرقم الداخلي</th>
-              <th className="p-3 border-b">المديونية الحالية</th>
+              <th className="p-3 border-b">الرصيد الحالي</th>
               <th className="p-3 border-b">الإجراءات</th>
             </tr>
           </thead>
@@ -121,7 +121,7 @@ const PatientsPage = () => {
                 <td className="p-3 border-b font-bold">{p.fileNumber}</td>
                 <td className="p-3 border-b">{p.fullName}</td>
                 <td className="p-3 border-b">{p.internalNumber}</td>
-                <td className={`p-3 border-b font-bold ${p.currentDebt > 0 ? 'text-red-600' : p.currentDebt < 0 ? 'text-green-600' : ''}`}>
+                <td className={`p-3 border-b font-bold ${p.currentDebt > 0 ? 'text-green-600' : p.currentDebt < 0 ? 'text-red-600' : ''}`}>
                   {p.currentDebt}
                 </td>
                 <td className="p-3 border-b flex gap-2">
@@ -209,8 +209,8 @@ const PatientsPage = () => {
               <div><strong>رقم الملف:</strong> {statementModal.fileNumber}</div>
               <div><strong>الرقم الداخلي:</strong> {statementModal.internalNumber}</div>
               <div>
-                <strong>المديونية الحالية:</strong> 
-                <span className={`mr-2 font-bold ${statementModal.currentDebt > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <strong>الرصيد الحالي:</strong> 
+                <span className={`mr-2 font-bold ${statementModal.currentDebt > 0 ? 'text-green-600' : statementModal.currentDebt < 0 ? 'text-red-600' : ''}`}>
                   {statementModal.currentDebt}
                 </span>
               </div>

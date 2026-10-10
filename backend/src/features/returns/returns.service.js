@@ -140,7 +140,7 @@ const createReturn = async (data, userId) => {
         const patient = await tx.patient.findUnique({ where: { id: invoice.patientId } });
         await tx.patient.update({
           where: { id: patient.id },
-          data: { currentDebt: Number(patient.currentDebt) - returnTotalAmount } // Reduce debt
+          data: { currentDebt: Number(patient.currentDebt) + returnTotalAmount } // Increase balance
         });
 
         await tx.patientTransaction.create({

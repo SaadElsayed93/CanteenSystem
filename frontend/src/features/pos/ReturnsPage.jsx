@@ -130,7 +130,7 @@ const ReturnsPage = () => {
             </div>
             {invoice.patient && (
               <div className="col-span-2">
-                <strong>العميل (المريض):</strong> {invoice.patient.fullName} (مديونية: {invoice.patient.currentDebt})
+                <strong>العميل (المريض):</strong> {invoice.patient.fullName} (الرصيد: {invoice.patient.currentDebt})
               </div>
             )}
           </div>
@@ -198,7 +198,7 @@ const ReturnsPage = () => {
 
               {invoice.paymentType === 'CREDIT' && (
                 <div className="mb-4 text-green-600 font-bold">
-                  * سيتم خصم مبلغ الاسترجاع من مديونية المريض بشكل تلقائي ولن يتأثر رصيد الخزينة.
+                  * سيتم إضافة مبلغ الاسترجاع إلى رصيد المريض بشكل تلقائي ولن يتأثر رصيد الخزينة.
                 </div>
               )}
 

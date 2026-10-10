@@ -177,7 +177,7 @@ const createSale = async (data, userId) => {
       const patient = await tx.patient.findUnique({ where: { id: patientId } });
       await tx.patient.update({
         where: { id: patientId },
-        data: { currentDebt: Number(patient.currentDebt) + totalAmount }
+        data: { currentDebt: Number(patient.currentDebt) - totalAmount }
       });
     }
 

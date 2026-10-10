@@ -297,10 +297,10 @@ const POSPage = () => {
               </select>
               {patientId && (
                 <div className="text-sm mt-1">
-                  {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
-                    <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المديونية لهذا المريض يتجاوز الـ 500 جنية!</span>
+                  {patients.find(p => p.id === Number(patientId))?.currentDebt < -500 ? (
+                    <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المريض أقل من -500 جنية (عليه مديونية كبيرة)!</span>
                   ) : null}
-                  <span className="text-gray-600">* سيتم إضافة الفاتورة لمديونية المريض.</span>
+                  <span className="text-gray-600">* سيتم خصم الفاتورة من رصيد المريض.</span>
                 </div>
               )}
             </div>

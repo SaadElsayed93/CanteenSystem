@@ -49,12 +49,12 @@ const addTransaction = async (data, userId) => {
     const patient = await tx.patient.findUnique({ where: { id: patientId } });
     if (!patient) throw new Error('المريض غير موجود');
 
-    // Calculate new debt: DEPOSIT decreases debt, WITHDRAWAL increases debt (or reduces positive balance)
-    let newDebt = Number(patient.currentDebt);
+    // Calculate new balance: DEPOSIT increases balance, WITHDRAWAL decreases balance
+    let newBalance = Number(patient.currentDebt);
     if (type === 'DEPOSIT') {
-      newDebt -= pAmount;
+      newBalance += pAmount;
     } else if (type === 'WITHDRAWAL') {
-      newDebt += pAmount;
+      newBalance -= pAmount;
     }
 
     const transaction = await tx.patientTransaction.create({
@@ -70,7 +70,7 @@ const addTransaction = async (data, userId) => {
 
     await tx.patient.update({
       where: { id: patientId },
-      data: { currentDebt: newDebt }
+      data: { currentDebt: newBalance }
     });
 
     // Impact Treasury if a payment method is specified
