@@ -9,4 +9,6 @@ router.use(authMiddleware);
 // Only admins or managers should see reports
 router.get('/dashboard', checkPermission('VIEW_REPORTS'), reportsController.getDashboard);
 
+router.get('/detailed', checkPermission('VIEW_REPORTS'), reportsController.getDetailedReport);
+
 module.exports = router;

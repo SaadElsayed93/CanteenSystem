@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, DollarSign, PackageOpen, Users, 
-  ShoppingCart, Calendar, AlertTriangle, Download
+  ShoppingCart, Calendar, AlertTriangle, Download, Printer, Filter
 } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel }) => (
@@ -34,7 +34,33 @@ const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel }) => (
 const ReportsPage = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('DASHBOARD');
+    const [activeTab, setActiveTab] = useState('DASHBOARD');
+  const [reportType, setReportType] = useState('SALES');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(1); // first day of month
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [detailedData, setDetailedData] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateReport = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await client.get(`/reports/detailed?type=${reportType}&startDate=${startDate}&endDate=${endDate}`);
+      setDetailedData(res.data.data);
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء استخراج التقرير');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   useEffect(() => {
     fetchDashboard();
@@ -182,18 +208,224 @@ const ReportsPage = () => {
         </>
       )}
 
-      {activeTab === 'DETAILED' && (
-        <div className="bg-white p-12 rounded-2xl shadow-sm border-2 border-dashed border-gray-300 text-center flex flex-col items-center justify-center h-96">
-          <div className="bg-indigo-50 p-4 rounded-full mb-4">
-            <Download size={48} className="text-indigo-400" />
+            {activeTab === 'DETAILED' && (
+        <div className="space-y-6 print:m-0 print:p-0">
+          {/* Filters - Hidden when printing */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 flex flex-col md:flex-row gap-4 items-end print:hidden">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-bold text-gray-700 mb-2">نوع التقرير</label>
+              <select 
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
+              >
+                <option value="SALES">تقرير المبيعات والأرباح</option>
+                <option value="PURCHASES">تقرير المشتريات والموردين</option>
+                <option value="EXPENSES">تقرير المصروفات</option>
+                <option value="INVENTORY">تقرير تقييم المخزون الحالي</option>
+              </select>
+            </div>
+            
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-bold text-gray-700 mb-2">من تاريخ</label>
+              <input 
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
+                disabled={reportType === 'INVENTORY'}
+              />
+            </div>
+
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-bold text-gray-700 mb-2">إلى تاريخ</label>
+              <input 
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
+                disabled={reportType === 'INVENTORY'}
+              />
+            </div>
+
+            <button 
+              onClick={generateReport}
+              disabled={isGenerating}
+              className="bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              <Filter size={20} />
+              {isGenerating ? 'جاري الاستخراج...' : 'عرض التقرير'}
+            </button>
           </div>
-          <h3 className="text-2xl font-black text-gray-800 mb-2">تقارير الطباعة والتصدير</h3>
-          <p className="text-gray-500 font-bold max-w-md">
-            هذا القسم سيحتوي على فلاتر متقدمة لاستخراج تقارير المبيعات، الجرد، والأرباح وتصديرها بصيغة Word أو Excel أو طباعتها مباشرة.
-          </p>
-          <button className="mt-8 bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors">
-            قريباً في التحديث القادم
-          </button>
+
+          {/* Report Display */}
+          {detailedData && (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-gray-100 print:border-none print:shadow-none print:p-0">
+              
+              {/* Report Header for Print */}
+              <div className="text-center mb-8 border-b-2 border-gray-200 pb-6 print:block">
+                <h1 className="text-3xl font-black text-gray-900 mb-2">
+                  {reportType === 'SALES' && 'تقرير المبيعات الشامل'}
+                  {reportType === 'PURCHASES' && 'تقرير المشتريات الشامل'}
+                  {reportType === 'EXPENSES' && 'تقرير المصروفات الشامل'}
+                  {reportType === 'INVENTORY' && 'تقرير تقييم المخزون الشامل'}
+                </h1>
+                {reportType !== 'INVENTORY' && (
+                  <p className="text-lg font-bold text-gray-500">
+                    عن الفترة من {new Date(startDate).toLocaleDateString('ar-EG')} إلى {new Date(endDate).toLocaleDateString('ar-EG')}
+                  </p>
+                )}
+                {reportType === 'INVENTORY' && (
+                  <p className="text-lg font-bold text-gray-500">
+                    التاريخ: {new Date().toLocaleDateString('ar-EG')}
+                  </p>
+                )}
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                {Object.entries(detailedData.summary).map(([key, val]) => (
+                  <div key={key} className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-center">
+                    <p className="text-gray-500 font-bold mb-1 text-sm">
+                      {key === 'totalSales' && 'إجمالي المبيعات'}
+                      {key === 'totalCost' && 'تكلفة المبيعات'}
+                      {key === 'totalProfit' && 'صافي الربح التقريبي'}
+                      {key === 'cashSales' && 'المبيعات النقدية'}
+                      {key === 'creditSales' && 'المبيعات الآجلة'}
+                      {key === 'invoiceCount' && 'عدد الفواتير'}
+                      {key === 'totalPurchases' && 'إجمالي قيمة المشتريات'}
+                      {key === 'totalPaid' && 'المدفوع للموردين'}
+                      {key === 'totalRemaining' && 'المتبقي للموردين'}
+                      {key === 'purchaseCount' && 'عدد فواتير الشراء'}
+                      {key === 'totalExpenses' && 'إجمالي المصروفات'}
+                      {key === 'expenseCount' && 'عدد المصروفات'}
+                      {key === 'totalValue' && 'القيمة الإجمالية للمخزون'}
+                      {key === 'totalItems' && 'إجمالي كمية القطع'}
+                      {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
+                    </p>
+                    <p className="text-2xl font-black text-indigo-700">
+                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' 
+                        ? `${val} ج.م` 
+                        : val}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
+                  <thead>
+                    <tr className="bg-indigo-50 border-y-2 border-indigo-100">
+                      {reportType === 'SALES' && (
+                        <>
+                          <th className="p-3 font-bold text-indigo-800">رقم الفاتورة</th>
+                          <th className="p-3 font-bold text-indigo-800">التاريخ</th>
+                          <th className="p-3 font-bold text-indigo-800">النوع</th>
+                          <th className="p-3 font-bold text-indigo-800">العميل</th>
+                          <th className="p-3 font-bold text-indigo-800 w-1/3">الأصناف</th>
+                          <th className="p-3 font-bold text-indigo-800">الإجمالي</th>
+                          <th className="p-3 font-bold text-indigo-800">الربح</th>
+                        </>
+                      )}
+                      {reportType === 'PURCHASES' && (
+                        <>
+                          <th className="p-3 font-bold text-indigo-800">رقم الفاتورة</th>
+                          <th className="p-3 font-bold text-indigo-800">التاريخ</th>
+                          <th className="p-3 font-bold text-indigo-800">المورد</th>
+                          <th className="p-3 font-bold text-indigo-800 w-1/3">الأصناف</th>
+                          <th className="p-3 font-bold text-indigo-800">الإجمالي</th>
+                          <th className="p-3 font-bold text-indigo-800">المدفوع</th>
+                        </>
+                      )}
+                      {reportType === 'EXPENSES' && (
+                        <>
+                          <th className="p-3 font-bold text-indigo-800">التاريخ</th>
+                          <th className="p-3 font-bold text-indigo-800">التصنيف</th>
+                          <th className="p-3 font-bold text-indigo-800 w-1/2">البيان</th>
+                          <th className="p-3 font-bold text-indigo-800">وسيلة الدفع</th>
+                          <th className="p-3 font-bold text-indigo-800">المبلغ</th>
+                        </>
+                      )}
+                      {reportType === 'INVENTORY' && (
+                        <>
+                          <th className="p-3 font-bold text-indigo-800">الصنف</th>
+                          <th className="p-3 font-bold text-indigo-800">التصنيف</th>
+                          <th className="p-3 font-bold text-indigo-800">الكمية الحالية</th>
+                          <th className="p-3 font-bold text-indigo-800">سعر الشراء (التكلفة)</th>
+                          <th className="p-3 font-bold text-indigo-800">القيمة الإجمالية</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {detailedData.data.map((row, i) => (
+                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                        {reportType === 'SALES' && (
+                          <>
+                            <td className="p-3 font-bold text-gray-700">{row.id}</td>
+                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleString('ar-EG')}</td>
+                            <td className="p-3 font-bold text-gray-600">{row.type}</td>
+                            <td className="p-3 font-bold text-gray-800">{row.patientName}</td>
+                            <td className="p-3 text-sm text-gray-500">{row.itemsSummary}</td>
+                            <td className="p-3 font-black text-indigo-600">{row.total} ج</td>
+                            <td className="p-3 font-bold text-emerald-600">{row.profit} ج</td>
+                          </>
+                        )}
+                        {reportType === 'PURCHASES' && (
+                          <>
+                            <td className="p-3 font-bold text-gray-700">{row.id}</td>
+                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleString('ar-EG')}</td>
+                            <td className="p-3 font-bold text-gray-800">{row.supplierName}</td>
+                            <td className="p-3 text-sm text-gray-500">{row.itemsSummary}</td>
+                            <td className="p-3 font-black text-indigo-600">{row.total} ج</td>
+                            <td className="p-3 font-bold text-gray-600">{row.paid} ج</td>
+                          </>
+                        )}
+                        {reportType === 'EXPENSES' && (
+                          <>
+                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleDateString('ar-EG')}</td>
+                            <td className="p-3 font-bold text-gray-800">{row.category}</td>
+                            <td className="p-3 text-gray-600">{row.description}</td>
+                            <td className="p-3 font-bold text-gray-600">{row.paymentMethod}</td>
+                            <td className="p-3 font-black text-red-600">{row.amount} ج</td>
+                          </>
+                        )}
+                        {reportType === 'INVENTORY' && (
+                          <>
+                            <td className="p-3 font-bold text-gray-800">{row.name}</td>
+                            <td className="p-3 text-gray-600">{row.category}</td>
+                            <td className="p-3 font-bold text-gray-800">{row.quantity}</td>
+                            <td className="p-3 text-gray-600">{row.purchasePrice} ج</td>
+                            <td className="p-3 font-black text-indigo-600">{row.totalValue} ج</td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                    {detailedData.data.length === 0 && (
+                      <tr>
+                        <td colSpan="10" className="p-8 text-center text-gray-400 font-bold text-lg">
+                          لا توجد بيانات مطابقة للبحث في هذه الفترة
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Print Footer / Controls */}
+              <div className="mt-8 flex justify-center print:hidden">
+                <button 
+                  onClick={handlePrint}
+                  className="bg-gray-800 text-white font-bold px-8 py-3 rounded-xl hover:bg-black flex items-center gap-2 transition-all shadow-lg hover:shadow-xl"
+                >
+                  <Printer size={20} />
+                  طباعة التقرير (أو حفظ كـ PDF)
+                </button>
+              </div>
+
+            </div>
+          )}
         </div>
       )}
 

@@ -144,4 +144,169 @@ const getTopProducts = async () => {
     .slice(0, 5); // Top 5
 };
 
-module.exports = { getDashboardMetrics, getSalesChartData, getTopProducts };
+
+const getDetailedReport = async (type, startDateStr, endDateStr) => {
+  // Parse dates and set boundaries (start of day to end of day)
+  const startDate = startDateStr ? new Date(startDateStr) : new Date();
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = endDateStr ? new Date(endDateStr) : new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  if (type === 'SALES') {
+    const invoices = await prisma.invoice.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: {
+        items: { include: { product: true } },
+        patient: { select: { fullName: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let totalSales = 0;
+    let totalCost = 0;
+    let cashSales = 0;
+    let creditSales = 0;
+
+    const data = invoices.map(inv => {
+      let invoiceCost = 0;
+      inv.items.forEach(item => {
+        invoiceCost += Number(item.quantity) * Number(item.product.purchasePrice);
+      });
+
+      if (inv.status === 'COMPLETED') {
+        totalSales += Number(inv.totalAmount);
+        totalCost += invoiceCost;
+        if (inv.paymentType === 'CASH') cashSales += Number(inv.totalAmount);
+        else creditSales += Number(inv.totalAmount);
+      }
+
+      return {
+        id: inv.invoiceNumber,
+        date: inv.createdAt,
+        type: inv.paymentType === 'CASH' ? 'نقدي' : 'آجل',
+        patientName: inv.patient?.fullName || 'غير محدد',
+        total: Number(inv.totalAmount),
+        status: inv.status === 'COMPLETED' ? 'مكتملة' : 'مرتجع',
+        profit: Number(inv.totalAmount) - invoiceCost,
+        itemsSummary: inv.items.map(i => `${i.quantity}x ${i.product.name}`).join('، ')
+      };
+    });
+
+    return {
+      summary: {
+        totalSales,
+        totalCost,
+        totalProfit: totalSales - totalCost,
+        cashSales,
+        creditSales,
+        invoiceCount: invoices.length
+      },
+      data
+    };
+  }
+
+  if (type === 'PURCHASES') {
+    const purchases = await prisma.supplierPurchase.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: {
+        supplier: true,
+        items: { include: { product: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let totalPurchases = 0;
+    let totalPaid = 0;
+
+    const data = purchases.map(pur => {
+      totalPurchases += Number(pur.totalAmount);
+      totalPaid += Number(pur.paidAmount);
+      
+      return {
+        id: pur.referenceNo,
+        date: pur.createdAt,
+        supplierName: pur.supplier?.name || 'غير محدد',
+        total: Number(pur.totalAmount),
+        paid: Number(pur.paidAmount),
+        remaining: Number(pur.totalAmount) - Number(pur.paidAmount),
+        status: pur.status === 'PAID' ? 'خالصة' : pur.status === 'PARTIAL' ? 'مدفوعة جزئياً' : 'غير مدفوعة',
+        itemsSummary: pur.items.map(i => `${i.quantity}x ${i.product.name}`).join('، ')
+      };
+    });
+
+    return {
+      summary: {
+        totalPurchases,
+        totalPaid,
+        totalRemaining: totalPurchases - totalPaid,
+        purchaseCount: purchases.length
+      },
+      data
+    };
+  }
+
+  if (type === 'EXPENSES') {
+    const expenses = await prisma.expense.findMany({
+      where: { date: { gte: startDate, lte: endDate } },
+      include: { category: true, paymentMethod: true },
+      orderBy: { date: 'desc' }
+    });
+
+    let totalExpenses = 0;
+
+    const data = expenses.map(exp => {
+      totalExpenses += Number(exp.amount);
+      return {
+        id: exp.id,
+        date: exp.date,
+        category: exp.category.name,
+        amount: Number(exp.amount),
+        description: exp.description || 'بدون وصف',
+        paymentMethod: exp.paymentMethod.name
+      };
+    });
+
+    return {
+      summary: { totalExpenses, expenseCount: expenses.length },
+      data
+    };
+  }
+  
+  if (type === 'INVENTORY') {
+    // Inventory is a snapshot, no date filtering applies usually, but we return current state
+    const products = await prisma.product.findMany({
+      include: { batches: true, category: true },
+      orderBy: { name: 'asc' }
+    });
+
+    let totalValue = 0;
+    let totalItems = 0;
+
+    const data = products.map(p => {
+      const qty = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+      const value = qty * Number(p.purchasePrice);
+      totalValue += value;
+      totalItems += qty;
+
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category.name,
+        quantity: qty,
+        purchasePrice: Number(p.purchasePrice),
+        sellingPrice: Number(p.sellingPrice),
+        totalValue: value
+      };
+    });
+
+    return {
+      summary: { totalValue, totalItems, uniqueProducts: products.length },
+      data
+    };
+  }
+
+  throw new Error('نوع التقرير غير مدعوم');
+};
+
+module.exports = { getDashboardMetrics, getSalesChartData, getTopProducts, getDetailedReport };

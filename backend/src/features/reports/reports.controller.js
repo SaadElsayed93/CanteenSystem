@@ -17,4 +17,18 @@ const getDashboard = async (req, res, next) => {
   }
 };
 
-module.exports = { getDashboard };
+
+const getDetailedReport = async (req, res, next) => {
+  try {
+    const { type, startDate, endDate } = req.query;
+    if (!type) throw new Error('يرجى تحديد نوع التقرير');
+    
+    const reportData = await reportsService.getDetailedReport(type, startDate, endDate);
+    
+    res.json({ success: true, data: reportData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getDashboard, getDetailedReport };
