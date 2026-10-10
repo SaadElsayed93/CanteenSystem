@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import UserManagement from './features/settings/UserManagement';
+import HistoryPage from './features/settings/HistoryPage';
 import ProductsPage from './features/products/ProductsPage';
 import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
@@ -40,7 +41,8 @@ function MainLayout({ children }) {
       { to: "/purchases/suppliers", icon: <Truck size={20} />, label: "الموردين والمشتريات" }
     ] : []),
     ...(hasPermission('MANAGE_USERS') ? [
-      { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" }
+      { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" },
+    { to: "/settings/history", icon: <Settings size={20} />, label: "سجل الحركات (History)" }
     ] : [])
   ];
 
@@ -199,6 +201,8 @@ function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/settings/history" element={<ProtectedRoute requiredPermission="VIEW_REPORTS"><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />
+
           <Route path="/settings/users" element={
             <ProtectedRoute requiredPermission="MANAGE_USERS">
               <MainLayout>
@@ -215,3 +219,5 @@ function App() {
 }
 
 export default App;
+
+

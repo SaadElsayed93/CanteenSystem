@@ -181,8 +181,20 @@ const createSale = async (data, userId) => {
       });
     }
 
+    // 7. Audit Log
+    await tx.auditLog.create({
+      data: {
+        action: 'SALE',
+        entityType: 'INVOICE',
+        entityId: invoice.id,
+        newValues: JSON.stringify({ totalAmount, type, itemCount: invoiceItems.length }),
+        userId: userId
+      }
+    });
+
     return invoice;
   });
 };
 
 module.exports = { getPosData, getCategories, createSale };
+

@@ -154,3 +154,4 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
 };
 
 module.exports = { getAllProducts, getProductById, createProduct, updateProduct, adjustInventory };
+
