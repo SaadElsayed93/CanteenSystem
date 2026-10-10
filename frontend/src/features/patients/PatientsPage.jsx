@@ -164,17 +164,33 @@ const PatientsPage = () => {
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">معاملة مالية (سداد / سحب)</h3>
             <form onSubmit={handleTransactSubmit} className="flex flex-col gap-4">
-              <select className="border p-2 rounded" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
-                <option value="DEPOSIT">إيداع / سداد مديونية (نقص الدين)</option>
-                <option value="WITHDRAWAL">سحب رصيد (زيادة الدين)</option>
-              </select>
-              <input required type="number" step="0.01" min="0.01" placeholder="المبلغ" className="border p-2 rounded" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})}/>
-              <input type="text" placeholder="المصدر (مثال: فودافون كاش من والده)" className="border p-2 rounded" value={transactForm.source} onChange={e=>setTransactForm({...transactForm, source: e.target.value})}/>
-              <select className="border p-2 rounded" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
-                <option value="">-- تسميع في الخزينة؟ (اختر الخزينة) --</option>
-                {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-              <input type="text" placeholder="البيان/ملاحظات" className="border p-2 rounded" value={transactForm.description} onChange={e=>setTransactForm({...transactForm, description: e.target.value})}/>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold">نوع المعاملة:</label>
+                <select className="w-full border p-2 rounded" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
+                  <option value="DEPOSIT">سداد جزء من المديونية (المريض يدفع فلوس لتقليل دينه)</option>
+                  <option value="WITHDRAWAL">سلفة نقدية للمريض (سحب فلوس من الكانتين تزيد دينه)</option>
+                </select>
+                {transactForm.type === 'DEPOSIT' ? (
+                  <p className="text-xs text-green-600 mt-1 font-bold">💡 سيتم إضافة هذا المبلغ إلى رصيد الخزينة، وسيتم تخفيض مديونية المريض.</p>
+                ) : (
+                  <p className="text-xs text-red-600 mt-1 font-bold">💡 سيتم خصم هذا المبلغ من رصيد الخزينة، وسيتم زيادة مديونية المريض.</p>
+                )}
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold">المبلغ:</label>
+                <input required type="number" step="0.01" min="0.01" placeholder="مثال: 100" className="w-full border p-2 rounded" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})}/>
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold">الخزينة المرتبطة:</label>
+                <select required className="w-full border p-2 rounded" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
+                  <option value="">-- اختر الخزينة التي سيدخل أو يخرج منها المال --</option>
+                  {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold">المصدر / الملاحظات:</label>
+                <input type="text" placeholder="مثال: تحويل فودافون كاش من والده" className="w-full border p-2 rounded" value={transactForm.source} onChange={e=>setTransactForm({...transactForm, source: e.target.value})}/>
+              </div>
               
               <div className="flex justify-end gap-2 mt-4">
                 <button type="button" onClick={() => setIsTransactModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
