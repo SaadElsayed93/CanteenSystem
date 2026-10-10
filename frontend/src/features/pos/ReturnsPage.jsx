@@ -125,22 +125,31 @@ const ReturnsPage = () => {
     }
   };
 
+  const returnTotal = invoice ? returnCart.reduce((sum, item) => sum + (Number(item.returnQty) * Number(item.unitPrice)), 0) : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-6 max-h-[85vh] flex flex-col">
-          <h2 className="text-xl font-black text-gray-800 mb-2 flex items-center gap-2">📦 الفواتير الأخيرة</h2>
-          <p className="text-gray-500 text-sm mb-4">ابحث برقم الفاتورة، اسم المريض، أو اسم الصنف (شيبسي، كولا...)</p>
-          
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Header & Unified Search */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 text-center">
+        <h2 className="text-2xl font-black text-gray-800 mb-2">🔄 إدارة المرتجعات</h2>
+        <p className="text-gray-500 text-sm mb-6">ابحث برقم الفاتورة، اسم المريض، أو أي صنف داخل الفاتورة</p>
+        
+        <div className="relative max-w-2xl mx-auto">
           <input 
             type="text" 
-            placeholder="🔍 بحث سريع في الفواتير..." 
-            className="w-full border-2 border-indigo-100 rounded-xl p-3 font-bold outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all mb-4 bg-gray-50"
+            placeholder="🔍 ابحث هنا (مثال: شيبسي، سعدون، INV-123)..." 
+            className="w-full border-2 border-indigo-200 rounded-xl p-4 text-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner bg-gray-50 focus:bg-white text-center"
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
-          
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+        </div>
+      </div>
+
+      {/* Recent Invoices List (Only show if no invoice is selected, or maybe always show above?) */}
+      {!invoice && (
+        <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-6">
+          <h3 className="text-lg font-black text-gray-800 mb-4">آخر الفواتير المسجلة</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {recentInvoices.filter(inv => {
               const term = searchTerm.toLowerCase();
               return inv.invoiceNumber.toLowerCase().includes(term) ||
@@ -150,158 +159,167 @@ const ReturnsPage = () => {
               <div 
                 key={inv.id} 
                 onClick={() => openInvoiceFromList(inv.invoiceNumber)}
-                className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-400 hover:shadow-md ${invoice?.id === inv.id ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-gray-100 bg-white'}`}
+                className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-500 hover:shadow-md border-gray-100 bg-gray-50 hover:bg-indigo-50"
               >
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-bold text-gray-800 text-sm">{inv.invoiceNumber}</span>
                   <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">{inv.totalAmount} ج.م</span>
                 </div>
-                <div className="text-xs text-gray-500 font-bold">
-                  {inv.paymentType === 'CASH' ? '💰 نقدي' : `👤 ${inv.patient?.fullName || 'آجل'}`}
+                <div className="text-xs text-gray-500 font-bold mb-2">
+                  {inv.paymentType === 'CASH' ? '💵 نقدي' : `📝 ${inv.patient?.fullName || 'آجل'}`}
                 </div>
-                <div className="text-xs text-gray-400 mt-2 line-clamp-1">
-                  🛒 {inv.items.map(i => i.product.name).join('، ')}
+                <div className="text-xs text-gray-400 line-clamp-2">
+                  📦 {inv.items.map(i => i.product.name).join('، ')}
+                </div>
+                <div className="text-xs text-gray-400 mt-2 text-left" dir="ltr">
+                  {new Date(inv.createdAt).toLocaleString('ar-EG')}
                 </div>
               </div>
             ))}
-            {recentInvoices.length === 0 && <div className="text-center text-gray-400 font-bold py-10">لا توجد فواتير</div>}
+            {recentInvoices.length === 0 && <div className="col-span-full text-center text-gray-400 font-bold py-10">لا توجد فواتير مطابقة</div>}
           </div>
         </div>
+      )}
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">🔍 استرجاع برقم الفاتورة مباشرة</h2>
-            <form onSubmit={searchInvoice} className="flex gap-3 max-w-xl mx-auto mt-4">
-              <input 
-                type="text" 
-                placeholder="مثال: INV-123456789..." 
-                className="flex-1 border-2 border-indigo-200 rounded-xl p-4 text-lg font-bold text-center outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner"
-                value={invoiceNumber} 
-                onChange={e => setInvoiceNumber(e.target.value)} 
-              />
-              <button type="submit" className="bg-indigo-600 text-white font-bold px-8 py-4 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">
-                بحث
-              </button>
-            </form>
-            {error && <div className="text-red-500 font-bold mt-4 animate-in slide-in-from-top-2">{error}</div>}
-          </div>
-
+      {/* Selected Invoice Details & Return Form */}
       {invoice && (
-        <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border-2 border-gray-200">
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">رقم الفاتورة</div>
-              <div className="font-bold text-gray-800 text-lg">{invoice.invoiceNumber}</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">التاريخ</div>
-              <div className="font-bold text-gray-800">{new Date(invoice.createdAt).toLocaleString('ar-EG')}</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">نوع الدفع</div>
-              <div className="font-bold text-gray-800">{invoice.paymentType === 'CASH' ? 'نقدي (كاش)' : 'آجل (مديون)'}</div>
-            </div>
-            <div className="bg-white p-3 rounded-lg shadow-sm">
-              <div className="text-xs text-gray-500 mb-1">حالة الفاتورة</div>
-              <span className={`px-3 py-1 inline-block rounded-full text-sm font-bold border ${invoice.status === 'REFUNDED' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
-                {invoice.status === 'REFUNDED' ? 'مسترجعة بالكامل' : 'مكتملة'}
-              </span>
-            </div>
-            {invoice.patient && (
-              <div className="col-span-1 md:col-span-4 bg-indigo-50 p-4 rounded-lg border border-indigo-100 mt-2 flex justify-between items-center">
-                <div>
-                  <span className="text-gray-500 text-sm block">العميل (المريض)</span>
-                  <span className="font-bold text-lg text-indigo-900">{invoice.patient.fullName}</span>
-                </div>
-                <div className="text-left">
-                  <span className="text-gray-500 text-sm block">المديونية</span>
-                  <span className={`font-bold text-xl ${invoice.patient.currentDebt > 0 ? 'text-green-600' : 'text-red-600'}`}>{invoice.patient.currentDebt}</span>
-                </div>
-              </div>
-            )}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-indigo-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-black text-indigo-900">تفاصيل الفاتورة وتحديد المرتجع</h2>
+            <button onClick={() => setInvoice(null)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
+              رجوع للقائمة
+            </button>
           </div>
 
-          <h3 className="font-bold mb-6 text-xl text-gray-800 flex items-center gap-2"><span>📦</span> أصناف الفاتورة للاسترجاع</h3>
-          <div className="overflow-x-auto rounded-xl border border-gray-200 mb-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-indigo-50 p-6 rounded-xl border-2 border-indigo-100">
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              <div className="text-xs text-gray-500 mb-1">رقم الفاتورة</div>
+              <div className="font-bold text-gray-800 text-sm md:text-base">{invoice.invoiceNumber}</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              <div className="text-xs text-gray-500 mb-1">التاريخ</div>
+              <div className="font-bold text-gray-800 text-sm">{new Date(invoice.createdAt).toLocaleString('ar-EG')}</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              <div className="text-xs text-gray-500 mb-1">نوع الدفع</div>
+              <div className="font-bold text-gray-800 text-sm">{invoice.paymentType === 'CASH' ? 'نقدي' : 'آجل (مديونية)'}</div>
+            </div>
+            <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+              <div className="text-xs text-gray-500 mb-1">الإجمالي الأصلي</div>
+              <div className="font-black text-indigo-700 text-lg">{invoice.totalAmount} ج.م</div>
+            </div>
+          </div>
+
+          <h3 className="font-bold text-gray-700 mb-4 text-lg border-b-2 border-gray-100 pb-2 inline-block">الأصناف (حدد الكمية المرتجعة)</h3>
+          
+          <div className="overflow-x-auto mb-8">
             <table className="w-full text-right border-collapse">
-              <thead className="bg-gray-50 text-gray-700">
+              <thead className="bg-gray-100 text-gray-700">
                 <tr>
-                  <th className="p-4 border-b font-bold">الصنف</th>
+                  <th className="p-4 border-b font-bold rounded-tr-xl">الصنف</th>
                   <th className="p-4 border-b font-bold text-center">الكمية المباعة</th>
-                  <th className="p-4 border-b font-bold text-center">مرتجع سابق</th>
-                  <th className="p-4 border-b font-bold">السعر</th>
-                  <th className="p-4 border-b font-bold bg-red-50 text-red-700 w-40 text-center">كمية الاسترجاع الآن</th>
-                  <th className="p-4 border-b font-bold text-left">إجمالي الاسترجاع</th>
+                  <th className="p-4 border-b font-bold text-center">تم إرجاعه سابقاً</th>
+                  <th className="p-4 border-b font-bold text-center">السعر</th>
+                  <th className="p-4 border-b font-bold text-center rounded-tl-xl bg-indigo-100 text-indigo-900">الكمية المرتجعة الآن</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-600">
+              <tbody>
                 {returnCart.map(item => {
                   const returnedAlready = invoice.returns.reduce((sum, r) => {
                     const rit = r.items.find(ri => ri.productId === item.productId);
                     return sum + (rit ? Number(rit.quantity) : 0);
                   }, 0);
+                  const maxAllowed = item.quantity - returnedAlready;
                   
-                  const returnSubtotal = item.returnQty * item.unitPrice;
-                  const isFullyReturned = item.quantity - returnedAlready === 0;
-                  
-                  return (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors bg-white">
-                      <td className="p-4 border-b font-bold text-gray-800">{item.product.name}</td>
-                      <td className="p-4 border-b font-bold text-center text-gray-800">{item.quantity}</td>
-                      <td className="p-4 border-b text-center text-red-500 font-bold">{returnedAlready}</td>
-                      <td className="p-4 border-b">{item.unitPrice}</td>
-                      <td className="p-4 border-b bg-red-50/50 text-center">
-                        <input 
-                          type="number" 
-                          className="w-24 border border-red-200 rounded-lg p-2 text-center font-bold text-red-700 outline-none focus:ring-2 focus:ring-red-500 bg-white shadow-sm"
-                          value={item.returnQty === 0 ? '' : item.returnQty}
-                          placeholder="0"
-                          disabled={invoice.status === 'REFUNDED' || isFullyReturned}
-                          onChange={e => handleQtyChange(item.id, e.target.value)}
-                        />
+                  const returnTotal = invoice ? returnCart.reduce((sum, item) => sum + (Number(item.returnQty) * Number(item.unitPrice)), 0) : 0;
+
+  return (
+                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-bold text-gray-800">{item.product.name}</td>
+                      <td className="p-4 text-center font-bold text-gray-600">{item.quantity}</td>
+                      <td className="p-4 text-center font-bold text-red-500">{returnedAlready}</td>
+                      <td className="p-4 text-center font-bold text-gray-600">{item.unitPrice}</td>
+                      <td className="p-4 bg-indigo-50/50">
+                        <div className="flex justify-center items-center gap-3">
+                          <button 
+                            type="button" 
+                            onClick={() => handleQtyChange(item.id, item.returnQty - 1)}
+                            className="w-8 h-8 rounded-full bg-white border-2 border-indigo-200 text-indigo-600 font-bold hover:bg-indigo-100 flex items-center justify-center transition-colors"
+                          >-</button>
+                          <input 
+                            type="number" 
+                            min="0" 
+                            max={maxAllowed} 
+                            value={item.returnQty}
+                            onChange={(e) => handleQtyChange(item.id, e.target.value)}
+                            className="w-16 text-center border-2 border-indigo-200 rounded-lg p-1 font-bold outline-none focus:border-indigo-500"
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => handleQtyChange(item.id, item.returnQty + 1)}
+                            className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 flex items-center justify-center shadow-md transition-colors"
+                          >+</button>
+                        </div>
                       </td>
-                      <td className="p-4 border-b font-bold text-red-600 text-left text-lg">{returnSubtotal}</td>
                     </tr>
-                  );
+                  )
                 })}
               </tbody>
             </table>
           </div>
 
-          {invoice.status !== 'REFUNDED' && (
-            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-sm">
-              <div className="mb-6">
-                <label className="block font-bold mb-2 text-gray-700">سبب الاسترجاع (اختياري):</label>
-                <input type="text" placeholder="مثال: الصنف منتهي الصلاحية..." className="w-full border border-gray-300 p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={reason} onChange={e => setReason(e.target.value)} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
+            <div className="space-y-4">
+              <div>
+                <label className="block mb-2 font-bold text-gray-700">سبب المرتجع (اختياري)</label>
+                <textarea 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 transition-all bg-white"
+                  value={reason} 
+                  onChange={e => setReason(e.target.value)}
+                  placeholder="مثال: تالف، خطأ في الطلب..."
+                  rows="3"
+                ></textarea>
               </div>
-              
-              {invoice.paymentType === 'CASH' && (
-                <div className="mb-6 bg-red-50 p-4 rounded-xl border border-red-100">
-                  <label className="block font-bold mb-2 text-red-700">اختر خزينة لخصم المبلغ النقدي منها:</label>
-                  <select required className="w-full border border-red-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-red-500 bg-white text-gray-800" value={selectedMethodId} onChange={e => setSelectedMethodId(e.target.value)}>
-                    <option value="">-- اختر الخزينة التي سيتم رد المبلغ منها --</option>
-                    {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name} (المتاح: {m.currentBalance})</option>)}
+
+              {invoice.paymentType === 'CASH' && returnTotal > 0 && (
+                <div>
+                  <label className="block mb-2 font-bold text-gray-700">سحب مبلغ المرتجع من (الخزينة): <span className="text-red-500">*</span></label>
+                  <select 
+                    required
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold"
+                    value={selectedMethodId}
+                    onChange={e => setSelectedMethodId(e.target.value)}
+                  >
+                    <option value="">-- اختر الخزينة --</option>
+                    {paymentMethods.map(pm => (
+                      <option key={pm.id} value={pm.id}>{pm.name} (المتاح: {pm.currentBalance})</option>
+                    ))}
                   </select>
                 </div>
               )}
-
-              {invoice.paymentType === 'CREDIT' && (
-                <div className="mb-6 bg-green-50 p-4 rounded-xl border border-green-100 text-green-700 font-bold flex items-center gap-2">
-                  <span>💡</span> سيتم رد قيمة الاسترجاع إلى حساب المريض كإيداع (تقليل من مديونيته) بشكل تلقائي ولن يتم سحب نقدية من الخزينة.
-                </div>
-              )}
-
-              <div className="text-left mt-4 pt-4 border-t border-gray-200">
-                <button onClick={handleReturnSubmit} className="bg-red-600 text-white font-bold px-10 py-4 rounded-xl text-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
-                  تأكيد وحفظ الاسترجاع
-                </button>
-              </div>
             </div>
-          )}
+
+            <div className="flex flex-col justify-center bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-100">
+              <div className="text-center mb-6">
+                <div className="text-gray-500 font-bold mb-1">إجمالي قيمة المرتجع الحالي</div>
+                <div className="text-4xl font-black text-red-600">{returnTotal} ج.م</div>
+                {invoice.paymentType !== 'CASH' && returnTotal > 0 && (
+                  <div className="mt-2 text-sm font-bold text-indigo-600 bg-indigo-50 p-2 rounded-lg inline-block">
+                    سيتم خصم هذا المبلغ من مديونية المريض ({invoice.patient?.fullName}) تلقائياً.
+                  </div>
+                )}
+              </div>
+              <button 
+                onClick={handleReturnSubmit}
+                disabled={returnTotal === 0 || (invoice.paymentType === 'CASH' && !selectedMethodId)}
+                className="w-full bg-red-600 text-white font-bold px-6 py-4 rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              >
+                تأكيد المرتجع
+              </button>
+            </div>
+          </div>
         </div>
       )}
-        </div>
-      </div>
     </div>
   );
 };
