@@ -74,10 +74,16 @@ const createSale = async (data, userId) => {
     }
 
     // 3. Create Invoice
+    const invoiceNumber = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
     const invoice = await tx.invoice.create({
       data: {
-        type: type || 'CASH', // CASH or CREDIT
+        invoiceNumber,
+        paymentType: type || 'CASH', // CASH or CREDIT
+        cashAmount: type === 'CASH' ? totalAmount : 0,
+        accountAmount: type === 'CREDIT' ? totalAmount : 0,
         totalAmount,
+        status: 'COMPLETED',
         createdBy: userId,
         patientId: type === 'CREDIT' ? patientId : null,
       }
