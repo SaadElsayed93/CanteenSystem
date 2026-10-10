@@ -19,7 +19,7 @@ import {
   Home, ShoppingCart, RotateCcw, Package, 
   Users, Wallet, Truck, Settings, LogOut, Menu,
   Store, FileText
-} from 'lucide-react';
+, BarChart2} from 'lucide-react';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
