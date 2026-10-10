@@ -18,9 +18,9 @@ const checkout = async (req, res, next) => {
   }
 };
 
-module.exports = { getPosData, checkout };
 
-exports.getInvoiceById = async (req, res, next) => {
+
+const getInvoiceById = async (req, res, next) => {
   try {
     const invoice = await salesService.getInvoiceById(req.params.id);
     res.json({ success: true, data: invoice });
@@ -28,3 +28,5 @@ exports.getInvoiceById = async (req, res, next) => {
     next(err);
   }
 };
+
+module.exports = { getPosData, checkout, getInvoiceById };
