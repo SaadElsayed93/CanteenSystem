@@ -29,4 +29,13 @@ const getInvoiceById = async (req, res, next) => {
   }
 };
 
-module.exports = { getPosData, checkout, getInvoiceById };
+const getRecentInvoices = async (req, res, next) => {
+  try {
+    const invoices = await salesService.getRecentInvoices();
+    res.json({ success: true, data: invoices });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getPosData, checkout, getInvoiceById, getRecentInvoices };

@@ -58,6 +58,7 @@ const createSale = async (data, userId) => {
 
       invoiceItems.push({
         productId: product.id,
+        productName: product.name,
         quantity: qtyRequired,
         unitPrice: Number(product.sellingPrice),
         purchasePrice: Number(product.purchasePrice),
@@ -187,7 +188,7 @@ const createSale = async (data, userId) => {
         action: 'SALE',
         entityType: 'INVOICE',
         entityId: invoice.id,
-        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? (await tx.patient.findUnique({where: {id: patientId}})).fullName : '????' }),
+        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? (await tx.patient.findUnique({where: {id: patientId}})).fullName : '????', itemNames: invoiceItems.map(i => i.productName).join('? ') }),
         userId: userId
       }
     });
@@ -209,7 +210,22 @@ const getInvoiceById = async (id) => {
   return invoice;
 };
 
-module.exports = { getPosData, getCategories, createSale, getInvoiceById };
+const getRecentInvoices = async () => {
+  return prisma.invoice.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+    include: {
+      patient: true,
+      user: { select: { fullName: true, username: true } },
+      items: {
+        include: { product: true }
+      }
+    }
+  });
+};
+
+module.exports = { getPosData, getCategories, createSale, getInvoiceById, getRecentInvoices };
+
 
 
 
