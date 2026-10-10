@@ -14,7 +14,7 @@ const PatientsPage = () => {
   const { hasPermission } = useAuth();
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ fullName: '', fileNumber: '', internalNumber: '', notes: '' });
+  const [addForm, setAddForm] = useState({ fullName: '', fileNumber: '', internalNumber: '', notes: '', initialBalance: '', paymentMethodId: '' });
   
   const [isTransactModalOpen, setIsTransactModalOpen] = useState(false);
   const [transactForm, setTransactForm] = useState({ patientId: null, type: 'DEPOSIT', amount: '', source: '', description: '', paymentMethodId: '' });
@@ -46,7 +46,7 @@ const PatientsPage = () => {
     try {
       await client.post('/patients', addForm);
       setIsAddModalOpen(false);
-      setAddForm({ fullName: '', fileNumber: '', internalNumber: '', notes: '' });
+      setAddForm({ fullName: '', fileNumber: '', internalNumber: '', notes: '', initialBalance: '', paymentMethodId: '' });
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'خطأ في الإضافة');
@@ -177,6 +177,19 @@ const PatientsPage = () => {
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الرقم الداخلي</label>
                 <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
               </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الرصيد الافتتاحي (ديبوزت)</label>
+                <input type="number" min="0" step="1" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={addForm.initialBalance} onChange={e=>setAddForm({...addForm, initialBalance: e.target.value})} placeholder="مثال: 1000" />
+              </div>
+              {addForm.initialBalance > 0 && (
+                <div>
+                  <label className="block mb-2 font-bold text-gray-700 text-sm">إيداع الديبوزت في (الخزينة):</label>
+                  <select required className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={addForm.paymentMethodId} onChange={e=>setAddForm({...addForm, paymentMethodId: e.target.value})}>
+                    <option value="">-- اختر الخزينة --</option>
+                    {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
                 <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
@@ -376,5 +389,6 @@ const PatientsPage = () => {
 };
 
 export default PatientsPage;
+
 
 

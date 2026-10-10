@@ -21,7 +21,7 @@ const getById = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const patient = await patientsService.createPatient(req.body);
+    const patient = await patientsService.createPatient(req.body, req.user.id);
     res.status(201).json({ success: true, message: 'تم إضافة المريض بنجاح', data: patient });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -47,3 +47,4 @@ const transact = async (req, res, next) => {
 };
 
 module.exports = { getAll, getById, create, toggleStatus, transact };
+

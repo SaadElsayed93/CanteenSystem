@@ -17,17 +17,64 @@ const getPatientById = async (id) => {
   });
 };
 
-const createPatient = async (data) => {
-  const { fileNumber, fullName, internalNumber, notes } = data;
+const createPatient = async (data, userId) => {
+  const { fileNumber, fullName, internalNumber, notes, initialBalance, paymentMethodId } = data;
 
   const existingFile = await prisma.patient.findUnique({ where: { fileNumber } });
   if (existingFile) throw new Error('رقم الملف موجود مسبقاً');
 
   const existingInternal = await prisma.patient.findUnique({ where: { internalNumber } });
-  if (existingInternal) throw new Error('الرقم العسكري (الداخلي) موجود مسبقاً');
+  if (existingInternal) throw new Error('الرقم الداخلي (السرير) موجود مسبقاً');
 
-  return prisma.patient.create({
-    data: { fileNumber, fullName, internalNumber, notes }
+  return prisma.$transaction(async (tx) => {
+    const patient = await tx.patient.create({
+      data: { 
+        fileNumber, 
+        fullName, 
+        internalNumber, 
+        notes,
+        currentDebt: initialBalance ? Number(initialBalance) : 0
+      }
+    });
+
+    if (initialBalance && Number(initialBalance) > 0) {
+      const pAmount = Number(initialBalance);
+      
+      const transaction = await tx.patientTransaction.create({
+        data: {
+          patientId: patient.id,
+          type: 'DEPOSIT',
+          amount: pAmount,
+          source: 'إيداع نقدي',
+          description: 'رصيد افتتاحي (ديبوزت)',
+          createdBy: userId
+        }
+      });
+
+      if (paymentMethodId) {
+        const method = await tx.paymentMethod.findUnique({ where: { id: Number(paymentMethodId) } });
+        if (method) {
+          await tx.paymentMethod.update({
+            where: { id: Number(paymentMethodId) },
+            data: { currentBalance: Number(method.currentBalance) + pAmount }
+          });
+
+          await tx.treasuryTransaction.create({
+            data: {
+              paymentMethodId: Number(paymentMethodId),
+              type: 'IN',
+              amount: pAmount,
+              description: `ديبوزت مريض جديد (${patient.fullName}) - رصيد افتتاحي`,
+              referenceType: 'PATIENT_TX',
+              referenceId: transaction.id,
+              createdBy: userId
+            }
+          });
+        }
+      }
+    }
+    
+    return patient;
   });
 };
 
