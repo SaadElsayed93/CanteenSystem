@@ -276,7 +276,7 @@ const POSPage = () => {
             <label className="block mb-2 font-bold">طريقة الدفع:</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="invoiceType" value="CASH" checked={invoiceType === 'CASH'} onChange={() => setInvoiceType('CASH')} />
+                <input type="radio" name="invoiceType" value="CASH" checked={invoiceType === 'CASH'} onChange={() => { setInvoiceType('CASH'); setPatientId(''); }} />
                 نقدي (كاش)
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -286,27 +286,25 @@ const POSPage = () => {
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-1">المريض (اختياري للنقدي، إجباري للآجل):</label>
-            <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
-              <option value="">اختر المريض...</option>
-              {patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name || p.fullName} - (الرصيد: {p.currentDebt})</option>
-              ))}
-            </select>
-            {patientId && (
-              <div className="text-sm mt-1">
-                {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
-                  <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المديونية لهذا المريض يتجاوز الـ 500 جنية!</span>
-                ) : null}
-                {invoiceType === 'CREDIT' ? (
+          {invoiceType === 'CREDIT' && (
+            <div className="mb-4">
+              <label className="block mb-1 font-bold">المريض (إجباري):</label>
+              <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
+                <option value="">اختر المريض...</option>
+                {patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.name || p.fullName} - (الرصيد: {p.currentDebt})</option>
+                ))}
+              </select>
+              {patientId && (
+                <div className="text-sm mt-1">
+                  {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
+                    <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المديونية لهذا المريض يتجاوز الـ 500 جنية!</span>
+                  ) : null}
                   <span className="text-gray-600">* سيتم إضافة الفاتورة لمديونية المريض.</span>
-                ) : (
-                  <span className="text-green-600">* سيدفع المريض نقداً ولن يتأثر رصيده.</span>
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <button 
             onClick={handleCheckout} 
