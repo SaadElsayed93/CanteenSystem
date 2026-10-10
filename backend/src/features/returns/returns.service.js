@@ -202,7 +202,7 @@ const createReturn = async (data, userId) => {
         entityType: 'RETURN',
         entityId: returnRecord.id,
         newValues: JSON.stringify(auditNewValues),
-        createdBy: userId
+        userId: userId
       }
     });
 

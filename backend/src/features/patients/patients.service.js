@@ -225,7 +225,7 @@ const dischargePatient = async (id, paymentMethodId, userId) => {
         entityType: 'PATIENT',
         entityId: patient.id,
         newValues: JSON.stringify(auditNewValues),
-        createdBy: userId
+        userId: userId
       }
     });
 
