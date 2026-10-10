@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import UserManagement from './features/settings/UserManagement';
+import ProductsPage from './features/products/ProductsPage';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
@@ -14,6 +15,7 @@ function MainLayout({ children }) {
           <h1 className="text-xl font-bold">نظام إدارة الكانتين</h1>
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-blue-600">الرئيسية</Link>
+            <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
             {hasPermission('MANAGE_USERS') && (
               <Link to="/settings/users" className="text-gray-600 hover:text-blue-600">المستخدمين</Link>
             )}
@@ -44,6 +46,14 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <div className="text-center text-xl mt-10">مرحباً بك في لوحة التحكم</div>
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/products" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ProductsPage />
               </MainLayout>
             </ProtectedRoute>
           } />

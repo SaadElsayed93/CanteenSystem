@@ -6,7 +6,7 @@ const routes = require('./routes');
 const app = express();
 
 app.use(cors({
-  origin: '*', // For local network
+  origin: true, // Set to true to reflect the request origin
   credentials: true,
 }));
 app.use(express.json());
