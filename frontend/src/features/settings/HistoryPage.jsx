@@ -315,9 +315,23 @@ const HistoryPage = () => {
               </tbody>
             </table>
 
-            <div className="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-              <span className="font-bold text-indigo-900 text-lg">إجمالي الفاتورة:</span>
-              <span className="font-black text-2xl text-indigo-700">{selectedInvoice.totalAmount} جنية</span>
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-indigo-900 text-lg">إجمالي الفاتورة:</span>
+                <span className="font-black text-2xl text-indigo-700">{selectedInvoice.totalAmount} جنية</span>
+              </div>
+              {invoiceType === 'PURCHASE' && selectedInvoice.paidAmount !== undefined && (
+                <>
+                  <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                    <span className="font-bold text-emerald-800">المبلغ المدفوع (أثناء الإنشاء):</span>
+                    <span className="font-bold text-emerald-600">{selectedInvoice.paidAmount} جنية</span>
+                  </div>
+                  <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                    <span className="font-bold text-red-800">الباقي مديونية:</span>
+                    <span className="font-bold text-red-600">{(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2)} جنية</span>
+                  </div>
+                </>
+              )}
             </div>
             
           </div>
@@ -328,4 +342,5 @@ const HistoryPage = () => {
 };
 
 export default HistoryPage;
+
 
