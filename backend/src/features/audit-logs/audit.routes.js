@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const auditService = require('./audit.service');
-const { requireAuth, requirePermission } = require('../../middlewares/auth.middleware');
+const { authMiddleware } = require('../../common/middleware/auth');
+const { checkPermission } = require('../../common/middleware/permissions');
 
-router.get('/', requireAuth, requirePermission('VIEW_REPORTS'), async (req, res, next) => {
+router.use(authMiddleware);
+
+router.get('/', async (req, res, next) => {
   try {
     const logs = await auditService.getAuditLogs();
     res.json({ success: true, data: logs });
