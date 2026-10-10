@@ -84,10 +84,10 @@ const PatientsPage = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">حسابات العساكر (المرضى)</h2>
+        <h2 className="text-2xl font-bold">المرضى (الحسابات والديون)</h2>
         {hasPermission('VIEW_PATIENTS') && (
           <button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            + إضافة عسكري جديد
+            + إضافة مريض جديد
           </button>
         )}
       </div>
@@ -97,7 +97,7 @@ const PatientsPage = () => {
       <div className="mb-4">
         <input 
           type="text" 
-          placeholder="بحث بالاسم، رقم الملف، أو الرقم العسكري..." 
+          placeholder="بحث بالاسم، رقم الملف، أو الرقم الداخلي..." 
           className="w-full md:w-1/3 border rounded p-2"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -110,7 +110,7 @@ const PatientsPage = () => {
             <tr>
               <th className="p-3 border-b">رقم الملف</th>
               <th className="p-3 border-b">الاسم</th>
-              <th className="p-3 border-b">الرقم العسكري</th>
+              <th className="p-3 border-b">الرقم الداخلي</th>
               <th className="p-3 border-b">المديونية الحالية</th>
               <th className="p-3 border-b">الإجراءات</th>
             </tr>
@@ -143,11 +143,11 @@ const PatientsPage = () => {
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">إضافة عسكري جديد</h3>
+            <h3 className="text-xl font-bold mb-4">إضافة مريض جديد</h3>
             <form onSubmit={handleAddSubmit} className="flex flex-col gap-4">
               <input required type="text" placeholder="الاسم الرباعي" className="border p-2 rounded" value={addForm.fullName} onChange={e=>setAddForm({...addForm, fullName: e.target.value})}/>
               <input required type="text" placeholder="رقم الملف الطبي" className="border p-2 rounded" value={addForm.fileNumber} onChange={e=>setAddForm({...addForm, fileNumber: e.target.value})}/>
-              <input required type="text" placeholder="الرقم العسكري" className="border p-2 rounded" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
+              <input required type="text" placeholder="الرقم الداخلي" className="border p-2 rounded" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
               <textarea placeholder="ملاحظات" className="border p-2 rounded" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
               <div className="flex justify-end gap-2 mt-4">
                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 bg-gray-200 rounded">إلغاء</button>
@@ -196,7 +196,7 @@ const PatientsPage = () => {
             
             <div className="grid grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded">
               <div><strong>رقم الملف:</strong> {statementModal.fileNumber}</div>
-              <div><strong>الرقم العسكري:</strong> {statementModal.internalNumber}</div>
+              <div><strong>الرقم الداخلي:</strong> {statementModal.internalNumber}</div>
               <div>
                 <strong>المديونية الحالية:</strong> 
                 <span className={`mr-2 font-bold ${statementModal.currentDebt > 0 ? 'text-red-600' : 'text-green-600'}`}>

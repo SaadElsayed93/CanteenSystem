@@ -29,7 +29,7 @@ function MainLayout({ children }) {
             )}
             <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
             {hasPermission('VIEW_PATIENTS') && (
-              <Link to="/patients" className="text-gray-600 hover:text-blue-600">العساكر (المرضى)</Link>
+              <Link to="/patients" className="text-gray-600 hover:text-blue-600">المرضى</Link>
             )}
             {hasPermission('VIEW_TREASURY') && (
               <Link to="/treasury" className="text-gray-600 hover:text-blue-600">الخزينة والمصروفات</Link>

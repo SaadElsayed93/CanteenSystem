@@ -28,7 +28,14 @@ const POSPage = () => {
     try {
       const res = await client.get('/sales/pos-data');
       setProducts(res.data.data.products);
-      setPaymentMethods(res.data.data.paymentMethods);
+      
+      const methods = res.data.data.paymentMethods;
+      setPaymentMethods(methods);
+      
+      // Auto-select "نقدية" for cash
+      const cashMethod = methods.find(m => m.name === 'نقدية');
+      if (cashMethod) setPaymentMethodId(cashMethod.id);
+      
       setPatients(res.data.data.patients);
     } catch (err) {
       alert('فشل في جلب بيانات البيع');
@@ -248,48 +255,40 @@ const POSPage = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block mb-2 font-bold">نوع البيع:</label>
+            <label className="block mb-2 font-bold">طريقة الدفع:</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="invoiceType" value="CASH" checked={invoiceType === 'CASH'} onChange={() => setInvoiceType('CASH')} />
-                نقدي
+                نقدي (كاش)
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="invoiceType" value="CREDIT" checked={invoiceType === 'CREDIT'} onChange={() => setInvoiceType('CREDIT')} />
-                آجل (عساكر)
+                آجل (يخصم من رصيد المريض)
               </label>
             </div>
           </div>
 
-          {invoiceType === 'CASH' && (
-            <div className="mb-4">
-              <label className="block mb-1">الدفع إلى (الخزينة):</label>
-              <select className="w-full border rounded p-2" value={paymentMethodId} onChange={e => setPaymentMethodId(e.target.value)}>
-                <option value="">اختر...</option>
-                {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-              </select>
-            </div>
-          )}
-
-          {invoiceType === 'CREDIT' && (
-            <div className="mb-4">
-              <label className="block mb-1">حساب العسكري (المريض):</label>
-              <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
-                <option value="">اختر العسكري...</option>
-                {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.name || p.fullName} - (مديونية: {p.currentDebt})</option>
-                ))}
-              </select>
-              {patientId && (
-                <div className="text-sm mt-1">
-                  {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
-                    <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: مديونية هذا العسكري تتجاوز الـ 500 جنية!</span>
-                  ) : null}
-                  <span className="text-gray-600">* سيتم إضافة الفاتورة لمديونية العسكري.</span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="mb-4">
+            <label className="block mb-1">المريض (اختياري للنقدي، إجباري للآجل):</label>
+            <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
+              <option value="">اختر المريض...</option>
+              {patients.map(p => (
+                <option key={p.id} value={p.id}>{p.name || p.fullName} - (الرصيد: {p.currentDebt})</option>
+              ))}
+            </select>
+            {patientId && (
+              <div className="text-sm mt-1">
+                {patients.find(p => p.id === Number(patientId))?.currentDebt > 500 ? (
+                  <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المديونية لهذا المريض يتجاوز الـ 500 جنية!</span>
+                ) : null}
+                {invoiceType === 'CREDIT' ? (
+                  <span className="text-gray-600">* سيتم إضافة الفاتورة لمديونية المريض.</span>
+                ) : (
+                  <span className="text-green-600">* سيدفع المريض نقداً ولن يتأثر رصيده.</span>
+                )}
+              </div>
+            )}
+          </div>
 
           <button 
             onClick={handleCheckout} 

@@ -85,7 +85,7 @@ const createSale = async (data, userId) => {
         totalAmount,
         status: 'COMPLETED',
         createdBy: userId,
-        patientId: type === 'CREDIT' ? patientId : null,
+        patientId: patientId || null,
       }
     });
 
