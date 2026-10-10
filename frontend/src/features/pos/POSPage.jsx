@@ -90,6 +90,10 @@ const POSPage = () => {
       
       const invoiceData = res.data.data;
       
+      // Play cha-ching sound
+      const audio = new Audio('/poppop.ai - cha ching sound effect.mp3');
+      audio.play().catch(e => console.error("Audio play blocked", e));
+      
       // Setup Print View
       setPrintInvoice({
         id: invoiceData.id,
