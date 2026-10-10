@@ -61,7 +61,7 @@ const TreasuryPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">
         <h2 className="text-2xl font-bold text-gray-800">الخزينة والمصروفات</h2>
         {hasPermission('CREATE_EXPENSE') && (
           <button onClick={() => setIsExpenseModalOpen(true)} className="bg-red-600 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-red-700 transition-all shadow-md shadow-red-200">
@@ -75,7 +75,7 @@ const TreasuryPage = () => {
       {/* Balances Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {balances.map(b => (
-          <div key={b.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
+          <div key={b.id} className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 relative overflow-hidden group hover:shadow-md transition-all">
             <div className={`absolute top-0 left-0 w-full h-1.5 ${b.currentBalance < 0 ? 'bg-red-500' : 'bg-indigo-500'}`}></div>
             <h3 className="text-gray-500 text-sm font-bold mb-2">{b.name}</h3>
             <div className={`text-4xl font-black ${b.currentBalance < 0 ? 'text-red-600' : 'text-indigo-700'}`}>
@@ -86,7 +86,7 @@ const TreasuryPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-white rounded-xl shadow-sm border border-gray-100 p-1 mb-6">
+      <div className="flex bg-white rounded-xl shadow-sm border-2 border-gray-200 p-1 mb-6">
         <button 
           className={`flex-1 py-3 text-center rounded-lg font-bold transition-all ${activeTab === 'TREASURY' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('TREASURY')}
@@ -101,7 +101,7 @@ const TreasuryPage = () => {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden">
         {activeTab === 'TREASURY' && (
           <div className="overflow-x-auto">
             <table className="w-full text-right border-collapse text-sm">

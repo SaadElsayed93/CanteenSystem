@@ -98,9 +98,9 @@ const ReturnsPage = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">المرتجعات (Returns)</h2>
+      <h2 className="text-2xl font-bold text-gray-800 bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">المرتجعات (Returns)</h2>
 
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mb-6 max-w-2xl">
+      <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-gray-200 mb-6 max-w-2xl">
         <form onSubmit={searchInvoice} className="flex gap-3">
           <input 
             type="text" 
@@ -115,8 +115,8 @@ const ReturnsPage = () => {
       </div>
 
       {invoice && (
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-gray-50 p-6 rounded-xl border-2 border-gray-200">
             <div className="bg-white p-3 rounded-lg shadow-sm">
               <div className="text-xs text-gray-500 mb-1">رقم الفاتورة</div>
               <div className="font-bold text-gray-800 text-lg">{invoice.invoiceNumber}</div>

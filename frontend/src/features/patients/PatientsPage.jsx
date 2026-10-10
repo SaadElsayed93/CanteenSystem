@@ -83,7 +83,7 @@ const PatientsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">
         <h2 className="text-2xl font-bold text-gray-800">المرضى (الأرصدة)</h2>
         {hasPermission('VIEW_PATIENTS') && (
           <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200">
@@ -94,7 +94,7 @@ const PatientsPage = () => {
 
       {error && <div className="bg-red-50 border-r-4 border-red-500 text-red-700 p-4 rounded-lg font-bold">{error}</div>}
 
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">
         <div className="mb-6">
           <input 
             type="text" 
@@ -105,7 +105,7 @@ const PatientsPage = () => {
           />
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border-2 border-gray-200">
           <table className="w-full text-right border-collapse">
             <thead className="bg-gray-50 text-gray-700">
               <tr>

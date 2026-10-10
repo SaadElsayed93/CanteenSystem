@@ -28,7 +28,7 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-      <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md border border-gray-100">
+      <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md border-2 border-gray-200">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-indigo-100 p-4 rounded-full mb-4">
             <Store className="text-indigo-600" size={40} />

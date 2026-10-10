@@ -195,7 +195,7 @@ const POSPage = () => {
     <div className="flex flex-col md:flex-row gap-6 h-[85vh]">
       {/* Products Grid Section */}
       <div className="md:w-2/3 flex flex-col gap-4">
-        <div className="bg-white p-6 shadow-sm border border-gray-100 rounded-2xl">
+        <div className="bg-white p-6 shadow-sm border-2 border-gray-200 rounded-2xl">
           <form onSubmit={handleBarcodeSearch} className="flex gap-3">
             <input 
               ref={barcodeInputRef}
@@ -210,7 +210,7 @@ const POSPage = () => {
           </form>
         </div>
 
-        <div className="bg-white p-6 shadow-sm border border-gray-100 rounded-2xl flex-1 overflow-y-auto">
+        <div className="bg-white p-6 shadow-sm border-2 border-gray-200 rounded-2xl flex-1 overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-gray-800">الأصناف المتوفرة</h3>
             <span className="text-sm text-gray-500">نقرة واحدة للإضافة للفاتورة</span>
@@ -220,7 +220,7 @@ const POSPage = () => {
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}
-                className="border border-gray-100 rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
+                className="border-2 border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
               >
                 <div className="font-bold text-gray-800 mb-2 group-hover:text-indigo-800 transition-colors">{p.name}</div>
                 <div className="text-indigo-600 font-bold text-lg mb-2">{p.sellingPrice} <span className="text-sm font-normal">جنية</span></div>
@@ -234,7 +234,7 @@ const POSPage = () => {
       </div>
 
       {/* Cart & Checkout Section */}
-      <div className="md:w-1/3 bg-white p-6 shadow-sm border border-gray-100 rounded-2xl flex flex-col">
+      <div className="md:w-1/3 bg-white p-6 shadow-sm border-2 border-gray-200 rounded-2xl flex flex-col">
         <h2 className="text-xl font-bold mb-4 border-b border-gray-100 pb-4 text-gray-800">الفاتورة الحالية</h2>
         
         <div className="flex-1 overflow-y-auto mb-4 pr-2">
@@ -302,7 +302,7 @@ const POSPage = () => {
                 ))}
               </select>
               {patientId && (
-                <div className="text-sm mt-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <div className="text-sm mt-2 bg-gray-50 p-3 rounded-xl border-2 border-gray-200">
                   {patients.find(p => p.id === Number(patientId))?.currentDebt < -500 ? (
                     <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المريض أقل من -500 جنية (عليه مديونية كبيرة)!</span>
                   ) : null}
