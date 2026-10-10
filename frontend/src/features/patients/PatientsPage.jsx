@@ -167,14 +167,9 @@ const PatientsPage = () => {
               <div className="mb-2">
                 <label className="block mb-1 font-bold">نوع المعاملة:</label>
                 <select className="w-full border p-2 rounded" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
-                  <option value="DEPOSIT">سداد جزء من المديونية (المريض يدفع فلوس لتقليل دينه)</option>
-                  <option value="WITHDRAWAL">سلفة نقدية للمريض (سحب فلوس من الكانتين تزيد دينه)</option>
+                  <option value="DEPOSIT">خصم من رصيد المريض (سداد مبلغ)</option>
+                  <option value="WITHDRAWAL">زيادة رصيد المريض (أخذ سلفة)</option>
                 </select>
-                {transactForm.type === 'DEPOSIT' ? (
-                  <p className="text-xs text-green-600 mt-1 font-bold">💡 سيتم إضافة هذا المبلغ إلى رصيد الخزينة، وسيتم تخفيض مديونية المريض.</p>
-                ) : (
-                  <p className="text-xs text-red-600 mt-1 font-bold">💡 سيتم خصم هذا المبلغ من رصيد الخزينة، وسيتم زيادة مديونية المريض.</p>
-                )}
               </div>
               <div className="mb-2">
                 <label className="block mb-1 font-bold">المبلغ:</label>
