@@ -202,25 +202,42 @@ const ProductsPage = () => {
                 <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.barcode} onChange={e=>setForm({...form,barcode:e.target.value})}/>
               </div>
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر الشراء</label>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر شراء {form.unit ? `الـ ${form.unit}` : 'الوحدة'}</label>
                 <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.purchasePrice} onChange={e=>setForm({...form,purchasePrice:e.target.value})}/>
               </div>
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر البيع</label>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">سعر بيع {form.unit ? `الـ ${form.unit}` : 'الوحدة'}</label>
                 <input required type="number" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={form.sellingPrice} onChange={e=>setForm({...form,sellingPrice:e.target.value})}/>
               </div>
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">الوحدة الأساسية (مثل: قطعة، كيس)</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">وحدة البيع (الوحدة الأساسية الصغرى)</label>
+                <input list="sales-units" required placeholder="مثال: كيس، قطعة، زجاجة..." className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
+                <datalist id="sales-units">
+                  <option value="قطعة" />
+                  <option value="كيس" />
+                  <option value="زجاجة" />
+                  <option value="كوب" />
+                  <option value="علبة" />
+                  <option value="كانز" />
+                  <option value="باكو" />
+                  <option value="شريط" />
+                </datalist>
               </div>
               <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-2 font-bold text-indigo-900 text-sm">وحدة التعبئة / الكرتونة (اختياري)</label>
-                  <input type="text" placeholder="مثل: كرتونة، باكتة" className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.packageUnit} onChange={e=>setForm({...form,packageUnit:e.target.value})}/>
+                  <label className="block mb-2 font-bold text-indigo-900 text-sm">وحدة الشراء الكبرى / التعبئة (اختياري)</label>
+                  <input list="package-units" placeholder="مثال: كرتونة، باكتة..." className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.packageUnit} onChange={e=>setForm({...form,packageUnit:e.target.value})}/>
+                  <datalist id="package-units">
+                    <option value="كرتونة" />
+                    <option value="باكتة" />
+                    <option value="دستة" />
+                    <option value="شوال" />
+                    <option value="صندوق" />
+                  </datalist>
                 </div>
                 <div>
-                  <label className="block mb-2 font-bold text-indigo-900 text-sm">الكمية داخل {form.packageUnit || 'الكرتونة'} (بالوحدة الأساسية)</label>
-                  <input type="number" min="1" className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.piecesPerPackage} onChange={e=>setForm({...form,piecesPerPackage:e.target.value})} disabled={!form.packageUnit}/>
+                  <label className="block mb-2 font-bold text-indigo-900 text-sm">الـ {form.packageUnit || 'كرتونة'} دي جواها كام {form.unit || 'وحدة'}؟</label>
+                  <input type="number" min="1" className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700" value={form.piecesPerPackage} onChange={e=>setForm({...form,piecesPerPackage:e.target.value})} disabled={!form.packageUnit}/>
                 </div>
               </div>
               <div>
