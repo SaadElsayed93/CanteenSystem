@@ -149,6 +149,8 @@ const ProductsPage = () => {
                 <td className="p-3 border-b">
                   {p.totalStock < 0 ? (
                     <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-bold">سالب ({p.totalStock})</span>
+                  ) : p.totalStock === 0 ? (
+                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-bold">انتهى من المخزون</span>
                   ) : p.totalStock <= p.alertThreshold ? (
                     <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">أوشك على الانتهاء</span>
                   ) : (

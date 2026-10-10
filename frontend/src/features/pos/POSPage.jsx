@@ -51,6 +51,12 @@ const POSPage = () => {
     // Find by barcode or internal code
     const product = products.find(p => p.barcode === search || p.internalCode === search);
     if (product) {
+      if (product.totalStock <= 0) {
+        if (!window.confirm(`⚠️ هذا الصنف (${product.name}) انتهى من المخزون! هل أنت متأكد من بيعه وتخفيض المخزون بالسالب؟`)) {
+          setSearch('');
+          return;
+        }
+      }
       addToCart(product);
       setSearch('');
     } else {
@@ -195,7 +201,7 @@ const POSPage = () => {
         <div className="bg-white p-4 shadow rounded flex-1 overflow-y-auto">
           <h3 className="font-bold mb-4">الأصناف المتوفرة (نقرة للإضافة)</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {products.map(p => (
+            {products.filter(p => p.totalStock > 0).map(p => (
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}

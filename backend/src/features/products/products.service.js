@@ -5,7 +5,6 @@ const getAllProducts = async () => {
   return prisma.product.findMany({
     include: {
       batches: {
-        where: { quantityRemaining: { gt: 0 } },
         orderBy: { receivedAt: 'asc' } // FIFO
       }
     }
@@ -17,7 +16,6 @@ const getProductById = async (id) => {
     where: { id },
     include: {
       batches: {
-        where: { quantityRemaining: { gt: 0 } },
         orderBy: { receivedAt: 'asc' }
       }
     }

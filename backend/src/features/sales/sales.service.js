@@ -8,7 +8,7 @@ const getCategories = async () => {
 const getPosData = async () => {
   const productsRaw = await prisma.product.findMany({
     where: { isActive: true },
-    include: { batches: { where: { quantityRemaining: { gt: 0 } } } }
+    include: { batches: true }
   });
   
   const products = productsRaw.map(p => {
@@ -60,6 +60,7 @@ const createSale = async (data, userId) => {
         productId: product.id,
         quantity: qtyRequired,
         unitPrice: Number(product.sellingPrice),
+        purchasePrice: Number(product.purchasePrice),
         subtotal: subtotal,
         productBatches: product.batches // to consume FIFO
       });
@@ -105,6 +106,8 @@ const createSale = async (data, userId) => {
       let qtyToDeduct = item.quantity;
       for (const batch of item.productBatches) {
         if (qtyToDeduct <= 0) break;
+        if (Number(batch.quantityRemaining) <= 0) continue; // Skip already negative/zero batches
+        
         const available = Number(batch.quantityRemaining);
         const deduct = Math.min(available, qtyToDeduct);
         
@@ -114,8 +117,17 @@ const createSale = async (data, userId) => {
         });
         qtyToDeduct -= deduct;
       }
-      // Note: If qtyToDeduct > 0, it means we went into negative stock. 
-      // The overall inventory movement will reflect it.
+      
+      // If still qtyToDeduct > 0, it means we went into negative stock. 
+      if (qtyToDeduct > 0) {
+        await tx.batch.create({
+          data: {
+            productId: item.productId,
+            quantityRemaining: -qtyToDeduct,
+            unitCost: item.purchasePrice // use default purchase price for negative
+          }
+        });
+      }
 
       const currentMovements = await tx.inventoryMovement.findMany({ where: { productId: item.productId } });
       const balance = currentMovements.reduce((acc, mov) => {
