@@ -206,10 +206,27 @@ const dischargePatient = async (id, paymentMethodId, userId) => {
       });
     }
 
-    // Mark as inactive/discharged and zero balance
+        // Mark as inactive/discharged and zero balance
     const updatedPatient = await tx.patient.update({
       where: { id: patient.id },
       data: { isActive: false, currentDebt: 0 }
+    });
+
+    const auditNewValues = {
+      'المريض': patient.fullName,
+      'حالة المريض': 'مغادرة وتصفية حساب',
+      'الرصيد المصفى': currentDebt !== 0 ? `${Math.abs(currentDebt)} ج.م` : 'بدون رصيد (مصفر مسبقاً)',
+      'نوع التصفية': currentDebt > 0 ? 'رد متبقي للمريض (سحب من الخزينة)' : currentDebt < 0 ? 'تحصيل ديون من المريض (إيداع بالخزينة)' : 'لا يوجد',
+    };
+
+    await tx.auditLog.create({
+      data: {
+        action: 'UPDATE_STATUS',
+        entityType: 'PATIENT',
+        entityId: patient.id,
+        newValues: JSON.stringify(auditNewValues),
+        createdBy: userId
+      }
     });
 
     return updatedPatient;

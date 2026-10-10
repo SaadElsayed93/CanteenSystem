@@ -19,7 +19,7 @@ const createReturn = async (data, userId) => {
   return prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findUnique({ 
       where: { id: invoiceId },
-      include: { items: true, patient: true }
+      include: { items: { include: { product: true } }, patient: true }
     });
 
     if (!invoice) throw new Error('الفاتورة غير موجودة');
@@ -178,6 +178,33 @@ const createReturn = async (data, userId) => {
         });
       }
     }
+
+
+    // 5. Explicit Audit Log for Return
+    const returnedItemsText = itemsToCreate.map(i => {
+      const originalItem = invoice.items.find(invI => invI.productId === i.productId);
+      const productName = originalItem?.product?.name || 'صنف غير معروف';
+      return `${i.quantity}x ${productName}`;
+    }).join('، ');
+
+    const auditNewValues = {
+      'رقم الفاتورة الأصلية': invoice.invoiceNumber,
+      'نوع المرتجع': type === 'FULL' ? 'مرتجع كلي' : 'مرتجع جزئي',
+      'قيمة المرتجع': `${returnTotalAmount} ج.م`,
+      'الأصناف المرتجعة': returnedItemsText,
+      'تأثير الخزينة/الحساب': invoice.paymentType === 'CASH' ? 'خصم نقدي من الخزينة' : `رد قيمة لمديونية المريض (${invoice.patient?.fullName || 'غير معروف'})`,
+      'سبب الاسترجاع': reason || 'غير محدد'
+    };
+
+    await tx.auditLog.create({
+      data: {
+        action: 'RETURN',
+        entityType: 'RETURN',
+        entityId: returnRecord.id,
+        newValues: JSON.stringify(auditNewValues),
+        createdBy: userId
+      }
+    });
 
     return returnRecord;
   });
