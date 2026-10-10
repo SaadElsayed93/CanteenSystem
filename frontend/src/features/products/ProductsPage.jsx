@@ -1,3 +1,5 @@
+import toast from 'react-hot-toast';
+import CreatableSelect from 'react-select/creatable';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -101,7 +103,45 @@ const ProductsPage = () => {
     }
   };
 
+  
+  const salesUnitOptions = [
+    { value: 'قطعة', label: 'قطعة' },
+    { value: 'كيس', label: 'كيس' },
+    { value: 'زجاجة', label: 'زجاجة' },
+    { value: 'كوب', label: 'كوب' },
+    { value: 'علبة', label: 'علبة' },
+    { value: 'كانز', label: 'كانز' },
+    { value: 'باكو', label: 'باكو' },
+    { value: 'شريط', label: 'شريط' }
+  ];
+
+  const packageUnitOptions = [
+    { value: 'كرتونة', label: 'كرتونة' },
+    { value: 'باكتة', label: 'باكتة' },
+    { value: 'دستة', label: 'دستة' },
+    { value: 'شوال', label: 'شوال' },
+    { value: 'صندوق', label: 'صندوق' }
+  ];
+
+  const customSelectStyles = {
+    control: (base) => ({
+      ...base,
+      border: '2px solid #e5e7eb',
+      borderRadius: '0.75rem',
+      padding: '0.15rem',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#6366f1' }
+    }),
+    menu: (base) => ({
+      ...base,
+      borderRadius: '0.75rem',
+      overflow: 'hidden',
+      zIndex: 9999
+    })
+  };
+
   if (loading) return <div>جاري التحميل...</div>;
+
 
   return (
     <div className="space-y-6">
@@ -211,29 +251,28 @@ const ProductsPage = () => {
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">وحدة البيع (الوحدة الأساسية الصغرى)</label>
-                <input list="sales-units" required placeholder="مثال: كيس، قطعة، زجاجة..." className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.unit} onChange={e=>setForm({...form,unit:e.target.value})}/>
-                <datalist id="sales-units">
-                  <option value="قطعة" />
-                  <option value="كيس" />
-                  <option value="زجاجة" />
-                  <option value="كوب" />
-                  <option value="علبة" />
-                  <option value="كانز" />
-                  <option value="باكو" />
-                  <option value="شريط" />
-                </datalist>
+                <CreatableSelect 
+                  options={salesUnitOptions}
+                  styles={customSelectStyles}
+                  placeholder="اختر أو اكتب..."
+                  formatCreateLabel={(val) => `إضافة "${val}"`}
+                  value={form.unit ? { value: form.unit, label: form.unit } : null}
+                  onChange={(selected) => setForm({...form, unit: selected ? selected.value : ''})}
+                  isClearable
+                />
               </div>
               <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block mb-2 font-bold text-indigo-900 text-sm">وحدة الشراء الكبرى / التعبئة (اختياري)</label>
-                  <input list="package-units" placeholder="مثال: كرتونة، باكتة..." className="w-full border border-indigo-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.packageUnit} onChange={e=>setForm({...form,packageUnit:e.target.value})}/>
-                  <datalist id="package-units">
-                    <option value="كرتونة" />
-                    <option value="باكتة" />
-                    <option value="دستة" />
-                    <option value="شوال" />
-                    <option value="صندوق" />
-                  </datalist>
+                  <CreatableSelect 
+                    options={packageUnitOptions}
+                    styles={{...customSelectStyles, control: (b)=>({...b, borderColor: '#c7d2fe'})}}
+                    placeholder="اختر أو اكتب..."
+                    formatCreateLabel={(val) => `إضافة "${val}"`}
+                    value={form.packageUnit ? { value: form.packageUnit, label: form.packageUnit } : null}
+                    onChange={(selected) => setForm({...form, packageUnit: selected ? selected.value : ''})}
+                    isClearable
+                  />
                 </div>
                 <div>
                   <label className="block mb-2 font-bold text-indigo-900 text-sm">الـ {form.packageUnit || 'كرتونة'} دي جواها كام {form.unit || 'وحدة'}؟</label>
@@ -292,3 +331,6 @@ const ProductsPage = () => {
 };
 
 export default ProductsPage;
+
+
+
