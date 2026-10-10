@@ -167,8 +167,8 @@ const PatientsPage = () => {
               <div className="mb-2">
                 <label className="block mb-1 font-bold">نوع المعاملة:</label>
                 <select className="w-full border p-2 rounded" value={transactForm.type} onChange={e=>setTransactForm({...transactForm, type: e.target.value})}>
-                  <option value="DEPOSIT">خصم من رصيد المريض (سداد مبلغ)</option>
-                  <option value="WITHDRAWAL">زيادة رصيد المريض (أخذ سلفة)</option>
+                  <option value="DEPOSIT">إيداع في حساب المريض (الرصيد يزيد)</option>
+                  <option value="WITHDRAWAL">خصم فلوس من المريض (خصم أو جزاء، الرصيد يقل)</option>
                 </select>
               </div>
               <div className="mb-2">
@@ -176,9 +176,9 @@ const PatientsPage = () => {
                 <input required type="number" step="0.01" min="0.01" placeholder="مثال: 100" className="w-full border p-2 rounded" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})}/>
               </div>
               <div className="mb-2">
-                <label className="block mb-1 font-bold">الخزينة المرتبطة:</label>
-                <select required className="w-full border p-2 rounded" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
-                  <option value="">-- اختر الخزينة التي سيدخل أو يخرج منها المال --</option>
+                <label className="block mb-1 font-bold">الخزينة المرتبطة (اختياري):</label>
+                <select className="w-full border p-2 rounded" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
+                  <option value="">-- بدون خزينة (تعديل رصيد فقط) --</option>
                   {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </div>
