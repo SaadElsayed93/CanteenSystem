@@ -7,6 +7,7 @@ import UserManagement from './features/settings/UserManagement';
 import ProductsPage from './features/products/ProductsPage';
 import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
+import POSPage from './features/pos/POSPage';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
@@ -17,6 +18,9 @@ function MainLayout({ children }) {
           <h1 className="text-xl font-bold">المنظومة المتكاملة لأدارة الكانتين :__:</h1>
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-blue-600">الرئيسية</Link>
+            {hasPermission('CREATE_INVOICE') && (
+              <Link to="/pos" className="text-gray-600 hover:text-blue-600 font-bold">شاشة البيع (POS)</Link>
+            )}
             <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
             {hasPermission('MANAGE_PURCHASES') && (
               <Link to="/purchases/suppliers" className="text-gray-600 hover:text-blue-600">الموردين والمشتريات</Link>
@@ -51,6 +55,14 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <div className="text-center text-xl mt-10">مرحباً بك في لوحة التحكم</div>
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/pos" element={
+            <ProtectedRoute requiredPermission="CREATE_INVOICE">
+              <MainLayout>
+                <POSPage />
               </MainLayout>
             </ProtectedRoute>
           } />

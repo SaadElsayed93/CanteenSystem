@@ -1,0 +1,170 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const getCategories = async () => {
+  return prisma.category.findMany({ where: { isActive: true } });
+};
+
+const getPosData = async () => {
+  const productsRaw = await prisma.product.findMany({
+    where: { isActive: true },
+    include: { batches: { where: { quantityRemaining: { gt: 0 } } } }
+  });
+  
+  const products = productsRaw.map(p => {
+    const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+    return {
+      id: p.id,
+      name: p.name,
+      internalCode: p.internalCode,
+      barcode: p.barcode,
+      sellingPrice: p.sellingPrice,
+      totalStock
+    };
+  });
+
+  const paymentMethods = await prisma.paymentMethod.findMany({ where: { isActive: true } });
+  const patients = await prisma.patient.findMany({ where: { isActive: true } });
+
+  return { products, paymentMethods, patients };
+};
+
+const createSale = async (data, userId) => {
+  const { patientId, items, paymentMethodId, type } = data; // type: 'CASH' or 'CREDIT'
+
+  if (!items || items.length === 0) throw new Error('لا توجد أصناف في الفاتورة');
+
+  return prisma.$transaction(async (tx) => {
+    let totalAmount = 0;
+    
+    // 1. Calculate total and check stock
+    const invoiceItems = [];
+    for (const item of items) {
+      const product = await tx.product.findUnique({ 
+        where: { id: item.productId },
+        include: { batches: { where: { quantityRemaining: { gt: 0 } }, orderBy: { receivedAt: 'asc' } } }
+      });
+      
+      if (!product) throw new Error(`صنف غير موجود: ${item.productId}`);
+      
+      const qtyRequired = Number(item.quantity);
+      const totalStock = product.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+      
+      // We allow negative stock per user requirements, but we'll fulfill from batches as much as we can.
+      // If we go negative, we will still record it. But standard batches shouldn't go negative, we just let the inventory balance go negative.
+      
+      const subtotal = qtyRequired * Number(product.sellingPrice);
+      totalAmount += subtotal;
+
+      invoiceItems.push({
+        productId: product.id,
+        quantity: qtyRequired,
+        unitPrice: Number(product.sellingPrice),
+        subtotal: subtotal,
+        productBatches: product.batches // to consume FIFO
+      });
+    }
+
+    // 2. Patient Credit Check if type is CREDIT
+    if (type === 'CREDIT') {
+      if (!patientId) throw new Error('يجب تحديد المريض للبيع الآجل');
+      const patient = await tx.patient.findUnique({ where: { id: patientId } });
+      if (!patient || !patient.isActive) throw new Error('المريض غير موجود أو معطل');
+      // Debt limit warning is handled in frontend or UI, we just record it.
+    }
+
+    // 3. Create Invoice
+    const invoice = await tx.invoice.create({
+      data: {
+        type: type || 'CASH', // CASH or CREDIT
+        totalAmount,
+        createdBy: userId,
+        patientId: type === 'CREDIT' ? patientId : null,
+      }
+    });
+
+    // 4. Create Items and Deduct Stock
+    for (const item of invoiceItems) {
+      await tx.invoiceItem.create({
+        data: {
+          invoiceId: invoice.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal
+        }
+      });
+
+      // Deduct from Batches (FIFO)
+      let qtyToDeduct = item.quantity;
+      for (const batch of item.productBatches) {
+        if (qtyToDeduct <= 0) break;
+        const available = Number(batch.quantityRemaining);
+        const deduct = Math.min(available, qtyToDeduct);
+        
+        await tx.batch.update({
+          where: { id: batch.id },
+          data: { quantityRemaining: available - deduct }
+        });
+        qtyToDeduct -= deduct;
+      }
+      // Note: If qtyToDeduct > 0, it means we went into negative stock. 
+      // The overall inventory movement will reflect it.
+
+      const currentMovements = await tx.inventoryMovement.findMany({ where: { productId: item.productId } });
+      const balance = currentMovements.reduce((acc, mov) => {
+        return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
+      }, 0);
+
+      await tx.inventoryMovement.create({
+        data: {
+          productId: item.productId,
+          type: 'OUT',
+          quantity: item.quantity,
+          balanceAfter: balance - item.quantity,
+          referenceType: 'SALE',
+          referenceId: invoice.id,
+          createdBy: userId
+        }
+      });
+    }
+
+    // 5. If CASH, Create Payment and Treasury Transaction
+    if (type === 'CASH') {
+      if (!paymentMethodId) throw new Error('يجب تحديد طريقة الدفع للبيع النقدي');
+      
+      const method = await tx.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+      if (!method) throw new Error('طريقة الدفع غير صحيحة');
+
+      await tx.paymentMethod.update({
+        where: { id: paymentMethodId },
+        data: { currentBalance: Number(method.currentBalance) + totalAmount }
+      });
+
+      await tx.treasuryTransaction.create({
+        data: {
+          paymentMethodId,
+          type: 'IN',
+          amount: totalAmount,
+          description: `مبيعات فاتورة رقم #${invoice.id}`,
+          referenceType: 'INVOICE',
+          referenceId: invoice.id,
+          createdBy: userId
+        }
+      });
+    }
+
+    // 6. If CREDIT, Update Patient Balance
+    if (type === 'CREDIT') {
+      const patient = await tx.patient.findUnique({ where: { id: patientId } });
+      await tx.patient.update({
+        where: { id: patientId },
+        data: { currentDebt: Number(patient.currentDebt) + totalAmount }
+      });
+    }
+
+    return invoice;
+  });
+};
+
+module.exports = { getPosData, getCategories, createSale };

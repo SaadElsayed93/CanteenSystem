@@ -1,0 +1,16 @@
+const express = require('express');
+const router = express.Router();
+const salesController = require('./sales.controller');
+const { authMiddleware } = require('../../common/middleware/auth');
+const { checkPermission } = require('../../common/middleware/permissions');
+const { logAudit } = require('../../common/middleware/audit');
+
+router.use(authMiddleware);
+
+// POS Data (Products, Categories)
+router.get('/pos-data', checkPermission('CREATE_INVOICE'), salesController.getPosData);
+
+// Checkout
+router.post('/checkout', checkPermission('CREATE_INVOICE'), logAudit('CREATE', 'INVOICE'), salesController.checkout);
+
+module.exports = router;

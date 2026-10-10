@@ -165,6 +165,8 @@ model Patient {
   fullName       String
   internalNumber String   @unique
   notes          String?
+  currentDebt    Decimal  @default(0)
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
 
   transactions PatientTransaction[]
