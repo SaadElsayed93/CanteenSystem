@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 
 const PatientsPage = () => {
   const [patients, setPatients] = useState([]);
@@ -117,9 +117,18 @@ const PatientsPage = () => {
 
   const filteredPatients = patients.filter(p => {
     const matchesTab = activeTab === 'ACTIVE' ? p.isActive : !p.isActive;
-    const matchesSearch = p.fullName.includes(search) || p.fileNumber.includes(search) || p.internalNumber.includes(search);
+    const matchesSearch = (p.fullName || '').includes(search) || (p.fileNumber || '').includes(search) || (p.internalNumber || '').includes(search);
     return matchesTab && matchesSearch;
   });
+
+    const toggleStatus = async (id, currentStatus) => {
+    try {
+      await client.patch(`/patients/${id}/status`, { isActive: !currentStatus });
+      fetchData();
+    } catch (err) {
+      toast.error('خطأ في تغيير الحالة');
+    }
+  };
 
   if (loading) return <div>جاري التحميل...</div>;
 
