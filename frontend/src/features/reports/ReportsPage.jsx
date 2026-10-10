@@ -3,6 +3,10 @@ import client from '../../api/client';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line 
 } from 'recharts';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
+import arEG from 'date-fns/locale/ar-EG';
+registerLocale('ar-EG', arEG);
 import { 
   TrendingUp, TrendingDown, DollarSign, PackageOpen, Users, 
   ShoppingCart, Calendar, AlertTriangle, Download, Printer, Filter
@@ -64,17 +68,17 @@ const ReportsPage = () => {
   const [reportType, setReportType] = useState('SALES');
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
-    d.setDate(1); // first day of month
-    return d.toISOString().split('T')[0];
+    d.setDate(1);
+    return d;
   });
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(() => new Date());
   const [detailedData, setDetailedData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateReport = async () => {
     setIsGenerating(true);
     try {
-      const res = await client.get(`/reports/detailed?type=${reportType}&startDate=${startDate}&endDate=${endDate}`);
+      const res = await client.get(`/reports/detailed?type=${reportType}&startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`);
       setDetailedData(res.data.data);
     } catch (err) {
       console.error(err);
@@ -254,11 +258,11 @@ const ReportsPage = () => {
             
             <div className="flex-1 w-full">
               <label className="block text-sm font-bold text-gray-700 mb-2">من تاريخ</label>
-              <input 
-                type="date"
-                lang="en-GB"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                            <DatePicker 
+                selected={startDate}
+                onChange={(date) => setStartDate(date)}
+                dateFormat="dd/MM/yyyy"
+                locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
                 disabled={reportType === 'INVENTORY'}
               />
@@ -266,11 +270,11 @@ const ReportsPage = () => {
 
             <div className="flex-1 w-full">
               <label className="block text-sm font-bold text-gray-700 mb-2">إلى تاريخ</label>
-              <input 
-                type="date"
-                lang="en-GB"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                            <DatePicker 
+                selected={endDate}
+                onChange={(date) => setEndDate(date)}
+                dateFormat="dd/MM/yyyy"
+                locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
                 disabled={reportType === 'INVENTORY'}
               />
