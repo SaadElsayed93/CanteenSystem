@@ -170,6 +170,11 @@ const PatientsPage = () => {
                   <option value="DEPOSIT">إيداع في حساب المريض (الرصيد يزيد)</option>
                   <option value="WITHDRAWAL">خصم فلوس من المريض (خصم أو جزاء، الرصيد يقل)</option>
                 </select>
+                {transactForm.type === 'DEPOSIT' ? (
+                  <p className="text-xs text-green-600 mt-1 font-bold">💡 رصيد المريض سيزيد. (وإذا اخترت خزينة، سيتم إيداع المبلغ فيها).</p>
+                ) : (
+                  <p className="text-xs text-red-600 mt-1 font-bold">💡 رصيد المريض سيقل. (وإذا اخترت خزينة، سيتم سحب المبلغ منها).</p>
+                )}
               </div>
               <div className="mb-2">
                 <label className="block mb-1 font-bold">المبلغ:</label>
