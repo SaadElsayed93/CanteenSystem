@@ -13,6 +13,7 @@ import POSPage from './features/pos/POSPage';
 import ReturnsPage from './features/pos/ReturnsPage';
 import PatientsPage from './features/patients/PatientsPage';
 import TreasuryPage from './features/treasury/TreasuryPage';
+import ReportsPage from './features/reports/ReportsPage';
 
 import { 
   Home, ShoppingCart, RotateCcw, Package, 
@@ -39,6 +40,9 @@ function MainLayout({ children }) {
     ] : []),
     ...(hasPermission('MANAGE_PURCHASES') ? [
       { to: "/purchases/suppliers", icon: <Truck size={20} />, label: "الموردين والمشتريات" }
+    ] : []),
+    ...(hasPermission('VIEW_REPORTS') ? [
+      { to: "/reports", icon: <BarChart2 size={20} />, label: "التقارير والإحصائيات" }
     ] : []),
     ...(hasPermission('MANAGE_USERS') ? [
       { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" },
@@ -197,6 +201,14 @@ function App() {
             <ProtectedRoute requiredPermission="MANAGE_PURCHASES">
               <MainLayout>
                 <NewPurchasePage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/reports" element={
+            <ProtectedRoute requiredPermission="VIEW_REPORTS">
+              <MainLayout>
+                <ReportsPage />
               </MainLayout>
             </ProtectedRoute>
           } />
