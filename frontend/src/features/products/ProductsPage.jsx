@@ -102,76 +102,83 @@ const ProductsPage = () => {
   if (loading) return <div>جاري التحميل...</div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">إدارة الأصناف والمخزون</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-2xl font-bold text-gray-800">إدارة الأصناف والمخزون</h2>
         {hasPermission('MANAGE_PRODUCTS') && (
-          <button onClick={openAddModal} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <button onClick={openAddModal} className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200">
             + إضافة صنف جديد
           </button>
         )}
       </div>
 
-      {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+      {error && <div className="bg-red-50 border-r-4 border-red-500 text-red-700 p-4 rounded-lg font-bold">{error}</div>}
 
-      <div className="mb-4">
-        <input 
-          type="text" 
-          placeholder="بحث بالاسم، الكود، أو الباركود..." 
-          className="w-full md:w-1/3 border rounded p-2"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          autoFocus
-        />
-      </div>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <input 
+            type="text" 
+            placeholder="بحث بالاسم، الكود، أو الباركود..." 
+            className="w-full md:w-1/3 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+          <div className="text-sm font-bold text-gray-500">
+            إجمالي الأصناف: {filteredProducts.length}
+          </div>
+        </div>
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full text-right border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-3 border-b">الكود</th>
-              <th className="p-3 border-b">اسم الصنف</th>
-              <th className="p-3 border-b">سعر الشراء</th>
-              <th className="p-3 border-b">سعر البيع</th>
-              <th className="p-3 border-b">المخزون الحالي</th>
-              <th className="p-3 border-b">حالة المخزون</th>
-              <th className="p-3 border-b">الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map(p => (
-              <tr key={p.id} className={!p.isActive ? 'bg-gray-50 opacity-60' : ''}>
-                <td className="p-3 border-b">{p.internalCode}</td>
-                <td className="p-3 border-b">{p.name} <br/><span className="text-xs text-gray-500">{p.barcode}</span></td>
-                <td className="p-3 border-b">{p.purchasePrice}</td>
-                <td className="p-3 border-b font-bold text-blue-600">{p.sellingPrice}</td>
-                <td className="p-3 border-b">{p.totalStock} {p.unit}</td>
-                <td className="p-3 border-b">
-                  {p.totalStock < 0 ? (
-                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-bold">سالب ({p.totalStock})</span>
-                  ) : p.totalStock === 0 ? (
-                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-bold">انتهى من المخزون</span>
-                  ) : p.totalStock <= p.alertThreshold ? (
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">أوشك على الانتهاء</span>
-                  ) : (
-                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm">متوفر</span>
-                  )}
-                </td>
-                <td className="p-3 border-b gap-2 flex">
-                  {hasPermission('MANAGE_PRODUCTS') && (
-                    <button onClick={() => openEditModal(p)} className="text-blue-600 hover:underline">تعديل</button>
-                  )}
-                  {hasPermission('MANAGE_INVENTORY') && (
-                    <button onClick={() => openAdjustModal(p)} className="text-purple-600 hover:underline">تسوية رصيد</button>
-                  )}
-                </td>
+        <div className="overflow-x-auto rounded-xl border border-gray-100">
+          <table className="w-full text-right border-collapse">
+            <thead className="bg-gray-50 text-gray-700">
+              <tr>
+                <th className="p-4 border-b font-bold">الكود</th>
+                <th className="p-4 border-b font-bold">اسم الصنف</th>
+                <th className="p-4 border-b font-bold">سعر الشراء</th>
+                <th className="p-4 border-b font-bold">سعر البيع</th>
+                <th className="p-4 border-b font-bold">المخزون الحالي</th>
+                <th className="p-4 border-b font-bold">حالة المخزون</th>
+                <th className="p-4 border-b font-bold">الإجراءات</th>
               </tr>
-            ))}
-            {filteredProducts.length === 0 && (
-              <tr><td colSpan="7" className="p-4 text-center text-gray-500">لا توجد أصناف مطابقة للبحث</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="text-gray-600">
+              {filteredProducts.map(p => (
+                <tr key={p.id} className={`hover:bg-gray-50 transition-colors ${!p.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
+                  <td className="p-4 border-b">{p.internalCode}</td>
+                  <td className="p-4 border-b font-bold text-gray-800">{p.name} <br/><span className="text-xs text-gray-400 font-normal">{p.barcode || '-'}</span></td>
+                  <td className="p-4 border-b">{p.purchasePrice}</td>
+                  <td className="p-4 border-b font-bold text-indigo-600">{p.sellingPrice}</td>
+                  <td className="p-4 border-b font-bold">{p.totalStock} <span className="text-sm font-normal text-gray-400">{p.unit}</span></td>
+                  <td className="p-4 border-b">
+                    {p.totalStock < 0 ? (
+                      <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold border border-red-200">سالب ({p.totalStock})</span>
+                    ) : p.totalStock === 0 ? (
+                      <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold border border-red-200">انتهى من المخزون</span>
+                    ) : p.totalStock <= p.alertThreshold ? (
+                      <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm border border-yellow-200">أوشك على الانتهاء</span>
+                    ) : (
+                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm border border-green-200">متوفر</span>
+                    )}
+                  </td>
+                  <td className="p-4 border-b">
+                    <div className="flex gap-3">
+                      {hasPermission('MANAGE_PRODUCTS') && (
+                        <button onClick={() => openEditModal(p)} className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-all">تعديل</button>
+                      )}
+                      {hasPermission('MANAGE_INVENTORY') && (
+                        <button onClick={() => openAdjustModal(p)} className="text-purple-600 hover:text-purple-800 font-bold hover:underline transition-all">تسوية</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredProducts.length === 0 && (
+                <tr><td colSpan="7" className="p-8 text-center text-gray-500">لا توجد أصناف مطابقة للبحث</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Product Modal */}

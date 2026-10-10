@@ -82,61 +82,68 @@ const PatientsPage = () => {
   if (loading) return <div>جاري التحميل...</div>;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">المرضى (الحسابات والديون)</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-2xl font-bold text-gray-800">المرضى (الأرصدة)</h2>
         {hasPermission('VIEW_PATIENTS') && (
-          <button onClick={() => setIsAddModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200">
             + إضافة مريض جديد
           </button>
         )}
       </div>
 
-      {error && <div className="bg-red-100 text-red-700 p-3 mb-4 rounded">{error}</div>}
+      {error && <div className="bg-red-50 border-r-4 border-red-500 text-red-700 p-4 rounded-lg font-bold">{error}</div>}
 
-      <div className="mb-4">
-        <input 
-          type="text" 
-          placeholder="بحث بالاسم، رقم الملف، أو الرقم الداخلي..." 
-          className="w-full md:w-1/3 border rounded p-2"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="mb-6">
+          <input 
+            type="text" 
+            placeholder="بحث بالاسم، رقم الملف، أو الرقم الداخلي..." 
+            className="w-full md:w-1/3 border border-gray-200 rounded-lg px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-      <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full text-right border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="p-3 border-b">رقم الملف</th>
-              <th className="p-3 border-b">الاسم</th>
-              <th className="p-3 border-b">الرقم الداخلي</th>
-              <th className="p-3 border-b">الرصيد الحالي</th>
-              <th className="p-3 border-b">الإجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPatients.map(p => (
-              <tr key={p.id}>
-                <td className="p-3 border-b font-bold">{p.fileNumber}</td>
-                <td className="p-3 border-b">{p.fullName}</td>
-                <td className="p-3 border-b">{p.internalNumber}</td>
-                <td className={`p-3 border-b font-bold ${p.currentDebt > 0 ? 'text-green-600' : p.currentDebt < 0 ? 'text-red-600' : ''}`}>
-                  {p.currentDebt}
-                </td>
-                <td className="p-3 border-b flex gap-2">
-                  <button onClick={() => viewStatement(p.id)} className="text-blue-600 hover:underline">كشف الحساب</button>
-                  {hasPermission('CREATE_DEPOSIT') && (
-                    <button onClick={() => {
-                      setTransactForm({ patientId: p.id, type: 'DEPOSIT', amount: '', source: '', description: '', paymentMethodId: '' });
-                      setIsTransactModalOpen(true);
-                    }} className="text-green-600 hover:underline">إيداع/سداد</button>
-                  )}
-                </td>
+        <div className="overflow-x-auto rounded-xl border border-gray-100">
+          <table className="w-full text-right border-collapse">
+            <thead className="bg-gray-50 text-gray-700">
+              <tr>
+                <th className="p-4 border-b font-bold">رقم الملف</th>
+                <th className="p-4 border-b font-bold">الاسم</th>
+                <th className="p-4 border-b font-bold">الرقم الداخلي</th>
+                <th className="p-4 border-b font-bold">الرصيد الحالي</th>
+                <th className="p-4 border-b font-bold">الإجراءات</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="text-gray-600">
+              {filteredPatients.map(p => (
+                <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="p-4 border-b font-bold text-gray-800">{p.fileNumber}</td>
+                  <td className="p-4 border-b font-bold text-gray-800">{p.fullName}</td>
+                  <td className="p-4 border-b">{p.internalNumber}</td>
+                  <td className={`p-4 border-b font-bold text-lg ${p.currentDebt > 0 ? 'text-green-600' : p.currentDebt < 0 ? 'text-red-600' : ''}`}>
+                    {p.currentDebt}
+                  </td>
+                  <td className="p-4 border-b">
+                    <div className="flex gap-4">
+                      <button onClick={() => viewStatement(p.id)} className="text-indigo-600 hover:text-indigo-800 font-bold hover:underline transition-all">كشف الحساب</button>
+                      {hasPermission('CREATE_DEPOSIT') && (
+                        <button onClick={() => {
+                          setTransactForm({ patientId: p.id, type: 'DEPOSIT', amount: '', source: '', description: '', paymentMethodId: '' });
+                          setIsTransactModalOpen(true);
+                        }} className="text-emerald-600 hover:text-emerald-800 font-bold hover:underline transition-all">معاملة مالية (سداد/جزاء)</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredPatients.length === 0 && (
+                <tr><td colSpan="5" className="p-8 text-center text-gray-500">لا توجد بيانات مطابقة</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Add Patient Modal */}

@@ -194,34 +194,37 @@ const POSPage = () => {
   return (
     <div className="flex flex-col md:flex-row gap-6 h-[85vh]">
       {/* Products Grid Section */}
-      <div className="md:w-2/3 flex flex-col">
-        <div className="bg-white p-4 shadow rounded mb-4">
-          <form onSubmit={handleBarcodeSearch} className="flex gap-2">
+      <div className="md:w-2/3 flex flex-col gap-4">
+        <div className="bg-white p-6 shadow-sm border border-gray-100 rounded-2xl">
+          <form onSubmit={handleBarcodeSearch} className="flex gap-3">
             <input 
               ref={barcodeInputRef}
               type="text" 
-              placeholder="مرر الباركود أو ابحث بالرقم الداخلي..." 
-              className="flex-1 border rounded p-3 text-lg"
+              placeholder="مرر الباركود أو ابحث بالرقم الداخلي أو الاسم..." 
+              className="flex-1 border border-gray-200 rounded-xl p-4 text-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               value={search}
               onChange={e => setSearch(e.target.value)}
               autoFocus
             />
-            <button type="submit" className="bg-blue-600 text-white px-6 rounded">بحث</button>
+            <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold px-8 rounded-xl shadow-md shadow-indigo-200">بحث</button>
           </form>
         </div>
 
-        <div className="bg-white p-4 shadow rounded flex-1 overflow-y-auto">
-          <h3 className="font-bold mb-4">الأصناف المتوفرة (نقرة للإضافة)</h3>
+        <div className="bg-white p-6 shadow-sm border border-gray-100 rounded-2xl flex-1 overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-800">الأصناف المتوفرة</h3>
+            <span className="text-sm text-gray-500">نقرة واحدة للإضافة للفاتورة</span>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {filteredProducts.map(p => (
               <div 
                 key={p.id} 
                 onClick={() => addToCart(p)}
-                className="border rounded p-3 text-center cursor-pointer hover:bg-blue-50 transition-colors"
+                className="border border-gray-100 rounded-xl p-4 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 hover:shadow-md transition-all group"
               >
-                <div className="font-bold mb-1">{p.name}</div>
-                <div className="text-blue-600 font-bold">{p.sellingPrice} جنية</div>
-                <div className={`text-xs mt-1 ${p.totalStock <= 0 ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+                <div className="font-bold text-gray-800 mb-2 group-hover:text-indigo-800 transition-colors">{p.name}</div>
+                <div className="text-indigo-600 font-bold text-lg mb-2">{p.sellingPrice} <span className="text-sm font-normal">جنية</span></div>
+                <div className={`text-xs px-2 py-1 inline-block rounded-full ${p.totalStock <= 0 ? 'bg-red-100 text-red-700 font-bold' : 'bg-gray-100 text-gray-600'}`}>
                   المخزون: {p.totalStock}
                 </div>
               </div>
@@ -231,33 +234,36 @@ const POSPage = () => {
       </div>
 
       {/* Cart & Checkout Section */}
-      <div className="md:w-1/3 bg-white p-4 shadow rounded flex flex-col">
-        <h2 className="text-xl font-bold mb-4 border-b pb-2">الفاتورة الحالية</h2>
+      <div className="md:w-1/3 bg-white p-6 shadow-sm border border-gray-100 rounded-2xl flex flex-col">
+        <h2 className="text-xl font-bold mb-4 border-b border-gray-100 pb-4 text-gray-800">الفاتورة الحالية</h2>
         
-        <div className="flex-1 overflow-y-auto mb-4">
+        <div className="flex-1 overflow-y-auto mb-4 pr-2">
           {cart.length === 0 ? (
-            <div className="text-gray-500 text-center mt-10">لا توجد أصناف في الفاتورة</div>
+            <div className="text-gray-400 flex flex-col items-center justify-center h-full">
+              <span className="text-4xl mb-2">🛒</span>
+              <span>لا توجد أصناف في الفاتورة</span>
+            </div>
           ) : (
             <table className="w-full text-right">
               <tbody>
                 {cart.map(item => (
-                  <tr key={item.productId} className="border-b">
-                    <td className="py-3 w-1/2">
-                      <div className="font-bold">{item.name}</div>
+                  <tr key={item.productId} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="py-4 w-1/2">
+                      <div className="font-bold text-gray-800">{item.name}</div>
                       <div className="text-sm text-gray-500">{item.price} جنية</div>
                     </td>
-                    <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="bg-gray-200 px-2 rounded">-</button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="bg-gray-200 px-2 rounded">+</button>
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="bg-gray-100 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 transition-colors font-bold">-</button>
+                        <span className="w-6 text-center font-bold">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="bg-gray-100 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center text-gray-600 transition-colors font-bold">+</button>
                       </div>
                     </td>
-                    <td className="py-3 font-bold text-blue-600">
+                    <td className="py-4 font-bold text-indigo-600">
                       {item.price * item.quantity}
                     </td>
-                    <td className="py-3">
-                      <button onClick={() => removeFromCart(item.productId)} className="text-red-500 font-bold">×</button>
+                    <td className="py-4 pl-2 text-left">
+                      <button onClick={() => removeFromCart(item.productId)} className="text-red-400 hover:text-red-600 font-bold transition-colors text-xl">×</button>
                     </td>
                   </tr>
                 ))}
@@ -266,41 +272,41 @@ const POSPage = () => {
           )}
         </div>
 
-        <div className="border-t pt-4">
-          <div className="flex justify-between items-center mb-4 text-xl font-bold">
-            <span>الإجمالي:</span>
-            <span className="text-blue-600">{totalAmount} جنية</span>
+        <div className="border-t border-gray-100 pt-6">
+          <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-xl">
+            <span className="text-lg font-bold text-gray-700">الإجمالي:</span>
+            <span className="text-2xl font-bold text-indigo-700">{totalAmount} جنية</span>
           </div>
 
-          <div className="mb-4">
-            <label className="block mb-2 font-bold">طريقة الدفع:</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="invoiceType" value="CASH" checked={invoiceType === 'CASH'} onChange={() => { setInvoiceType('CASH'); setPatientId(''); }} />
+          <div className="mb-5">
+            <label className="block mb-3 font-bold text-gray-700">طريقة الدفع:</label>
+            <div className="flex gap-4 bg-gray-50 p-1 rounded-xl">
+              <label className={`flex-1 text-center py-2 rounded-lg cursor-pointer font-bold transition-all ${invoiceType === 'CASH' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}>
+                <input type="radio" name="invoiceType" value="CASH" className="hidden" checked={invoiceType === 'CASH'} onChange={() => { setInvoiceType('CASH'); setPatientId(''); }} />
                 نقدي (كاش)
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="invoiceType" value="CREDIT" checked={invoiceType === 'CREDIT'} onChange={() => setInvoiceType('CREDIT')} />
-                آجل (يخصم من رصيد المريض)
+              <label className={`flex-1 text-center py-2 rounded-lg cursor-pointer font-bold transition-all ${invoiceType === 'CREDIT' ? 'bg-white shadow text-indigo-700' : 'text-gray-500 hover:text-gray-700'}`}>
+                <input type="radio" name="invoiceType" value="CREDIT" className="hidden" checked={invoiceType === 'CREDIT'} onChange={() => setInvoiceType('CREDIT')} />
+                آجل (رصيد)
               </label>
             </div>
           </div>
 
           {invoiceType === 'CREDIT' && (
-            <div className="mb-4">
-              <label className="block mb-1 font-bold">المريض (إجباري):</label>
-              <select className="w-full border rounded p-2" value={patientId} onChange={e => setPatientId(e.target.value)}>
-                <option value="">اختر المريض...</option>
+            <div className="mb-5">
+              <label className="block mb-2 font-bold text-gray-700">المريض (إجباري):</label>
+              <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" value={patientId} onChange={e => setPatientId(e.target.value)}>
+                <option value="">-- اختر المريض --</option>
                 {patients.map(p => (
                   <option key={p.id} value={p.id}>{p.name || p.fullName} - (الرصيد: {p.currentDebt})</option>
                 ))}
               </select>
               {patientId && (
-                <div className="text-sm mt-1">
+                <div className="text-sm mt-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
                   {patients.find(p => p.id === Number(patientId))?.currentDebt < -500 ? (
                     <span className="text-red-600 font-bold block mb-1">⚠️ تحذير: رصيد المريض أقل من -500 جنية (عليه مديونية كبيرة)!</span>
                   ) : null}
-                  <span className="text-gray-600">* سيتم خصم الفاتورة من رصيد المريض.</span>
+                  <span className="text-gray-600 text-xs">سيتم خصم الفاتورة من رصيد المريض.</span>
                 </div>
               )}
             </div>
@@ -309,7 +315,7 @@ const POSPage = () => {
           <button 
             onClick={handleCheckout} 
             disabled={cart.length === 0}
-            className="w-full bg-green-600 text-white font-bold py-3 rounded text-lg hover:bg-green-700 disabled:opacity-50"
+            className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 mt-2"
           >
             تأكيد الدفع وطباعة
           </button>
