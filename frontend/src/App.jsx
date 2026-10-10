@@ -8,6 +8,7 @@ import ProductsPage from './features/products/ProductsPage';
 import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
 import POSPage from './features/pos/POSPage';
+import ReturnsPage from './features/pos/ReturnsPage';
 import PatientsPage from './features/patients/PatientsPage';
 import TreasuryPage from './features/treasury/TreasuryPage';
 
@@ -21,7 +22,10 @@ function MainLayout({ children }) {
           <nav className="hidden md:flex gap-4">
             <Link to="/" className="text-gray-600 hover:text-blue-600">الرئيسية</Link>
             {hasPermission('CREATE_INVOICE') && (
-              <Link to="/pos" className="text-gray-600 hover:text-blue-600 font-bold">شاشة البيع (POS)</Link>
+              <>
+                <Link to="/pos" className="text-gray-600 hover:text-blue-600 font-bold">شاشة البيع (POS)</Link>
+                <Link to="/returns" className="text-gray-600 hover:text-blue-600">المرتجعات</Link>
+              </>
             )}
             <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
             {hasPermission('VIEW_PATIENTS') && (
@@ -71,6 +75,14 @@ function App() {
             <ProtectedRoute requiredPermission="CREATE_INVOICE">
               <MainLayout>
                 <POSPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/returns" element={
+            <ProtectedRoute requiredPermission="CREATE_INVOICE">
+              <MainLayout>
+                <ReturnsPage />
               </MainLayout>
             </ProtectedRoute>
           } />

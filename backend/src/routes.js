@@ -7,6 +7,7 @@ const purchasesRoutes = require('./features/purchases/purchases.routes');
 const salesRoutes = require('./features/sales/sales.routes');
 const patientsRoutes = require('./features/patients/patients.routes');
 const treasuryRoutes = require('./features/treasury/treasury.routes');
+const returnsRoutes = require('./features/returns/returns.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
@@ -15,5 +16,6 @@ router.use('/purchases', purchasesRoutes);
 router.use('/sales', salesRoutes);
 router.use('/patients', patientsRoutes);
 router.use('/treasury', treasuryRoutes);
+router.use('/returns', returnsRoutes);
 
 module.exports = router;
