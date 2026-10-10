@@ -120,15 +120,7 @@ const POSPage = () => {
       const audio = new Audio('/poppop.ai - cha ching sound effect.mp3');
       audio.play().catch(e => console.error("Audio play blocked", e));
       
-      // Setup Print View
-      setPrintInvoice({
-        id: invoiceData.id,
-        date: new Date().toLocaleString('ar-EG'),
-        type: invoiceType,
-        total: totalAmount,
-        items: [...cart],
-        patientName: invoiceType === 'CREDIT' ? patients.find(p => p.id === Number(patientId))?.fullName : null
-      });
+      toast.success('تم الحفظ بنجاح');
 
       // Reset
       setCart([]);
