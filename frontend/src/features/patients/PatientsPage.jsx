@@ -121,15 +121,6 @@ const PatientsPage = () => {
     return matchesTab && matchesSearch;
   });
 
-    const viewStatement = async (id) => {
-    try {
-      const res = await client.get(`/patients/${id}`);
-      setStatementModal(res.data.data);
-    } catch (err) {
-      toast.error('خطأ في جلب الكشف');
-    }
-  };
-
   const toggleStatus = async (id, currentStatus) => {
     try {
       await client.patch(`/patients/${id}/status`, { isActive: !currentStatus });
