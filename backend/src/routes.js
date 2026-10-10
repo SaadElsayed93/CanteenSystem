@@ -10,6 +10,7 @@ const treasuryRoutes = require('./features/treasury/treasury.routes');
 const returnsRoutes = require('./features/returns/returns.routes');
 const auditRoutes = require('./features/audit-logs/audit.routes');
 const reportsRoutes = require('./features/reports/reports.routes');
+const homeRoutes = require('./features/home/home.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
@@ -21,6 +22,7 @@ router.use('/treasury', treasuryRoutes);
 router.use('/returns', returnsRoutes);
 router.use('/audit-logs', auditRoutes);
 router.use('/reports', reportsRoutes);
+router.use('/home', authMiddleware, homeRoutes);
 
 module.exports = router;
 

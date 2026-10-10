@@ -1,0 +1,281 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../auth/AuthContext';
+import client from '../../api/client';
+import { 
+  ShoppingCart, RotateCcw, PlusCircle, CreditCard, 
+  AlertTriangle, TrendingUp, DollarSign, PackageOpen, 
+  Users, Activity, Wallet, Search
+} from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+
+const HomePage = () => {
+  const { user } = useAuth();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    fetchHomeData();
+  }, []);
+
+  const fetchHomeData = async () => {
+    try {
+      const res = await client.get('/home');
+      setData(res.data.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quick Search for Sales/Cashier
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await client.get(`/products?search=${searchQuery}`);
+        setSearchResults(res.data.data.slice(0, 5));
+      } catch (err) {
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  if (loading || !data) return <div className="text-center mt-20 font-bold text-gray-500 text-xl animate-pulse">جاري تحميل لوحة التحكم...</div>;
+
+  const isAdmin = user?.role?.name === 'مدير' || user?.permissions?.includes('ALL');
+
+  return (
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-indigo-900">أهلاً بك، {user.fullName} 👋</h1>
+          <p className="text-gray-500 font-bold mt-1">
+            {isAdmin ? 'نظرة عامة على أداء الكانتين والرقابة المالية.' : 'مكتب التشغيل اليومي - وردية موفقة!'}
+          </p>
+        </div>
+        {!isAdmin && (
+          <div className="bg-indigo-50 text-indigo-800 px-4 py-2 rounded-xl font-bold flex items-center gap-2">
+            <Activity size={20} />
+            متصل الآن
+          </div>
+        )}
+      </div>
+
+      {!isAdmin ? (
+        /* ================= SALES / CASHIER DASHBOARD ================= */
+        <div className="space-y-6">
+          
+          {/* Shift Cash Widget */}
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between">
+            <div>
+              <p className="text-emerald-100 font-bold mb-1">المبلغ المتوقع في الخزينة الآن (تقفيل الوردية)</p>
+              <h2 className="text-5xl font-black">{data.shiftStats.expectedCash} ج.م</h2>
+              <div className="flex gap-4 mt-4 text-sm font-bold opacity-90">
+                <span>المبيعات: {data.shiftStats.sales}</span>
+                <span>إيداعات المرضى: {data.shiftStats.deposits}</span>
+                <span>المصروفات والمشتريات: {data.shiftStats.expenses + data.shiftStats.purchases}</span>
+              </div>
+            </div>
+            <Wallet size={80} className="opacity-20 mt-4 md:mt-0" />
+          </div>
+
+          {/* Quick Actions Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link to="/pos" className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-transform hover:scale-105 shadow-md shadow-indigo-200">
+              <ShoppingCart size={40} />
+              <span className="font-bold text-lg">شاشة البيع (POS)</span>
+            </Link>
+            <Link to="/purchases/new" className="bg-amber-500 hover:bg-amber-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-transform hover:scale-105 shadow-md shadow-amber-200">
+              <PlusCircle size={40} />
+              <span className="font-bold text-lg">فاتورة مشتريات</span>
+            </Link>
+            <Link to="/treasury" className="bg-rose-500 hover:bg-rose-600 text-white rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-transform hover:scale-105 shadow-md shadow-rose-200">
+              <CreditCard size={40} />
+              <span className="font-bold text-lg">سحب مصروف</span>
+            </Link>
+            <Link to="/returns" className="bg-gray-800 hover:bg-gray-900 text-white rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-transform hover:scale-105 shadow-md">
+              <RotateCcw size={40} />
+              <span className="font-bold text-lg">إرجاع بضاعة</span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Low Stock Alerts */}
+            <div className="bg-white rounded-2xl border-2 border-red-100 shadow-sm overflow-hidden">
+              <div className="bg-red-50 p-4 border-b border-red-100 flex items-center gap-2 text-red-700">
+                <AlertTriangle size={24} />
+                <h3 className="font-black text-lg">نواقص تحتاج لشراء فوراً</h3>
+              </div>
+              <div className="p-4 max-h-64 overflow-y-auto">
+                {data.lowStockItems.length === 0 ? (
+                  <p className="text-gray-500 font-bold text-center py-4">المخزون ممتاز، لا توجد نواقص.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {data.lowStockItems.map(item => (
+                      <li key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                        <span className="font-bold text-gray-800">{item.name}</span>
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-lg font-bold text-sm">
+                          باقي: {item.quantity}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Search */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-sm p-6">
+              <h3 className="font-black text-gray-800 text-lg mb-4 flex items-center gap-2">
+                <Search className="text-indigo-500" />
+                استعلام سريع عن صنف
+              </h3>
+              <input 
+                type="text" 
+                placeholder="اكتب اسم الصنف أو الباركود..." 
+                className="w-full bg-gray-50 border-2 border-gray-200 rounded-xl p-4 font-bold focus:border-indigo-500 focus:bg-white transition-all"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+              {isSearching && <div className="mt-4 text-gray-400 font-bold text-center">جاري البحث...</div>}
+              {searchResults.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  {searchResults.map(p => (
+                    <div key={p.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl hover:bg-gray-50">
+                      <div>
+                        <div className="font-bold text-gray-800">{p.name}</div>
+                        <div className="text-xs text-gray-500 font-bold">{p.internalCode}</div>
+                      </div>
+                      <div className="font-black text-indigo-600">{p.sellingPrice} ج.م</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      ) : (
+        /* ================= ADMIN DASHBOARD ================= */
+        <div className="space-y-6">
+          {/* Top KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-2xl border-2 border-indigo-50 shadow-sm flex items-center gap-4">
+              <div className="bg-indigo-100 p-4 rounded-xl text-indigo-600"><PackageOpen size={28} /></div>
+              <div>
+                <p className="text-gray-500 font-bold text-sm">رأس المال (قيمة البضاعة)</p>
+                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.inventoryValue} ج</h3>
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-2xl border-2 border-emerald-50 shadow-sm flex items-center gap-4">
+              <div className="bg-emerald-100 p-4 rounded-xl text-emerald-600"><TrendingUp size={28} /></div>
+              <div>
+                <p className="text-gray-500 font-bold text-sm">صافي ربح الشهر (تقريبي)</p>
+                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.netProfit} ج</h3>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border-2 border-red-50 shadow-sm flex items-center gap-4">
+              <div className="bg-red-100 p-4 rounded-xl text-red-600"><Users size={28} /></div>
+              <div>
+                <p className="text-gray-500 font-bold text-sm">إجمالي ديون المرضى</p>
+                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.totalDebts} ج</h3>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border-2 border-blue-50 shadow-sm flex items-center gap-4">
+              <div className="bg-blue-100 p-4 rounded-xl text-blue-600"><Wallet size={28} /></div>
+              <div>
+                <p className="text-gray-500 font-bold text-sm">رصيد الخزائن (السيولة)</p>
+                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.treasuryBalance} ج</h3>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Live Feed (Sensitive Logs) */}
+            <div className="lg:col-span-2 bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-hidden">
+              <div className="bg-gray-50 p-4 border-b border-gray-100">
+                <h3 className="font-black text-gray-800 text-lg flex items-center gap-2">
+                  <Activity className="text-rose-500 animate-pulse" />
+                  رادار الرقابة (أحدث العمليات الحساسة)
+                </h3>
+              </div>
+              <div className="p-4">
+                {data.sensitiveLogs.length === 0 ? (
+                  <p className="text-gray-400 font-bold text-center py-6">لا توجد حركات حساسة حديثة</p>
+                ) : (
+                  <div className="space-y-4">
+                    {data.sensitiveLogs.map(log => (
+                      <div key={log.id} className="flex gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          log.action === 'RETURN' ? 'bg-orange-100 text-orange-600' :
+                          log.action === 'DELETE' ? 'bg-red-100 text-red-600' :
+                          'bg-indigo-100 text-indigo-600'
+                        }`}>
+                          <AlertTriangle size={18} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800">
+                            {log.user} قام بعمل <span className="text-indigo-600">{log.action}</span> في {log.entity}
+                          </p>
+                          <p className="text-sm text-gray-500 font-bold mt-1 line-clamp-1">{log.details}</p>
+                          <p className="text-xs text-gray-400 mt-1">{new Date(log.time).toLocaleString('ar-EG')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-4 text-center">
+                  <Link to="/settings/history" className="text-indigo-600 font-bold text-sm hover:underline">عرض كل السجلات »</Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Debtors */}
+            <div className="bg-white rounded-2xl border-2 border-gray-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-gray-50 p-4 border-b border-gray-100">
+                <h3 className="font-black text-gray-800 text-lg">أعلى مرضى عليهم مديونيات</h3>
+              </div>
+              <div className="p-4 flex-1">
+                <ul className="space-y-3">
+                  {data.topDebtors.map((p, i) => (
+                    <li key={p.id} className="flex justify-between items-center p-3 bg-red-50/50 rounded-xl border border-red-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-xs">{i+1}</div>
+                        <span className="font-bold text-gray-800">{p.fullName}</span>
+                      </div>
+                      <span className="font-black text-red-600">{Math.abs(p.currentDebt)} ج</span>
+                    </li>
+                  ))}
+                  {data.topDebtors.length === 0 && (
+                    <li className="text-center text-gray-500 font-bold py-4">لا توجد ديون مسجلة</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default HomePage;

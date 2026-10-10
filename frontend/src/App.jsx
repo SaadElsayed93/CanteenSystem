@@ -14,6 +14,7 @@ import ReturnsPage from './features/pos/ReturnsPage';
 import PatientsPage from './features/patients/PatientsPage';
 import TreasuryPage from './features/treasury/TreasuryPage';
 import ReportsPage from './features/reports/ReportsPage';
+import HomePage from './features/home/HomePage';
 
 import { 
   Home, ShoppingCart, RotateCcw, Package, 
@@ -144,7 +145,7 @@ function App() {
           <Route path="/" element={
             <ProtectedRoute>
               <MainLayout>
-                <div className="text-center text-xl mt-10">مرحباً بك في لوحة التحكم</div>
+                <HomePage />
               </MainLayout>
             </ProtectedRoute>
           } />
