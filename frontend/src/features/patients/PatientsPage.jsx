@@ -121,7 +121,16 @@ const PatientsPage = () => {
     return matchesTab && matchesSearch;
   });
 
-    const toggleStatus = async (id, currentStatus) => {
+    const viewStatement = async (id) => {
+    try {
+      const res = await client.get(`/patients/${id}`);
+      setStatementModal(res.data.data);
+    } catch (err) {
+      toast.error('خطأ في جلب الكشف');
+    }
+  };
+
+  const toggleStatus = async (id, currentStatus) => {
     try {
       await client.patch(`/patients/${id}/status`, { isActive: !currentStatus });
       fetchData();
@@ -186,7 +195,7 @@ const PatientsPage = () => {
                     </span>
                   </td>
                   <td className="p-4 border-b flex gap-2 justify-center">
-                    <button onClick={() => setStatementModal(p)} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 font-bold transition-colors">كشف حساب</button>
+                    <button onClick={() => viewStatement(p.id)} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 font-bold transition-colors">كشف حساب</button>
                     {p.isActive ? (
                       <>
                         <button onClick={() => { setTransactForm({ ...transactForm, patientId: p.id }); setIsTransactModalOpen(true); }} className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 font-bold transition-colors">إيداع / سحب</button>
