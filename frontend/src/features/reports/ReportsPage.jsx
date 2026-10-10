@@ -293,6 +293,7 @@ const ReportsPage = () => {
                       {key === 'cashSales' && 'المبيعات النقدية'}
                       {key === 'creditSales' && 'المبيعات الآجلة'}
                       {key === 'invoiceCount' && 'عدد الفواتير'}
+                      {key === 'productCount' && 'عدد الأصناف المباعة'}
                       {key === 'totalPurchases' && 'إجمالي قيمة المشتريات'}
                       {key === 'totalPaid' && 'المدفوع للموردين'}
                       {key === 'totalRemaining' && 'المتبقي للموردين'}
@@ -304,7 +305,7 @@ const ReportsPage = () => {
                       {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
                     </p>
                     <p className="text-2xl font-black text-indigo-700">
-                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' 
+                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'productCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' 
                         ? `${val} ج.م` 
                         : val}
                     </p>
@@ -319,13 +320,11 @@ const ReportsPage = () => {
                     <tr className="bg-indigo-50 border-y-2 border-indigo-100">
                       {reportType === 'SALES' && (
                         <>
-                          <th className="p-3 font-bold text-indigo-800">رقم الفاتورة</th>
-                          <th className="p-3 font-bold text-indigo-800">التاريخ</th>
-                          <th className="p-3 font-bold text-indigo-800">النوع</th>
-                          <th className="p-3 font-bold text-indigo-800">العميل</th>
-                          <th className="p-3 font-bold text-indigo-800 w-1/3">الأصناف</th>
-                          <th className="p-3 font-bold text-indigo-800">الإجمالي</th>
-                          <th className="p-3 font-bold text-indigo-800">الربح</th>
+                          <th className="p-3 font-bold text-indigo-800">الصنف</th>
+                          <th className="p-3 font-bold text-indigo-800">الكمية المباعة</th>
+                          <th className="p-3 font-bold text-indigo-800">تكلفة الشراء (الإجمالية)</th>
+                          <th className="p-3 font-bold text-indigo-800">سعر البيع (الإجمالي)</th>
+                          <th className="p-3 font-bold text-indigo-800">صافي الربح</th>
                         </>
                       )}
                       {reportType === 'PURCHASES' && (
@@ -363,13 +362,11 @@ const ReportsPage = () => {
                       <tr key={i} className="hover:bg-gray-50 transition-colors">
                         {reportType === 'SALES' && (
                           <>
-                            <td className="p-3 font-bold text-gray-700">{row.id}</td>
-                            <td className="p-3 text-gray-600">{new Date(row.date).toLocaleString('ar-EG')}</td>
-                            <td className="p-3 font-bold text-gray-600">{row.type}</td>
-                            <td className="p-3 font-bold text-gray-800">{row.patientName}</td>
-                            <td className="p-3 text-sm text-gray-500">{row.itemsSummary}</td>
-                            <td className="p-3 font-black text-indigo-600">{row.total} ج</td>
-                            <td className="p-3 font-bold text-emerald-600">{row.profit} ج</td>
+                            <td className="p-3 font-bold text-gray-800">{row.name}</td>
+                            <td className="p-3 font-bold text-indigo-600">{row.quantity}</td>
+                            <td className="p-3 font-bold text-red-600">{row.cost} ج</td>
+                            <td className="p-3 font-black text-emerald-600">{row.revenue} ج</td>
+                            <td className="p-3 font-black text-indigo-700">{row.profit} ج</td>
                           </>
                         )}
                         {reportType === 'PURCHASES' && (

@@ -154,53 +154,75 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
   endDate.setHours(23, 59, 59, 999);
 
   if (type === 'SALES') {
-    const invoices = await prisma.invoice.findMany({
-      where: { createdAt: { gte: startDate, lte: endDate } },
-      include: {
-        items: { include: { product: true } },
-        patient: { select: { fullName: true } }
+    // We want to group sales by product
+    const items = await prisma.invoiceItem.findMany({
+      where: {
+        invoice: {
+          createdAt: { gte: startDate, lte: endDate },
+          status: 'COMPLETED'
+        }
       },
-      orderBy: { createdAt: 'desc' }
+      include: {
+        product: { select: { id: true, name: true, purchasePrice: true } },
+        invoice: { select: { paymentType: true, totalAmount: true } }
+      }
     });
 
-    let totalSales = 0;
+    const productMap = {};
+    let totalRevenue = 0;
     let totalCost = 0;
     let cashSales = 0;
     let creditSales = 0;
-
-    const data = invoices.map(inv => {
-      let invoiceCost = 0;
-      inv.items.forEach(item => {
-        invoiceCost += Number(item.quantity) * Number(item.product.purchasePrice);
-      });
-
-      if (inv.status === 'COMPLETED') {
-        totalSales += Number(inv.totalAmount);
-        totalCost += invoiceCost;
-        if (inv.paymentType === 'CASH') cashSales += Number(inv.totalAmount);
-        else creditSales += Number(inv.totalAmount);
-      }
-
-      return {
-        id: inv.invoiceNumber,
-        date: inv.createdAt,
-        type: inv.paymentType === 'CASH' ? 'نقدي' : 'آجل',
-        patientName: inv.patient?.fullName || 'غير محدد',
-        total: Number(inv.totalAmount),
-        status: inv.status === 'COMPLETED' ? 'مكتملة' : 'مرتجع',
-        profit: Number(inv.totalAmount) - invoiceCost,
-        itemsSummary: inv.items.map(i => `${i.quantity}x ${i.product.name}`).join('، ')
-      };
+    
+    // We also need to get total cash/credit correctly. 
+    // Since we group by items, it's easier to just fetch invoices for the summary
+    const invoices = await prisma.invoice.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
+      select: { paymentType: true, totalAmount: true }
     });
+
+    invoices.forEach(inv => {
+      if (inv.paymentType === 'CASH') cashSales += Number(inv.totalAmount);
+      else creditSales += Number(inv.totalAmount);
+    });
+
+    items.forEach(item => {
+      const pid = item.productId;
+      if (!productMap[pid]) {
+        productMap[pid] = {
+          id: pid,
+          name: item.product.name,
+          quantity: 0,
+          revenue: 0,
+          cost: 0
+        };
+      }
+      
+      const qty = Number(item.quantity);
+      const rev = Number(item.subtotal);
+      const cost = qty * Number(item.product.purchasePrice);
+
+      productMap[pid].quantity += qty;
+      productMap[pid].revenue += rev;
+      productMap[pid].cost += cost;
+      
+      totalRevenue += rev;
+      totalCost += cost;
+    });
+
+    const data = Object.values(productMap).map(p => ({
+      ...p,
+      profit: p.revenue - p.cost
+    })).sort((a, b) => b.quantity - a.quantity); // sort by highest qty
 
     return {
       summary: {
-        totalSales,
+        totalSales: totalRevenue,
         totalCost,
-        totalProfit: totalSales - totalCost,
+        totalProfit: totalRevenue - totalCost,
         cashSales,
         creditSales,
-        invoiceCount: invoices.length
+        productCount: data.length
       },
       data
     };
