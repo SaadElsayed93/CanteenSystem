@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ==========================================
@@ -23,7 +23,7 @@ model User {
 
   role                  Role                   @relation(fields: [roleId], references: [id])
   priceChanges          PriceHistory[]
-  createdPurchases      Purchase[]
+  createdPurchases      SupplierPurchase[]
   createdPayments       SupplierPayment[]
   createdTransactions   PatientTransaction[]
   createdInvoices       Invoice[]
@@ -39,7 +39,7 @@ model User {
 model Role {
   id          Int      @id @default(autoincrement())
   name        String   @unique
-  permissions Json     // يخزن الصلاحيات كـ JSON array (مثال: ["CREATE_INVOICE", "VIEW_PATIENTS"])
+  permissions String     // يخزن الصلاحيات كـ String array (مثال: ["CREATE_INVOICE", "VIEW_PATIENTS"])
   users       User[]
 }
 
@@ -52,10 +52,10 @@ model Product {
   name             String
   internalCode     String    @unique
   barcode          String?
-  sellingPrice     Decimal   @db.Decimal(10, 2)
-  purchasePrice    Decimal   @db.Decimal(10, 2)
+  sellingPrice     Decimal   
+  purchasePrice    Decimal   
   unit             String
-  conversionFactor Decimal   @default(1.00) @db.Decimal(10, 4)
+  conversionFactor Decimal   @default(1.00) 
   alertThreshold   Int       @default(0)
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now())
@@ -73,8 +73,8 @@ model Batch {
   id                Int      @id @default(autoincrement())
   productId         Int
   purchaseItemId    Int?
-  quantityRemaining Decimal  @db.Decimal(10, 4)
-  unitCost          Decimal  @db.Decimal(10, 2)
+  quantityRemaining Decimal  
+  unitCost          Decimal  
   expiryDate        DateTime?
   receivedAt        DateTime @default(now())
 
@@ -86,8 +86,8 @@ model Batch {
 model PriceHistory {
   id        Int      @id @default(autoincrement())
   productId Int
-  oldPrice  Decimal  @db.Decimal(10, 2)
-  newPrice  Decimal  @db.Decimal(10, 2)
+  oldPrice  Decimal  
+  newPrice  Decimal  
   changedBy Int
   changedAt DateTime @default(now())
 
@@ -115,8 +115,8 @@ model SupplierPurchase {
   id          Int      @id @default(autoincrement())
   referenceNo String   @unique
   supplierId  Int
-  totalAmount Decimal  @db.Decimal(10, 2)
-  paidAmount  Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount Decimal  
+  paidAmount  Decimal  @default(0) 
   status      String   // مثلاً: "PENDING", "PARTIAL", "PAID"
   createdBy   Int
   createdAt   DateTime @default(now())
@@ -131,9 +131,9 @@ model PurchaseItem {
   id           Int      @id @default(autoincrement())
   purchaseId   Int
   productId    Int
-  quantity     Decimal  @db.Decimal(10, 4)
-  unitCost     Decimal  @db.Decimal(10, 2)
-  subtotal     Decimal  @db.Decimal(10, 2)
+  quantity     Decimal  
+  unitCost     Decimal  
+  subtotal     Decimal  
 
   purchase     SupplierPurchase @relation(fields: [purchaseId], references: [id])
   product      Product          @relation(fields: [productId], references: [id])
@@ -144,7 +144,7 @@ model SupplierPayment {
   id              Int      @id @default(autoincrement())
   purchaseId      Int?
   supplierId      Int
-  amount          Decimal  @db.Decimal(10, 2)
+  amount          Decimal  
   paymentMethodId Int
   createdBy       Int
   createdAt       DateTime @default(now())
@@ -175,7 +175,7 @@ model PatientTransaction {
   id            Int      @id @default(autoincrement())
   patientId     Int
   type          String   // "DEPOSIT", "WITHDRAWAL", "PURCHASE", "REFUND", "ADJUSTMENT"
-  amount        Decimal  @db.Decimal(10, 2) // موجب = دائن (للمريض), سالب = مدين (عليه)
+  amount        Decimal   // موجب = دائن (للمريض), سالب = مدين (عليه)
   source        String?  // مثل "فودافون كاش", "نقدية", الخ
   description   String?
   referenceId   Int?     // رقم الفاتورة أو المرتجع المرتبط إن وجد
@@ -196,9 +196,9 @@ model Invoice {
   invoiceNumber String   @unique
   patientId     Int?
   paymentType   String   // "CASH", "ACCOUNT", "MIXED"
-  cashAmount    Decimal  @default(0) @db.Decimal(10, 2)
-  accountAmount Decimal  @default(0) @db.Decimal(10, 2)
-  totalAmount   Decimal  @db.Decimal(10, 2)
+  cashAmount    Decimal  @default(0) 
+  accountAmount Decimal  @default(0) 
+  totalAmount   Decimal  
   status        String   // "COMPLETED", "CANCELLED", "REFUNDED"
   createdBy     Int
   createdAt     DateTime @default(now())
@@ -213,9 +213,9 @@ model InvoiceItem {
   id         Int      @id @default(autoincrement())
   invoiceId  Int
   productId  Int
-  quantity   Decimal  @db.Decimal(10, 4)
-  unitPrice  Decimal  @db.Decimal(10, 2) // Snapshot السعر وقت البيع
-  subtotal   Decimal  @db.Decimal(10, 2)
+  quantity   Decimal  
+  unitPrice  Decimal   // Snapshot السعر وقت البيع
+  subtotal   Decimal  
 
   invoice    Invoice  @relation(fields: [invoiceId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
@@ -225,7 +225,7 @@ model Return {
   id                Int      @id @default(autoincrement())
   originalInvoiceId Int
   type              String   // "FULL", "PARTIAL"
-  amount            Decimal  @db.Decimal(10, 2)
+  amount            Decimal  
   reason            String?
   status            String   // "COMPLETED"
   createdBy         Int
@@ -240,8 +240,8 @@ model ReturnItem {
   id         Int      @id @default(autoincrement())
   returnId   Int
   productId  Int
-  quantity   Decimal  @db.Decimal(10, 4)
-  unitPrice  Decimal  @db.Decimal(10, 2)
+  quantity   Decimal  
+  unitPrice  Decimal  
 
   returnRec  Return   @relation(fields: [returnId], references: [id])
   product    Product  @relation(fields: [productId], references: [id])
@@ -254,7 +254,7 @@ model ReturnItem {
 model PaymentMethod {
   id             Int      @id @default(autoincrement())
   name           String   @unique // "نقدية", "فودافون كاش", "تحويل"
-  currentBalance Decimal  @default(0) @db.Decimal(15, 2)
+  currentBalance Decimal  @default(0) 
   isActive       Boolean  @default(true)
 
   treasuryTransactions TreasuryTransaction[]
@@ -266,7 +266,7 @@ model TreasuryTransaction {
   id              Int      @id @default(autoincrement())
   paymentMethodId Int
   type            String   // "IN", "OUT"
-  amount          Decimal  @db.Decimal(15, 2)
+  amount          Decimal  
   description     String?
   referenceId     Int?
   referenceType   String?  // "INVOICE", "EXPENSE", "TRANSFER", "DEPOSIT"
@@ -288,7 +288,7 @@ model ExpenseCategory {
 model Expense {
   id              Int      @id @default(autoincrement())
   categoryId      Int
-  amount          Decimal  @db.Decimal(10, 2)
+  amount          Decimal  
   paymentMethodId Int
   description     String?
   createdBy       Int
@@ -308,8 +308,8 @@ model InventoryMovement {
   productId     Int
   batchId       Int?
   type          String   // "IN", "OUT", "ADJUSTMENT"
-  quantity      Decimal  @db.Decimal(10, 4)
-  balanceAfter  Decimal  @db.Decimal(10, 4)
+  quantity      Decimal  
+  balanceAfter  Decimal  
   referenceId   Int?
   referenceType String?  // "INVOICE", "PURCHASE", "RETURN", "COUNT"
   createdBy     Int
@@ -323,9 +323,9 @@ model InventoryMovement {
 model InventoryCount {
   id             Int      @id @default(autoincrement())
   productId      Int
-  systemQuantity Decimal  @db.Decimal(10, 4)
-  actualQuantity Decimal  @db.Decimal(10, 4)
-  difference     Decimal  @db.Decimal(10, 4)
+  systemQuantity Decimal  
+  actualQuantity Decimal  
+  difference     Decimal  
   reason         String?
   createdBy      Int
   createdAt      DateTime @default(now())
@@ -339,8 +339,8 @@ model AuditLog {
   action     String   // "CREATE", "UPDATE", "DELETE", "LOGIN"
   entityType String   // "PRODUCT", "INVOICE", "USER"
   entityId   Int?
-  oldValues  Json?
-  newValues  Json?
+  oldValues  String?
+  newValues  String?
   userId     Int
   ipAddress  String?
   createdAt  DateTime @default(now())

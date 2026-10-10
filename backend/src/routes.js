@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const authRoutes = require('./features/auth/auth.routes');
+const usersRoutes = require('./features/users/users.routes');
 
-// Here we will import and use all feature routes
-// e.g., router.use('/auth', authRoutes);
+router.use('/auth', authRoutes);
+router.use('/users', usersRoutes);
 
 module.exports = router;

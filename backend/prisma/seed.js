@@ -1,5 +1,4 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt'); // We'll install bcrypt later, or skip hashing for seed just to mock it now. Wait, I'll just use a raw hash for now or add bcrypt later.
 // Let's just create roles and categories for now.
 
 const prisma = new PrismaClient();
@@ -13,7 +12,7 @@ async function main() {
     update: {},
     create: {
       name: 'أدمن',
-      permissions: ['ALL'],
+      permissions: JSON.stringify(['ALL']),
     },
   });
 
@@ -22,8 +21,23 @@ async function main() {
     update: {},
     create: {
       name: 'مبيعات',
-      permissions: ['CREATE_INVOICE', 'VIEW_PRODUCTS', 'VIEW_PATIENTS', 'CREATE_DEPOSIT'],
+      permissions: JSON.stringify(['CREATE_INVOICE', 'VIEW_PRODUCTS', 'VIEW_PATIENTS', 'CREATE_DEPOSIT']),
     },
+  });
+
+  const bcrypt = require('bcrypt');
+  const passwordHash = await bcrypt.hash('admin123', 10);
+  
+  await prisma.user.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: {
+      username: 'admin',
+      passwordHash,
+      fullName: 'مدير النظام',
+      roleId: adminRole.id,
+      isActive: true,
+    }
   });
 
   // 2. Default Payment Methods
