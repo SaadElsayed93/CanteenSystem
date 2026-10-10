@@ -13,4 +13,6 @@ router.get('/pos-data', checkPermission('CREATE_INVOICE'), salesController.getPo
 // Checkout
 router.post('/checkout', checkPermission('CREATE_INVOICE'), logAudit('CREATE', 'INVOICE'), salesController.checkout);
 
+router.get('/invoices/:id', salesController.getInvoiceById);
 module.exports = router;
+

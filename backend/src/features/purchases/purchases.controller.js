@@ -51,3 +51,12 @@ const paySupplier = async (req, res, next) => {
 };
 
 module.exports = { getSuppliers, createSupplier, toggleSupplierStatus, createPurchase, paySupplier };
+
+exports.getPurchaseById = async (req, res, next) => {
+  try {
+    const purchase = await purchasesService.getPurchaseById(req.params.id);
+    res.json({ success: true, data: purchase });
+  } catch (err) {
+    next(err);
+  }
+};

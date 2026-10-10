@@ -163,3 +163,4 @@ const paySupplier = async (data, userId) => {
 };
 
 module.exports = { getAllSuppliers, createSupplier, updateSupplierStatus, createPurchase, paySupplier };
+

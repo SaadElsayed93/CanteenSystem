@@ -187,7 +187,7 @@ const createSale = async (data, userId) => {
         action: 'SALE',
         entityType: 'INVOICE',
         entityId: invoice.id,
-        newValues: JSON.stringify({ totalAmount, type, itemCount: invoiceItems.length }),
+        newValues: JSON.stringify({ totalAmount, type: type === 'CASH' ? 'CASH' : 'CREDIT', itemCount: invoiceItems.length, patientName: type === 'CREDIT' ? patient.fullName : '?? ????' }),
         userId: userId
       }
     });
@@ -196,5 +196,22 @@ const createSale = async (data, userId) => {
   });
 };
 
-module.exports = { getPosData, getCategories, createSale };
+const getInvoiceById = async (id) => {
+  const invoice = await prisma.invoice.findUnique({
+    where: { id: Number(id) },
+    include: {
+      items: { include: { product: true } },
+      patient: true,
+      user: { select: { fullName: true } }
+    }
+  });
+  if (!invoice) throw new Error('???????? ??? ??????');
+  return invoice;
+};
+
+module.exports = { getPosData, getCategories, createSale, getInvoiceById };
+
+
+
+
 

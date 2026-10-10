@@ -14,4 +14,6 @@ router.patch('/suppliers/:id/status', checkPermission('MANAGE_PURCHASES'), logAu
 router.post('/', checkPermission('MANAGE_PURCHASES'), logAudit('CREATE', 'PURCHASE'), purchasesController.createPurchase);
 router.post('/payment', checkPermission('MANAGE_PURCHASES'), logAudit('PAY', 'SUPPLIER'), purchasesController.paySupplier);
 
+router.get('/:id', purchasesController.getPurchaseById);
 module.exports = router;
+

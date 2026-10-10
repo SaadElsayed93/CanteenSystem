@@ -17,7 +17,7 @@ import TreasuryPage from './features/treasury/TreasuryPage';
 import { 
   Home, ShoppingCart, RotateCcw, Package, 
   Users, Wallet, Truck, Settings, LogOut, Menu,
-  Store
+  Store, FileText
 } from 'lucide-react';
 
 function MainLayout({ children }) {
@@ -42,7 +42,7 @@ function MainLayout({ children }) {
     ] : []),
     ...(hasPermission('MANAGE_USERS') ? [
       { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" },
-    { to: "/settings/history", icon: <Settings size={20} />, label: "سجل الحركات (History)" }
+    { to: "/settings/history", icon: <FileText size={20} />, label: "سجل الحركات (History)" }
     ] : [])
   ];
 
@@ -219,5 +219,6 @@ function App() {
 }
 
 export default App;
+
 
 
