@@ -9,6 +9,7 @@ import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
 import POSPage from './features/pos/POSPage';
 import PatientsPage from './features/patients/PatientsPage';
+import TreasuryPage from './features/treasury/TreasuryPage';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
@@ -25,6 +26,9 @@ function MainLayout({ children }) {
             <Link to="/products" className="text-gray-600 hover:text-blue-600">الأصناف والمخزون</Link>
             {hasPermission('VIEW_PATIENTS') && (
               <Link to="/patients" className="text-gray-600 hover:text-blue-600">العساكر (المرضى)</Link>
+            )}
+            {hasPermission('VIEW_TREASURY') && (
+              <Link to="/treasury" className="text-gray-600 hover:text-blue-600">الخزينة والمصروفات</Link>
             )}
             {hasPermission('MANAGE_PURCHASES') && (
               <Link to="/purchases/suppliers" className="text-gray-600 hover:text-blue-600">الموردين والمشتريات</Link>
@@ -75,6 +79,14 @@ function App() {
             <ProtectedRoute requiredPermission="VIEW_PATIENTS">
               <MainLayout>
                 <PatientsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/treasury" element={
+            <ProtectedRoute requiredPermission="VIEW_TREASURY">
+              <MainLayout>
+                <TreasuryPage />
               </MainLayout>
             </ProtectedRoute>
           } />
