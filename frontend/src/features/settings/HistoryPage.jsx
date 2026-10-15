@@ -54,7 +54,7 @@ const keyTranslationMap = {
 
 const valueTranslationMap = {
   'CASH': 'نقدي',
-  'CREDIT': 'آجل',
+  'CREDIT': 'على حساب المريض',
   'FULL': 'كلي',
   'PARTIAL': 'جزئي',
   'DEPOSIT': 'إيداع',

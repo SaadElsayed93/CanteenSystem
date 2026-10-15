@@ -327,7 +327,7 @@ const PatientsPage = () => {
                   <div className="text-xl font-bold text-indigo-900">{statementModal.transactions?.length || 0} حركة مالية</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-500 mb-1">الفواتير الآجلة</div>
+                  <div className="text-sm font-bold text-gray-500 mb-1">فواتير مسحوبات المريض</div>
                   <div className="text-xl font-bold text-indigo-900">{statementModal.invoices?.length || 0} فاتورة</div>
                 </div>
               </div>
@@ -371,7 +371,7 @@ const PatientsPage = () => {
               </div>
 
               <div>
-                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-indigo-100 inline-block pb-1">أحدث الفواتير الآجلة المسحوبة</h4>
+                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-indigo-100 inline-block pb-1">أحدث فواتير مسحوبات المريض المسحوبة</h4>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
                   <table className="w-full text-right border-collapse text-sm">
                     <thead className="bg-gray-50">

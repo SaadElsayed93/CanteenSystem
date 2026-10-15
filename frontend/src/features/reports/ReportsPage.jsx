@@ -323,7 +323,7 @@ const ReportsPage = () => {
                       {key === 'totalCost' && 'تكلفة المبيعات'}
                       {key === 'totalProfit' && 'صافي الربح التقريبي'}
                       {key === 'cashSales' && 'المبيعات النقدية'}
-                      {key === 'creditSales' && 'المبيعات الآجلة'}
+                      {key === 'creditSales' && 'مبيعات على حساب المرضى'}
                       {key === 'invoiceCount' && 'عدد الفواتير'}
                       {key === 'productCount' && 'عدد الأصناف المباعة'}
                       {key === 'totalPurchases' && 'إجمالي قيمة المشتريات'}

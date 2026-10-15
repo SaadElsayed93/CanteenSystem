@@ -148,7 +148,7 @@ const createReturn = async (data, userId) => {
             patientId: patient.id,
             type: 'REFUND',
             amount: returnTotalAmount,
-            description: `مرتجع مبيعات آجل للفاتورة #${invoice.invoiceNumber}`,
+            description: `مرتجع مبيعات لحساب المريض للفاتورة #${invoice.invoiceNumber}`,
             referenceType: 'RETURN',
             referenceId: returnRecord.id,
             createdBy: userId

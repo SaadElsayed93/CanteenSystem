@@ -25,8 +25,8 @@ const POSPage = () => {
   
   // Receipt State
   const [completedReceipt, setCompletedReceipt] = useState(null);
-  const [autoPrintReceipt, setAutoPrintReceipt] = useState(() => {
-    return localStorage.getItem('canteen_autoprint') === 'true';
+  const [showReceiptModal, setShowReceiptModal] = useState(() => {
+    return localStorage.getItem('canteen_show_receipt_modal') !== 'false';
   });
   
   const barcodeInputRef = useRef(null);
@@ -147,11 +147,11 @@ const POSPage = () => {
     toast.success('تم إفراغ السلة');
   };
 
-  const toggleAutoPrint = () => {
-    const next = !autoPrintReceipt;
-    setAutoPrintReceipt(next);
-    localStorage.setItem('canteen_autoprint', String(next));
-    toast.success(next ? 'تم تفعيل طباعة البون تلقائياً' : 'تم تعطيل الطباعة التلقائية');
+  const toggleShowReceipt = () => {
+    const next = !showReceiptModal;
+    setShowReceiptModal(next);
+    localStorage.setItem('canteen_show_receipt_modal', String(next));
+    toast.success(next ? 'تم تفعيل إظهار بون الفاتورة' : 'تم تعطيل إظهار بون الفاتورة');
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -162,7 +162,7 @@ const POSPage = () => {
     
     const typeToUse = forcedType || invoiceType;
     if (typeToUse === 'CASH' && !paymentMethodId) return toast.error('اختر طريقة الدفع النقدية');
-    if (typeToUse === 'CREDIT' && !patientId) return toast.error('اختر المريض للبيع الآجل');
+    if (typeToUse === 'CREDIT' && !patientId) return toast.error('اختر المريض لتسجيل الفاتورة على حسابه');
 
     setIsSubmitting(true);
     try {
@@ -199,12 +199,9 @@ const POSPage = () => {
       fetchPosData();
       setIsSubmitting(false);
 
-      // Show receipt or auto-print
-      setCompletedReceipt(receipt);
-      if (autoPrintReceipt) {
-        setTimeout(() => {
-          window.print();
-        }, 300);
+      // Show receipt if enabled
+      if (showReceiptModal) {
+        setCompletedReceipt(receipt);
       }
       
     } catch (err) {
@@ -284,7 +281,7 @@ const POSPage = () => {
             <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F2</kbd> البحث / الباركود
           </span>
           <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg font-bold border border-amber-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F4</kbd> تبديل (كاش / آجل)
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F4</kbd> تبديل (كاش / حساب المريض)
           </span>
           <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg font-bold border border-emerald-100 flex items-center gap-1">
             <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F9</kbd> إنهاء كاش فوري
@@ -294,20 +291,20 @@ const POSPage = () => {
           </span>
         </div>
         
-        {/* Auto-print receipt toggle */}
+        {/* Show receipt toggle */}
         <button 
-          onClick={toggleAutoPrint}
+          onClick={toggleShowReceipt}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold transition-all border ${
-            autoPrintReceipt 
+            showReceiptModal 
               ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
               : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
           }`}
-          title="طباعة بون الفاتورة تلقائياً عند تأكيد البيع"
+          title="تفعيل أو إخفاء نافذة بون الفاتورة بعد إتمام البيع"
         >
           <Printer size={16} />
-          <span>طباعة تلقائية للبون:</span>
-          <span className={`px-2 py-0.5 rounded-full text-xs ${autoPrintReceipt ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-            {autoPrintReceipt ? 'مفعل' : 'معطل'}
+          <span>إظهار بون الفاتورة:</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showReceiptModal ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+            {showReceiptModal ? 'مفعل' : 'معطل'}
           </span>
         </button>
       </div>
@@ -499,7 +496,7 @@ const POSPage = () => {
                   }`}
                 >
                   <User size={16} />
-                  آجل (على الحساب)
+                  على حساب المريض
                 </button>
               </div>
             </div>
@@ -568,7 +565,7 @@ const POSPage = () => {
                   <div>رقم الفاتورة: <span className="font-mono font-black">{completedReceipt.invoiceNumber}</span></div>
                   <div>التاريخ: {new Date(completedReceipt.date).toLocaleString('ar-EG')}</div>
                   <div>الكاشير: {completedReceipt.cashierName}</div>
-                  <div>نوع الدفع: {completedReceipt.type === 'CASH' ? 'نقدي (كاش)' : `آجل (${completedReceipt.patientName || 'مريض'})`}</div>
+                  <div>نوع الدفع: {completedReceipt.type === 'CASH' ? 'نقدي (كاش)' : `على حساب المريض (${completedReceipt.patientName || 'المريض'})`}</div>
                 </div>
                 <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
               </div>

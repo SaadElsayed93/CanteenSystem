@@ -166,7 +166,7 @@ const ReturnsPage = () => {
                   <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">{inv.totalAmount} ج.م</span>
                 </div>
                 <div className="text-xs text-gray-500 font-bold mb-2">
-                  {inv.paymentType === 'CASH' ? '💵 نقدي' : `📝 ${inv.patient?.fullName || 'آجل'}`}
+                  {inv.paymentType === 'CASH' ? '💵 نقدي' : `📝 على حساب ${inv.patient?.fullName || 'المريض'}`}
                 </div>
                 <div className="text-xs text-gray-400 line-clamp-2">
                   📦 {inv.items.map(i => i.product.name).join('، ')}
@@ -202,7 +202,7 @@ const ReturnsPage = () => {
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
               <div className="text-xs text-gray-500 mb-1">نوع الدفع</div>
-              <div className="font-bold text-gray-800 text-sm">{invoice.paymentType === 'CASH' ? 'نقدي' : 'آجل (مديونية)'}</div>
+              <div className="font-bold text-gray-800 text-sm">{invoice.paymentType === 'CASH' ? 'نقدي' : 'على حساب المريض'}</div>
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
               <div className="text-xs text-gray-500 mb-1">الإجمالي الأصلي</div>

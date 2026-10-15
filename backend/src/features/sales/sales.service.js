@@ -69,7 +69,7 @@ const createSale = async (data, userId) => {
 
     // 2. Patient Credit Check if type is CREDIT
     if (type === 'CREDIT') {
-      if (!patientId) throw new Error('يجب تحديد المريض للبيع الآجل');
+      if (!patientId) throw new Error('يجب تحديد المريض للبيع على حسابه');
       const patient = await tx.patient.findUnique({ where: { id: patientId } });
       if (!patient || !patient.isActive) throw new Error('المريض غير موجود أو معطل');
       // Debt limit warning is handled in frontend or UI, we just record it.
