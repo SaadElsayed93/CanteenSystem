@@ -16,4 +16,7 @@ router.patch('/:id/status', checkPermission('VIEW_PATIENTS'), logAudit('UPDATE',
 // Deposits / Withdrawals
 router.post('/transaction', checkPermission('CREATE_DEPOSIT'), patientsController.transact);
 
+// Discharge & Account Settlement
+router.post('/:id/discharge', checkPermission('VIEW_PATIENTS'), patientsController.discharge);
+
 module.exports = router;
