@@ -25,45 +25,63 @@ const getHomeDashboardData = async (userId, userRole) => {
     }
   });
 
-  // 2. Shift Stats (Today's Cash Flow)
-  // Cash Sales
-  const todayCashSales = await prisma.invoice.aggregate({
-    where: { createdAt: { gte: today }, status: 'COMPLETED', paymentType: 'CASH' },
-    _sum: { totalAmount: true }
+  // 2. Shift Stats (Today's Cash Flow for the Cash Drawer)
+  const drawerMethod = await prisma.paymentMethod.findFirst({
+    where: { name: { contains: 'درج' } }
   });
+  const drawerId = drawerMethod ? drawerMethod.id : 1;
+
+  // Cash Sales (Cash portion of completed invoices)
+  const todayCashSales = await prisma.invoice.aggregate({
+    where: { createdAt: { gte: today }, status: 'COMPLETED' },
+    _sum: { cashAmount: true }
+  });
+  const sales = Number(todayCashSales._sum.cashAmount || 0);
   
-  // Cash Patient Deposits
-  const todayDeposits = await prisma.patientTransaction.aggregate({
-    where: { createdAt: { gte: today }, type: 'DEPOSIT' }, // Assuming all deposits are cash
+  // Cash Patient Deposits & Collections entering the drawer
+  const todayDrawerDeposits = await prisma.treasuryTransaction.aggregate({
+    where: { 
+      createdAt: { gte: today }, 
+      paymentMethodId: drawerId, 
+      type: 'IN', 
+      referenceType: 'PATIENT_TX' 
+    },
     _sum: { amount: true }
   });
+  const deposits = Number(todayDrawerDeposits._sum.amount || 0);
 
-  // Cash Expenses
-  const cashPaymentMethod = await prisma.paymentMethod.findFirst({ where: { name: 'نقدي' } });
-  let todayExpenses = { _sum: { amount: 0 } };
-  let todayPurchasesPaid = { _sum: { paidAmount: 0 } };
-  
-  if (cashPaymentMethod) {
-    todayExpenses = await prisma.expense.aggregate({
-      where: { createdAt: { gte: today }, paymentMethodId: cashPaymentMethod.id },
-      _sum: { amount: true }
-    });
+  // Cash Outflows from Drawer (Operating Expenses + Supplier Payments + Patient Refunds/Withdrawals)
+  const todayDrawerExpenses = await prisma.expense.aggregate({
+    where: { 
+      createdAt: { gte: today }, 
+      paymentMethodId: drawerId 
+    },
+    _sum: { amount: true }
+  });
+  const expenses = Number(todayDrawerExpenses._sum.amount || 0);
 
-    todayPurchasesPaid = await prisma.supplierPurchase.aggregate({
-      where: { createdAt: { gte: today }, paymentMethodId: cashPaymentMethod.id },
-      _sum: { paidAmount: true }
-    });
-  }
+  // Cash Transfers & Settlements out of the Drawer
+  const todayDrawerTransfers = await prisma.treasuryTransaction.aggregate({
+    where: { 
+      createdAt: { gte: today }, 
+      paymentMethodId: drawerId, 
+      type: 'OUT', 
+      referenceType: { in: ['TRANSFER', 'DAILY_SETTLEMENT'] } 
+    },
+    _sum: { amount: true }
+  });
+  const transfers = Number(todayDrawerTransfers._sum.amount || 0);
 
-  const cashIn = Number(todayCashSales._sum.totalAmount || 0) + Number(todayDeposits._sum.amount || 0);
-  const cashOut = Number(todayExpenses._sum.amount || 0) + Number(todayPurchasesPaid._sum.paidAmount || 0);
-  const expectedCash = cashIn - cashOut;
+  // Exact Expected Cash in Drawer right now
+  const expectedCash = drawerMethod ? Number(drawerMethod.currentBalance) : (sales + deposits - expenses - transfers);
+  const startingCash = Math.max(0, expectedCash - (sales + deposits - expenses - transfers));
 
   const shiftStats = {
-    sales: Number(todayCashSales._sum.totalAmount || 0),
-    deposits: Number(todayDeposits._sum.amount || 0),
-    expenses: Number(todayExpenses._sum.amount || 0),
-    purchases: Number(todayPurchasesPaid._sum.paidAmount || 0),
+    startingCash,
+    sales,
+    deposits,
+    expenses,
+    transfers,
     expectedCash
   };
 
@@ -75,7 +93,7 @@ const getHomeDashboardData = async (userId, userRole) => {
   });
 
   // Patient Deposits (Positive balance: liabilities/deposits owed to patients upon discharge)
-  const deposits = await prisma.patient.aggregate({
+  const patientDepositsLiability = await prisma.patient.aggregate({
     where: { currentDebt: { gt: 0 } },
     _sum: { currentDebt: true }
   });
@@ -102,24 +120,27 @@ const getHomeDashboardData = async (userId, userRole) => {
     });
   });
 
-  const monthExpenses = await prisma.expense.aggregate({
-    where: { createdAt: { gte: startOfMonth } },
+  // Operational expenses only (exclude supplier payments already in COGS and patient deposit returns)
+  const monthOperatingExpenses = await prisma.expense.aggregate({
+    where: { 
+      createdAt: { gte: startOfMonth },
+      category: { name: { notIn: ['سداد لمورد', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى'] } }
+    },
     _sum: { amount: true }
   });
 
-  const netProfit = monthRevenue - monthCost - Number(monthExpenses._sum.amount || 0);
+  const netProfit = monthRevenue - monthCost - Number(monthOperatingExpenses._sum.amount || 0);
 
-  // Treasury (Total Cash)
-  const treasuryTotal = await prisma.treasuryTransaction.aggregate({
-    _sum: { amount: true }
-  });
+  // Total Treasury Balance across all active channels
+  const activeMethods = await prisma.paymentMethod.findMany({ where: { isActive: true } });
+  const treasuryBalance = activeMethods.reduce((sum, m) => sum + Number(m.currentBalance), 0);
 
   const adminStats = {
     inventoryValue,
     totalDebts: Math.abs(Number(debts._sum.currentDebt || 0)),
-    totalPatientDeposits: Number(deposits._sum.currentDebt || 0),
+    totalPatientDeposits: Number(patientDepositsLiability._sum.currentDebt || 0),
     netProfit,
-    treasuryBalance: Number(treasuryTotal._sum.amount || 0)
+    treasuryBalance
   };
 
 

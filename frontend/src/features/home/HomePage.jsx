@@ -81,17 +81,23 @@ const HomePage = () => {
         <div className="space-y-6">
           
           {/* Shift Cash Widget */}
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl p-6 text-white shadow-lg flex flex-col md:flex-row items-center justify-between">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between border-2 border-emerald-400/30">
             <div>
-              <p className="text-emerald-100 font-bold mb-1">المبلغ المتوقع في الخزينة الآن (تقفيل الوردية)</p>
-              <h2 className="text-5xl font-black">{data.shiftStats.expectedCash} ج.م</h2>
-              <div className="flex gap-4 mt-4 text-sm font-bold opacity-90">
-                <span>المبيعات: {data.shiftStats.sales}</span>
-                <span>إيداعات المرضى: {data.shiftStats.deposits}</span>
-                <span>المصروفات والمشتريات: {data.shiftStats.expenses + data.shiftStats.purchases}</span>
+              <p className="text-emerald-100 font-black text-sm mb-1 tracking-wide">النقدية المتوقعة في درج الكاشير الآن (تقفيل الوردية)</p>
+              <h2 className="text-5xl font-black tracking-tight">{data.shiftStats.expectedCash} <span className="text-2xl font-bold text-emerald-200">ج.م</span></h2>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-black">
+                {Number(data.shiftStats.startingCash) > 0 && (
+                  <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/30 text-emerald-100">عهدة بداية اليوم: {data.shiftStats.startingCash} ج.م</span>
+                )}
+                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">المبيعات النقدية: {data.shiftStats.sales} ج.م</span>
+                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">إيداعات المرضى: {data.shiftStats.deposits} ج.م</span>
+                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-rose-200">المنصرفات والمشتريات: {data.shiftStats.expenses} ج.م</span>
+                {Number(data.shiftStats.transfers) > 0 && (
+                  <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-amber-200">توريدات وتحويلات سابقة: {data.shiftStats.transfers} ج.م</span>
+                )}
               </div>
             </div>
-            <Wallet size={80} className="opacity-20 mt-4 md:mt-0" />
+            <Wallet size={80} className="opacity-25 mt-4 md:mt-0" />
           </div>
 
           {/* Quick Actions Grid */}

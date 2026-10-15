@@ -267,19 +267,34 @@ const createPurchase = async (data, userId) => {
       });
 
       // 3. Log Treasury Transaction
+      const expenseDesc = `دفع فاتورة مشتريات #${purchase.id} للمورد (${supplier.name})`;
       await tx.treasuryTransaction.create({
         data: {
           paymentMethodId: Number(paymentMethodId),
           type: 'OUT',
           amount: pAmount,
-          description: `دفع فاتورة مشتريات #${purchase.id} للمورد (${supplier.name})`,
+          description: expenseDesc,
           referenceType: 'SUPPLIER_PAYMENT',
           referenceId: payment.id,
           createdBy: userId
         }
       });
       
-      // Audit log the payment addition specifically (optional, since purchase creation logs itself)
+      // 4. Also Record in Expenses ledger under category (سداد لمورد)
+      const supplierCat = await tx.expenseCategory.upsert({
+        where: { name: 'سداد لمورد' },
+        update: {},
+        create: { name: 'سداد لمورد', isDefault: true }
+      });
+      await tx.expense.create({
+        data: {
+          categoryId: supplierCat.id,
+          amount: pAmount,
+          paymentMethodId: Number(paymentMethodId),
+          description: expenseDesc,
+          createdBy: userId
+        }
+      });
     }
 
     // Update total amount and paid amount of purchase
@@ -297,46 +312,68 @@ const paySupplier = async (data, userId) => {
   const payAmount = Number(amount);
 
   return prisma.$transaction(async (tx) => {
+    const supplier = await tx.supplier.findUnique({ where: { id: Number(supplierId) } });
+    if (!supplier) throw new Error('المورد غير موجود');
+
     // 1. Log Payment
     const payment = await tx.supplierPayment.create({
       data: {
         purchaseId: purchaseId || null,
-        supplierId,
+        supplierId: Number(supplierId),
         amount: payAmount,
-        paymentMethodId,
+        paymentMethodId: Number(paymentMethodId),
         createdBy: userId
       }
     });
 
     // 2. Reduce from Payment Method (Treasury Out)
-    const method = await tx.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+    const method = await tx.paymentMethod.findUnique({ where: { id: Number(paymentMethodId) } });
     if (!method) throw new Error('طريقة الدفع غير موجودة');
     
-    // We update balance directly in SQLite, or create a treasury transaction
     await tx.paymentMethod.update({
-      where: { id: paymentMethodId },
+      where: { id: Number(paymentMethodId) },
       data: { currentBalance: Number(method.currentBalance) - payAmount }
     });
 
+    const expenseDesc = purchaseId 
+      ? `سداد فاتورة مشتريات #${purchaseId} للمورد (${supplier.name})`
+      : `سداد حساب مديونية للمورد (${supplier.name})`;
+
     await tx.treasuryTransaction.create({
       data: {
-        paymentMethodId,
+        paymentMethodId: Number(paymentMethodId),
         type: 'OUT',
         amount: payAmount,
-        description: `دفع للمورد`,
+        description: expenseDesc,
         referenceType: 'SUPPLIER_PAYMENT',
         referenceId: payment.id,
         createdBy: userId
       }
     });
 
-    // 3. If tied to a specific purchase, update it
+    // 3. Also Record in Expenses ledger under category (سداد لمورد)
+    const supplierCat = await tx.expenseCategory.upsert({
+      where: { name: 'سداد لمورد' },
+      update: {},
+      create: { name: 'سداد لمورد', isDefault: true }
+    });
+    await tx.expense.create({
+      data: {
+        categoryId: supplierCat.id,
+        amount: payAmount,
+        paymentMethodId: Number(paymentMethodId),
+        description: expenseDesc,
+        createdBy: userId
+      }
+    });
+
+    // 4. If tied to a specific purchase, update it
     if (purchaseId) {
-      const purchase = await tx.supplierPurchase.findUnique({ where: { id: purchaseId } });
+      const purchase = await tx.supplierPurchase.findUnique({ where: { id: Number(purchaseId) } });
       const newPaid = Number(purchase.paidAmount) + payAmount;
       const status = newPaid >= Number(purchase.totalAmount) ? 'PAID' : 'PARTIAL';
       await tx.supplierPurchase.update({
-        where: { id: purchaseId },
+        where: { id: Number(purchaseId) },
         data: { paidAmount: newPaid, status }
       });
     }

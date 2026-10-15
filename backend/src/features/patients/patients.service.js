@@ -132,17 +132,36 @@ const addTransaction = async (data, userId) => {
           data: { currentBalance: Number(method.currentBalance) + balanceChange }
         });
 
+        const txDesc = `حركة مريض (${patient.fullName}): ${description || type}`;
         await tx.treasuryTransaction.create({
           data: {
-            paymentMethodId,
+            paymentMethodId: Number(paymentMethodId),
             type: treasuryType,
             amount: pAmount,
-            description: `حركة مريض (${patient.fullName}): ${description || type}`,
+            description: txDesc,
             referenceType: 'PATIENT_TX',
             referenceId: transaction.id,
             createdBy: userId
           }
         });
+
+        // If money is leaving treasury/drawer as a patient withdrawal, record in Expenses
+        if (type === 'WITHDRAWAL') {
+          const withdrawalCat = await tx.expenseCategory.upsert({
+            where: { name: 'مسحوبات مرضى' },
+            update: {},
+            create: { name: 'مسحوبات مرضى', isDefault: true }
+          });
+          await tx.expense.create({
+            data: {
+              categoryId: withdrawalCat.id,
+              amount: pAmount,
+              paymentMethodId: Number(paymentMethodId),
+              description: `سحب نقدي من حساب المريض (${patient.fullName}) - ${description || 'سحب نقدية'}`,
+              createdBy: userId
+            }
+          });
+        }
       }
     }
 
@@ -211,17 +230,36 @@ const dischargePatient = async (id, paymentMethodId, userId) => {
       });
 
       // 3. Log Treasury Transaction
+      const dischargeDesc = `تصفية حساب مريض مغادر (${patient.fullName}) - ${isRefund ? 'رد رصيد' : 'تحصيل مديونية'}`;
       await tx.treasuryTransaction.create({
         data: {
           paymentMethodId: Number(paymentMethodId),
           type: treasuryType,
           amount: absAmount,
-          description: `تصفية حساب مريض مغادر (${patient.fullName}) - ${isRefund ? 'رد رصيد' : 'تحصيل مديونية'}`,
+          description: dischargeDesc,
           referenceType: 'PATIENT_TX',
           referenceId: transaction.id,
           createdBy: userId
         }
       });
+
+      // 4. If refunding money out of treasury to discharged patient, record in Expenses ledger
+      if (isRefund) {
+        const refundCat = await tx.expenseCategory.upsert({
+          where: { name: 'رد أمانات وتصفية مرضى' },
+          update: {},
+          create: { name: 'رد أمانات وتصفية مرضى', isDefault: true }
+        });
+        await tx.expense.create({
+          data: {
+            categoryId: refundCat.id,
+            amount: absAmount,
+            paymentMethodId: Number(paymentMethodId),
+            description: `تصفية حساب مريض مغادر (${patient.fullName}) - رد رصيد وأمانات`,
+            createdBy: userId
+          }
+        });
+      }
     }
 
         // Mark as inactive/discharged and zero balance
