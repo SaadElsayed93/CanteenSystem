@@ -10,6 +10,7 @@ router.use(authMiddleware);
 // Treasury
 router.get('/balances', checkPermission('VIEW_TREASURY'), treasuryController.getBalances);
 router.get('/transactions', checkPermission('VIEW_TREASURY'), treasuryController.getTransactions);
+router.post('/transfer', checkPermission('VIEW_TREASURY'), treasuryController.transfer);
 
 // Expenses
 router.get('/expenses/categories', checkPermission('VIEW_TREASURY'), treasuryController.getExpCategories);

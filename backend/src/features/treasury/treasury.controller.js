@@ -46,4 +46,13 @@ const addExpense = async (req, res, next) => {
   }
 };
 
-module.exports = { getBalances, getTransactions, getExpCategories, getExpensesList, addExpense };
+const transfer = async (req, res, next) => {
+  try {
+    const result = await treasuryService.transferFunds(req.body, req.user.id);
+    res.json({ success: true, message: 'تم تحويل المبلغ بنجاح', data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getBalances, getTransactions, getExpCategories, getExpensesList, addExpense, transfer };

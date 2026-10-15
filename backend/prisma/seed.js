@@ -62,7 +62,7 @@ async function main() {
   });
 
   // 3. Default Payment Methods
-  const methods = ['نقدية', 'فودافون كاش', 'تحويل'];
+  const methods = ['نقدي (الدرج)', 'فودافون كاش', 'الخزينة (الرئيسية)'];
   for (const method of methods) {
     await prisma.paymentMethod.upsert({
       where: { name: method },

@@ -62,8 +62,8 @@ const POSPage = () => {
       const methods = res.data.data.paymentMethods;
       setPaymentMethods(methods);
       
-      // Auto-select "نقدية" for cash
-      const cashMethod = methods.find(m => m.name === 'نقدية');
+      // Auto-select cash (drawer)
+      const cashMethod = methods.find(m => m.name.includes('نقدي') || m.name === 'نقدية') || methods[0];
       if (cashMethod) setPaymentMethodId(cashMethod.id);
       
       setPatients(res.data.data.patients);

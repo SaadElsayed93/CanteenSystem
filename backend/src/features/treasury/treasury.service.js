@@ -80,10 +80,95 @@ const getExpenses = async () => {
   });
 };
 
+const transferFunds = async (data, userId) => {
+  const { fromMethodId, toMethodId, amount, notes } = data;
+  const transferAmount = Number(amount);
+
+  if (!fromMethodId || !toMethodId) {
+    throw new Error('يجب تحديد القناة المحول منها والقناة المحول إليها');
+  }
+
+  if (Number(fromMethodId) === Number(toMethodId)) {
+    throw new Error('لا يمكن التحويل إلى نفس القناة');
+  }
+
+  if (transferAmount <= 0) {
+    throw new Error('مبلغ التحويل يجب أن يكون أكبر من صفر');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const fromMethod = await tx.paymentMethod.findUnique({ where: { id: Number(fromMethodId) } });
+    if (!fromMethod) throw new Error('القناة المحول منها غير موجودة');
+
+    const toMethod = await tx.paymentMethod.findUnique({ where: { id: Number(toMethodId) } });
+    if (!toMethod) throw new Error('القناة المحول إليها غير موجودة');
+
+    if (Number(fromMethod.currentBalance) < transferAmount) {
+      throw new Error(`رصيد (${fromMethod.name}) غير كافٍ. المتاح حالياً: ${fromMethod.currentBalance} ج.م`);
+    }
+
+    // 1. Deduct from source
+    await tx.paymentMethod.update({
+      where: { id: Number(fromMethodId) },
+      data: { currentBalance: Number(fromMethod.currentBalance) - transferAmount }
+    });
+
+    // 2. Add to destination
+    await tx.paymentMethod.update({
+      where: { id: Number(toMethodId) },
+      data: { currentBalance: Number(toMethod.currentBalance) + transferAmount }
+    });
+
+    // 3. Log Source Treasury Transaction (OUT)
+    const outTx = await tx.treasuryTransaction.create({
+      data: {
+        paymentMethodId: Number(fromMethodId),
+        type: 'OUT',
+        amount: transferAmount,
+        description: `تحويل صادر إلى (${toMethod.name}) - ${notes || 'تحويل سيولة'}`,
+        referenceType: 'TRANSFER',
+        createdBy: userId
+      }
+    });
+
+    // 4. Log Destination Treasury Transaction (IN)
+    await tx.treasuryTransaction.create({
+      data: {
+        paymentMethodId: Number(toMethodId),
+        type: 'IN',
+        amount: transferAmount,
+        description: `تحويل وارد من (${fromMethod.name}) - ${notes || 'تحويل سيولة'}`,
+        referenceType: 'TRANSFER',
+        referenceId: outTx.id,
+        createdBy: userId
+      }
+    });
+
+    // 5. Audit Log
+    await tx.auditLog.create({
+      data: {
+        action: 'TRANSFER',
+        entityType: 'TREASURY',
+        entityId: outTx.id,
+        newValues: JSON.stringify({
+          'من قناة': fromMethod.name,
+          'إلى قناة': toMethod.name,
+          'المبلغ': `${transferAmount} ج.م`,
+          'البيان': notes || 'بدون بيان'
+        }),
+        userId: userId
+      }
+    });
+
+    return { success: true, message: 'تم التحويل بنجاح' };
+  });
+};
+
 module.exports = { 
   getPaymentMethods, 
   getTreasuryTransactions, 
   getExpenseCategories, 
   createExpense, 
-  getExpenses 
+  getExpenses,
+  transferFunds
 };
