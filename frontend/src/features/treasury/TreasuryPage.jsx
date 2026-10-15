@@ -13,6 +13,7 @@ const TreasuryPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ const TreasuryPage = () => {
   
   // Modals
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [expenseForm, setExpenseForm] = useState({ categoryId: '', amount: '', paymentMethodId: '', description: '' });
+  const [expenseForm, setExpenseForm] = useState({ categoryId: '', amount: '', paymentMethodId: '', description: '', supplierId: '' });
 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [transferForm, setTransferForm] = useState({ fromMethodId: '', toMethodId: '', amount: '', notes: '' });
@@ -39,16 +40,18 @@ const TreasuryPage = () => {
 
   const fetchData = async () => {
     try {
-      const [balRes, txRes, expRes, catRes] = await Promise.all([
+      const [balRes, txRes, expRes, catRes, supRes] = await Promise.all([
         client.get('/treasury/balances'),
         client.get('/treasury/transactions'),
         client.get('/treasury/expenses'),
-        client.get('/treasury/expenses/categories')
+        client.get('/treasury/expenses/categories'),
+        client.get('/purchases/suppliers')
       ]);
       setBalances(balRes.data.data);
       setTransactions(txRes.data.data);
       setExpenses(expRes.data.data);
       setCategories(catRes.data.data);
+      setSuppliers(supRes.data.data);
     } catch (err) {
       setError('فشل جلب بيانات الخزينة');
     } finally {
@@ -59,17 +62,25 @@ const TreasuryPage = () => {
   const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    const selectedCat = categories.find(c => c.id === Number(expenseForm.categoryId));
+    const isSupplierCat = selectedCat && selectedCat.name.includes('مورد');
+    if (isSupplierCat && !expenseForm.supplierId) {
+      return toast.error('يرجى اختيار المورد المراد سداد حسابه');
+    }
+
     setIsSubmitting(true);
     try {
       await client.post('/treasury/expenses', {
         ...expenseForm,
         categoryId: Number(expenseForm.categoryId),
         amount: Number(expenseForm.amount),
-        paymentMethodId: Number(expenseForm.paymentMethodId)
+        paymentMethodId: Number(expenseForm.paymentMethodId),
+        supplierId: isSupplierCat ? Number(expenseForm.supplierId) : undefined
       });
       setIsExpenseModalOpen(false);
-      setExpenseForm({ categoryId: '', amount: '', paymentMethodId: '', description: '' });
-      toast.success('تم تسجيل المصروف وخصمه بنجاح');
+      setExpenseForm({ categoryId: '', amount: '', paymentMethodId: '', description: '', supplierId: '' });
+      toast.success(isSupplierCat ? 'تم سداد حساب المورد وخصم المبلغ من الخزينة بنجاح' : 'تم تسجيل المصروف وخصمه بنجاح');
       fetchData();
     } catch (err) {
       toast.error(err.response?.data?.message || 'حدث خطأ في الخصم');
@@ -176,6 +187,10 @@ const TreasuryPage = () => {
   const drawerChannel = balances.find(b => b.name.includes('درج') || b.name.includes('نقدي'));
   const drawerBalance = drawerChannel ? Number(drawerChannel.currentBalance) : 0;
   const settlementDiscrepancy = Number(settlementForm.countedAmount || 0) - drawerBalance;
+
+  const selectedExpenseCat = categories.find(c => c.id === Number(expenseForm.categoryId));
+  const isSupplierCategory = selectedExpenseCat && selectedExpenseCat.name.includes('مورد');
+  const selectedSupplierForExpense = suppliers.find(s => s.id === Number(expenseForm.supplierId));
 
   return (
     <div className="space-y-6">
@@ -482,6 +497,65 @@ const TreasuryPage = () => {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
+
+              {/* Conditional Supplier Dropdown for "سداد لمورد" */}
+              {isSupplierCategory && (
+                <div className="bg-amber-50/80 border-2 border-amber-300 p-4 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-black text-amber-900 block">
+                      🏢 اختر المورد المراد سداد حسابه:
+                    </label>
+                    <span className="text-[11px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded-full border border-amber-300">
+                      يخصم من المديونية فوراً
+                    </span>
+                  </div>
+
+                  <select 
+                    required 
+                    className="w-full border-2 border-amber-300 rounded-xl p-3 outline-none focus:border-amber-500 bg-white font-bold text-sm text-gray-800"
+                    value={expenseForm.supplierId} 
+                    onChange={e => {
+                      const supId = e.target.value;
+                      const sup = suppliers.find(s => s.id === Number(supId));
+                      setExpenseForm({ 
+                        ...expenseForm, 
+                        supplierId: supId,
+                        amount: sup && sup.currentDebt > 0 ? sup.currentDebt : expenseForm.amount
+                      });
+                    }}
+                  >
+                    <option value="">-- اختر المورد من القائمة --</option>
+                    {suppliers.map(s => {
+                      const debt = Number(s.currentDebt || 0);
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {s.name} (مديونية: {debt.toFixed(2)} ج.م)
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  {selectedSupplierForExpense && (
+                    <div className="flex justify-between items-center pt-1 px-1">
+                      <div className="text-xs font-bold text-gray-700">
+                        المديونية المستحقة علينا: 
+                        <span className="font-black text-red-600 mr-1.5 text-sm">
+                          {Number(selectedSupplierForExpense.currentDebt || 0).toFixed(2)} ج.م
+                        </span>
+                      </div>
+                      {Number(selectedSupplierForExpense.currentDebt || 0) > 0 && (
+                        <button 
+                          type="button" 
+                          onClick={() => setExpenseForm({ ...expenseForm, amount: selectedSupplierForExpense.currentDebt })}
+                          className="text-xs text-indigo-700 hover:text-indigo-900 font-black underline bg-white px-2 py-1 rounded-md border border-amber-200"
+                        >
+                          سداد كامل المديونية ({Number(selectedSupplierForExpense.currentDebt).toFixed(2)} ج.م)
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">المبلغ (ج.م):</label>

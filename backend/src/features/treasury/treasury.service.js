@@ -24,45 +24,123 @@ const getExpenseCategories = async () => {
 };
 
 const createExpense = async (data, userId) => {
-  const { categoryId, amount, paymentMethodId, description } = data;
+  const { categoryId, amount, paymentMethodId, description, supplierId } = data;
   const expAmount = Number(amount);
 
   if (expAmount <= 0) throw new Error('مبلغ المصروف يجب أن يكون أكبر من صفر');
 
   return prisma.$transaction(async (tx) => {
     // 1. Check payment method
-    const method = await tx.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+    const method = await tx.paymentMethod.findUnique({ where: { id: Number(paymentMethodId) } });
     if (!method) throw new Error('طريقة الدفع/الخزينة غير موجودة');
 
-    // 2. Create Expense
+    if (Number(method.currentBalance) < expAmount) {
+      throw new Error(`رصيد (${method.name}) غير كافٍ. المتاح حالياً: ${method.currentBalance} ج.م`);
+    }
+
+    // 2. Check Category
+    const category = await tx.expenseCategory.findUnique({ where: { id: Number(categoryId) } });
+    if (!category) throw new Error('تصنيف المصروف غير موجود');
+
+    let supplier = null;
+    let supplierPayment = null;
+
+    // If paying a supplier (either category is "سداد لمورد" or supplierId passed)
+    if (supplierId || (category.name && category.name.includes('مورد'))) {
+      if (!supplierId) {
+        throw new Error('يرجى تحديد المورد المراد سداد حسابه');
+      }
+
+      supplier = await tx.supplier.findUnique({ where: { id: Number(supplierId) } });
+      if (!supplier) throw new Error('المورد المحدد غير موجود');
+
+      // Create SupplierPayment record
+      supplierPayment = await tx.supplierPayment.create({
+        data: {
+          supplierId: supplier.id,
+          amount: expAmount,
+          paymentMethodId: Number(paymentMethodId),
+          createdBy: userId
+        }
+      });
+
+      // Distribute payment to open purchases (oldest first)
+      const purchases = await tx.supplierPurchase.findMany({
+        where: { supplierId: supplier.id },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      let remainingToApply = expAmount;
+      for (const p of purchases) {
+        const debtOnPurchase = Number(p.totalAmount) - Number(p.paidAmount);
+        if (debtOnPurchase > 0 && remainingToApply > 0) {
+          const apply = Math.min(remainingToApply, debtOnPurchase);
+          const newPaid = Number(p.paidAmount) + apply;
+          const newStatus = newPaid >= Number(p.totalAmount) ? 'PAID' : 'PARTIAL';
+          await tx.supplierPurchase.update({
+            where: { id: p.id },
+            data: {
+              paidAmount: newPaid,
+              status: newStatus
+            }
+          });
+          remainingToApply -= apply;
+        }
+      }
+    }
+
+    // 3. Create Expense
+    const expenseDescription = supplier 
+      ? `سداد لمورد: ${supplier.name} ${description ? `(${description})` : ''}`
+      : (description || 'بدون تفاصيل');
+
     const expense = await tx.expense.create({
       data: {
-        categoryId,
+        categoryId: Number(categoryId),
         amount: expAmount,
-        paymentMethodId,
-        description,
+        paymentMethodId: Number(paymentMethodId),
+        description: expenseDescription,
         createdBy: userId
       }
     });
 
-    // 3. Deduct from Treasury
+    // 4. Deduct from Treasury
     await tx.paymentMethod.update({
-      where: { id: paymentMethodId },
+      where: { id: Number(paymentMethodId) },
       data: { currentBalance: Number(method.currentBalance) - expAmount }
     });
 
-    // 4. Log Treasury Transaction
+    // 5. Log Treasury Transaction
     await tx.treasuryTransaction.create({
       data: {
-        paymentMethodId,
+        paymentMethodId: Number(paymentMethodId),
         type: 'OUT',
         amount: expAmount,
-        description: `مصروفات: ${description || 'بدون تفاصيل'}`,
-        referenceType: 'EXPENSE',
-        referenceId: expense.id,
+        description: `مصروفات [${category.name}]: ${expenseDescription}`,
+        referenceType: supplier ? 'SUPPLIER_PAYMENT' : 'EXPENSE',
+        referenceId: supplierPayment ? supplierPayment.id : expense.id,
         createdBy: userId
       }
     });
+
+    // 6. Audit Log
+    if (supplier) {
+      await tx.auditLog.create({
+        data: {
+          action: 'PAY',
+          entityType: 'SUPPLIER',
+          entityId: supplier.id,
+          newValues: JSON.stringify({
+            'المورد': supplier.name,
+            'المبلغ المسدد': `${expAmount} ج.م`,
+            'القناة المالية': method.name,
+            'مصدر السداد': 'سحب مصروفات',
+            'البيان': description || '-'
+          }),
+          userId
+        }
+      });
+    }
 
     return expense;
   });
