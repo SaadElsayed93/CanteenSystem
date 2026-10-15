@@ -367,6 +367,53 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     };
   }
 
+  if (type === 'PATIENTS') {
+    const patients = await prisma.patient.findMany({
+      orderBy: { currentDebt: 'asc' }
+    });
+
+    let totalDebts = 0;
+    let totalDeposits = 0;
+
+    const data = patients.map(p => {
+      const bal = Number(p.currentDebt);
+      if (bal < 0) totalDebts += Math.abs(bal);
+      else if (bal > 0) totalDeposits += bal;
+
+      let statusArabic = 'خالص';
+      let typeArabic = 'رصيد صفري (0.00 ج.م)';
+      if (bal < 0) {
+        statusArabic = 'مدين للكانتين';
+        typeArabic = 'دين على المريض (مستحق لنا)';
+      } else if (bal > 0) {
+        statusArabic = 'أمانات مستحقة';
+        typeArabic = 'وديعة للمريض (واجبة الرد عند الخروج)';
+      }
+
+      return {
+        id: p.fileNumber,
+        name: p.fullName,
+        internalNumber: p.internalNumber,
+        currentDebt: bal,
+        status: p.isActive ? 'نشط' : 'أرشيف',
+        accountStatus: statusArabic,
+        type: typeArabic,
+        notes: p.notes || '-'
+      };
+    });
+
+    return {
+      summary: {
+        totalDebts,
+        totalDeposits,
+        netDifference: totalDeposits - totalDebts,
+        totalPatients: patients.length,
+        activePatients: patients.filter(p => p.isActive).length
+      },
+      data
+    };
+  }
+
   throw new Error('نوع التقرير غير مدعوم');
 };
 

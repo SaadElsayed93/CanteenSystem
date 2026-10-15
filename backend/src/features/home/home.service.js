@@ -68,9 +68,15 @@ const getHomeDashboardData = async (userId, userRole) => {
   };
 
   // 3. Admin Stats
-  // Patient Debts
+  // Patient Debts (Negative balance: what patients owe to the canteen)
   const debts = await prisma.patient.aggregate({
     where: { currentDebt: { lt: 0 } },
+    _sum: { currentDebt: true }
+  });
+
+  // Patient Deposits (Positive balance: liabilities/deposits owed to patients upon discharge)
+  const deposits = await prisma.patient.aggregate({
+    where: { currentDebt: { gt: 0 } },
     _sum: { currentDebt: true }
   });
   
@@ -111,6 +117,7 @@ const getHomeDashboardData = async (userId, userRole) => {
   const adminStats = {
     inventoryValue,
     totalDebts: Math.abs(Number(debts._sum.currentDebt || 0)),
+    totalPatientDeposits: Number(deposits._sum.currentDebt || 0),
     netProfit,
     treasuryBalance: Number(treasuryTotal._sum.amount || 0)
   };

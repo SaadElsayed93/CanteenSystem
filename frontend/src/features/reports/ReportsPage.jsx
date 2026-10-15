@@ -155,30 +155,38 @@ const ReportsPage = () => {
       {activeTab === 'DASHBOARD' && (
         <>
           {/* Top Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             <StatCard 
               title="مبيعات اليوم" 
               value={`${metrics.todaySales} ج.م`} 
               icon={ShoppingCart} 
               color="indigo" 
               subValue={`${metrics.monthSales} ج.م`}
-              subLabel="إجمالي الشهر الحالي"
+              subLabel="إجمالي الشهر"
             />
             <StatCard 
               title="أرباح اليوم التقريبية" 
               value={`${metrics.todayProfit} ج.م`} 
               icon={TrendingUp} 
               color="emerald" 
-              subValue="صافي"
-              subLabel="بعد خصم التكلفة للمبيعات"
+              subValue="صافي ربح"
+              subLabel="بعد خصم التكلفة"
             />
             <StatCard 
-              title="إجمالي المديونيات" 
+              title="ديون المرضى (لنا)" 
               value={`${metrics.totalPatientDebt} ج.م`} 
               icon={Users} 
               color="red" 
-              subValue={`${metrics.totalPatientDeposits} ج.م`}
-              subLabel="أرصدة ودائع للمرضى"
+              subValue="مستحقة للكانتين"
+              subLabel="أرصدة سالبة"
+            />
+            <StatCard 
+              title="أموال المرضى (أمانات لهم)" 
+              value={`${(metrics.totalPatientDeposits || 0).toFixed(2)} ج.م`} 
+              icon={DollarSign} 
+              color="amber" 
+              subValue="واجبة الرد"
+              subLabel="تُصرف عند الخروج"
             />
             <StatCard 
               title="نواقص المخزون" 
@@ -269,30 +277,31 @@ const ReportsPage = () => {
                 <option value="EXPENSES">تقرير المصروفات</option>
                 <option value="INVENTORY">تقرير تقييم المخزون الحالي</option>
                 <option value="LOW_STOCK">تقرير نواقص المخزون والاحتياجات</option>
+                <option value="PATIENTS">تقرير أرصدة وحسابات المرضى (ديون وأمانات)</option>
               </select>
             </div>
             
             <div className="flex-1 w-full">
               <label className="block text-sm font-bold text-gray-700 mb-2">من تاريخ</label>
-                            <DatePicker 
+              <DatePicker 
                 selected={startDate}
                 onChange={(date) => setStartDate(date)}
                 dateFormat="dd/MM/yyyy"
                 locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
-                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK'}
+                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK' || reportType === 'PATIENTS'}
               />
             </div>
 
             <div className="flex-1 w-full">
               <label className="block text-sm font-bold text-gray-700 mb-2">إلى تاريخ</label>
-                            <DatePicker 
+              <DatePicker 
                 selected={endDate}
                 onChange={(date) => setEndDate(date)}
                 dateFormat="dd/MM/yyyy"
                 locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
-                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK'}
+                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK' || reportType === 'PATIENTS'}
               />
             </div>
 
@@ -354,10 +363,15 @@ const ReportsPage = () => {
                       {key === 'totalNeededCost' && 'التكلفة التقديرية لإعادة الطلب'}
                       {key === 'totalItems' && 'إجمالي كمية القطع'}
                       {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
+                      {key === 'totalDebts' && 'إجمالي ديون المرضى (لنا)'}
+                      {key === 'totalDeposits' && 'إجمالي أموال المرضى (أمانات لهم)'}
+                      {key === 'netDifference' && 'صافي الفارق المالي'}
+                      {key === 'totalPatients' && 'إجمالي عدد المرضى'}
+                      {key === 'activePatients' && 'عدد المرضى النشطين'}
                     </p>
                     <p className="text-2xl font-black text-indigo-700">
-                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'productCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' && key !== 'lowStockCount' 
-                        ? `${val} ج.م` 
+                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'productCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' && key !== 'lowStockCount' && key !== 'totalPatients' && key !== 'activePatients'
+                        ? `${val.toFixed(2)} ج.م` 
                         : val}
                     </p>
                   </div>
@@ -406,6 +420,17 @@ const ReportsPage = () => {
                           <th className="p-3 font-bold text-indigo-800">القيمة الإجمالية</th>
                         </>
                       )}
+                      {reportType === 'PATIENTS' && (
+                        <>
+                          <th className="p-3 font-bold text-indigo-800">رقم الملف</th>
+                          <th className="p-3 font-bold text-indigo-800">اسم المريض</th>
+                          <th className="p-3 font-bold text-indigo-800">الرقم الداخلي</th>
+                          <th className="p-3 font-bold text-indigo-800">نوع الحساب</th>
+                          <th className="p-3 font-bold text-indigo-800">الرصيد المالي</th>
+                          <th className="p-3 font-bold text-indigo-800">الحالة</th>
+                          <th className="p-3 font-bold text-indigo-800">ملاحظات</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -446,6 +471,37 @@ const ReportsPage = () => {
                             <td className="p-3 font-bold text-gray-800">{row.quantity}</td>
                             <td className="p-3 text-gray-600">{row.purchasePrice} ج</td>
                             <td className="p-3 font-black text-indigo-600">{row.totalValue} ج</td>
+                          </>
+                        )}
+                        {reportType === 'PATIENTS' && (
+                          <>
+                            <td className="p-3 font-mono font-bold text-gray-700">{row.id}</td>
+                            <td className="p-3 font-black text-gray-900">{row.name}</td>
+                            <td className="p-3 font-bold text-gray-500">{row.internalNumber}</td>
+                            <td className="p-3">
+                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                row.currentDebt < 0 
+                                  ? 'bg-red-50 text-red-700 border border-red-200' 
+                                  : row.currentDebt > 0 
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                                  : 'bg-gray-50 text-gray-600 border border-gray-200'
+                              }`}>
+                                {row.type}
+                              </span>
+                            </td>
+                            <td className={`p-3 font-black text-sm ${
+                              row.currentDebt < 0 ? 'text-red-600' : row.currentDebt > 0 ? 'text-emerald-600' : 'text-gray-500'
+                            }`}>
+                              {Math.abs(row.currentDebt).toFixed(2)} ج.م {row.currentDebt < 0 ? '(مدين للكانتين)' : row.currentDebt > 0 ? '(أمانات مستحقة)' : ''}
+                            </td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                                row.status === 'نشط' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-xs text-gray-500">{row.notes}</td>
                           </>
                         )}
                       </tr>

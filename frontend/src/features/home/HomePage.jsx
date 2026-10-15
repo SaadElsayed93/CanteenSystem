@@ -174,36 +174,44 @@ const HomePage = () => {
         /* ================= ADMIN DASHBOARD ================= */
         <div className="space-y-6">
           {/* Top KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-6 rounded-2xl border-2 border-indigo-50 shadow-sm flex items-center gap-4">
-              <div className="bg-indigo-100 p-4 rounded-xl text-indigo-600"><PackageOpen size={28} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white p-5 rounded-2xl border-2 border-indigo-50 shadow-sm flex items-center gap-3">
+              <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600"><PackageOpen size={24} /></div>
               <div>
-                <p className="text-gray-500 font-bold text-sm">رأس المال (قيمة البضاعة)</p>
-                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.inventoryValue} ج</h3>
+                <p className="text-gray-500 font-bold text-xs">قيمة البضاعة</p>
+                <h3 className="text-xl font-black text-gray-800">{data.adminStats.inventoryValue} ج</h3>
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-2xl border-2 border-emerald-50 shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-100 p-4 rounded-xl text-emerald-600"><TrendingUp size={28} /></div>
+            <div className="bg-white p-5 rounded-2xl border-2 border-emerald-50 shadow-sm flex items-center gap-3">
+              <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600"><TrendingUp size={24} /></div>
               <div>
-                <p className="text-gray-500 font-bold text-sm">صافي ربح الشهر (تقريبي)</p>
-                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.netProfit} ج</h3>
+                <p className="text-gray-500 font-bold text-xs">صافي ربح الشهر</p>
+                <h3 className="text-xl font-black text-emerald-600">{data.adminStats.netProfit} ج</h3>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border-2 border-red-50 shadow-sm flex items-center gap-4">
-              <div className="bg-red-100 p-4 rounded-xl text-red-600"><Users size={28} /></div>
+            <div className="bg-white p-5 rounded-2xl border-2 border-red-50 shadow-sm flex items-center gap-3">
+              <div className="bg-red-100 p-3 rounded-xl text-red-600"><Users size={24} /></div>
               <div>
-                <p className="text-gray-500 font-bold text-sm">إجمالي ديون المرضى</p>
-                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.totalDebts} ج</h3>
+                <p className="text-gray-500 font-bold text-xs">ديون المرضى (لنا)</p>
+                <h3 className="text-xl font-black text-red-600">{data.adminStats.totalDebts} ج</h3>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border-2 border-blue-50 shadow-sm flex items-center gap-4">
-              <div className="bg-blue-100 p-4 rounded-xl text-blue-600"><Wallet size={28} /></div>
+            <div className="bg-white p-5 rounded-2xl border-2 border-amber-50 shadow-sm flex items-center gap-3">
+              <div className="bg-amber-100 p-3 rounded-xl text-amber-700"><CreditCard size={24} /></div>
               <div>
-                <p className="text-gray-500 font-bold text-sm">رصيد الخزائن (السيولة)</p>
-                <h3 className="text-2xl font-black text-gray-800">{data.adminStats.treasuryBalance} ج</h3>
+                <p className="text-gray-500 font-bold text-xs">أموال المرضى (أمانات)</p>
+                <h3 className="text-xl font-black text-amber-600">{(data.adminStats.totalPatientDeposits || 0).toFixed(2)} ج</h3>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border-2 border-blue-50 shadow-sm flex items-center gap-3">
+              <div className="bg-blue-100 p-3 rounded-xl text-blue-600"><Wallet size={24} /></div>
+              <div>
+                <p className="text-gray-500 font-bold text-xs">سيولة الخزائن</p>
+                <h3 className="text-xl font-black text-gray-800">{data.adminStats.treasuryBalance} ج</h3>
               </div>
             </div>
           </div>
