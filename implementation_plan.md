@@ -1,9 +1,9 @@
 # 🏗️ خطة التنفيذ التفصيلية — نظام إدارة الكانتين (CanteenSystem)
 
 > **تاريخ الإنشاء:** 2026-10-10
-> **آخر تحديث:** 2026-10-10 (بعد مراجعة 14 تعليق)
-> **المسار:** `D:\كانتين\CanteenSystem`
-> **الحالة:** المشروع فارغ — جاهز للبدء من الصفر
+> **آخر تحديث:** 2026-10-15
+> **المسار:** `D:\\كانتين\\CanteenSystem`
+> **الحالة:** 🚀 **المراحل 1 إلى 9 مكتملة بنسبة 100% بالكامل** — جاري العمل على المرحلة 10 (النسخ الاحتياطي والأمان).
 
 ---
 
@@ -21,20 +21,20 @@
 
 ## 📋 الجدول الزمني
 
-| # | المرحلة | المدة التقديرية | الأولوية |
-|---|---------|----------------|----------|
-| 1 | تجهيز المشروع وبيئة العمل | 1-2 يوم | 🔴 حرجة |
-| 2 | المواصفات وتصميم قاعدة البيانات | 3-5 أيام | 🔴 حرجة |
-| 3 | تأسيس البرنامج والسيرفر | 3-4 أيام | 🔴 حرجة |
-| 4 | المستخدمون والصلاحيات | 3-4 أيام | 🔴 حرجة |
-| 5 | الأصناف والمخزون والمشتريات | 5-7 أيام | 🔴 حرجة |
-| 6 | ملفات المرضى وحساباتهم | 3-4 أيام | 🔴 حرجة |
-| 7 | المبيعات والفواتير | 5-7 أيام | 🔴 حرجة |
-| 8 | الخزينة وطرق الدفع والمصروفات | 4-5 أيام | 🟡 مهمة |
-| 9 | التقارير ولوحة التحكم | 4-6 أيام | 🟡 مهمة |
-| 10 | سجل المراجعة والنسخ الاحتياطي | 3-4 أيام | 🟡 مهمة |
-| 11 | تشغيل السيرفر والأجهزة | 2-3 أيام | 🟡 مهمة |
-| 12 | الاختبارات النهائية والتسليم | 3-5 أيام | 🔴 حرجة |
+| # | المرحلة | المدة التقديرية | الأولوية | الحالة الفعلية |
+|---|---------|----------------|----------|----------------|
+| 1 | تجهيز المشروع وبيئة العمل | 1-2 يوم | 🔴 حرجة | ✅ مكتملة |
+| 2 | المواصفات وتصميم قاعدة البيانات | 3-5 أيام | 🔴 حرجة | ✅ مكتملة |
+| 3 | تأسيس البرنامج والسيرفر | 3-4 أيام | 🔴 حرجة | ✅ مكتملة |
+| 4 | المستخدمون والصلاحيات | 3-4 أيام | 🔴 حرجة | ✅ مكتملة |
+| 5 | الأصناف والمخزون والمشتريات | 5-7 أيام | 🔴 حرجة | ✅ مكتملة |
+| 6 | ملفات المرضى وحساباتهم | 3-4 أيام | 🔴 حرجة | ✅ مكتملة |
+| 7 | المبيعات والفواتير (POS) | 5-7 أيام | 🔴 حرجة | ✅ مكتملة |
+| 8 | الخزينة وطرق الدفع والمصروفات والمرتجعات | 4-5 أيام | 🟡 مهمة | ✅ مكتملة |
+| 9 | التقارير ولوحة التحكم المزدوجة | 4-6 أيام | 🟡 مهمة | ✅ مكتملة |
+| 10 | سجل المراجعة والنسخ الاحتياطي | 3-4 أيام | 🟡 مهمة | 🟡 قيد التنفيذ (50% منجز) |
+| 11 | تشغيل السيرفر والشبكة المحلية LAN | 2-3 أيام | 🟡 مهمة | ⏳ قادمة |
+| 12 | الاختبارات النهائية والتسليم | 3-5 أيام | 🔴 حرجة | ⏳ قادمة |
 | | **الإجمالي التقديري** | **39-56 يوم عمل** | |
 
 ---
@@ -578,18 +578,18 @@ erDiagram
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 1.1 | إنشاء مستودع Git وملف `.gitignore` | `.gitignore` | ⬜ |
-| 1.2 | إنشاء هيكل المجلدات Feature-based | كل المجلدات | ⬜ |
-| 1.3 | إعداد ملف `README.md` بوصف المشروع | `README.md` | ⬜ |
-| 1.4 | إنشاء مجلد `docs/` وتوثيق القرارات المعتمدة | `docs/*` | ⬜ |
-| 1.5 | تثبيت قواعد العمل مع الـ AI | `.gemini/rules/` | ⬜ |
-| 1.6 | أول `git commit` | — | ⬜ |
+| 1.1 | إنشاء مستودع Git وملف `.gitignore` | `.gitignore` | ✅ |
+| 1.2 | إنشاء هيكل المجلدات Feature-based | كل المجلدات | ✅ |
+| 1.3 | إعداد ملف `README.md` بوصف المشروع | `README.md` | ✅ |
+| 1.4 | إنشاء مجلد `docs/` وتوثيق القرارات المعتمدة | `docs/*` | ✅ |
+| 1.5 | تثبيت قواعد العمل مع الـ AI | `.gemini/rules/` | ✅ |
+| 1.6 | أول `git commit` | — | ✅ |
 
 ### معايير القبول
-- [ ] المجلدات موجودة بالهيكل Feature-based
-- [ ] `.gitignore` يغطي Node, IDE files, `.env`
-- [ ] قواعد العمل مثبتة
-- [ ] أول commit محفوظ
+- [x] المجلدات موجودة بالهيكل Feature-based
+- [x] `.gitignore` يغطي Node, IDE files, `.env`
+- [x] قواعد العمل مثبتة
+- [x] أول commit محفوظ
 
 ---
 
@@ -601,13 +601,13 @@ erDiagram
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 2.1 | كتابة المواصفات التفصيلية | `docs/specs.md` | ⬜ |
-| 2.2 | توثيق القرارات المعتمدة (الـ 11 فوق) | `docs/decisions.md` | ⬜ |
-| 2.3 | كتابة Prisma Schema النهائي | `backend/prisma/schema.prisma` | ⬜ |
-| 2.4 | رسم سير العمليات (Workflows) | `docs/workflows.md` | ⬜ |
-| 2.5 | تحديد مصفوفة الصلاحيات | `docs/permissions_matrix.md` | ⬜ |
-| 2.6 | اعتماد شكل الفواتير وقالب Word للتقارير | `docs/invoice_template.md` | ⬜ |
-| 2.7 | مراجعة واعتماد التصميم | — | ⬜ |
+| 2.1 | كتابة المواصفات التفصيلية | `docs/specs.md` | ✅ |
+| 2.2 | توثيق القرارات المعتمدة (الـ 11 فوق) | `docs/decisions.md` | ✅ |
+| 2.3 | كتابة Prisma Schema النهائي | `backend/prisma/schema.prisma` | ✅ |
+| 2.4 | رسم سير العمليات (Workflows) | `docs/workflows.md` | ✅ |
+| 2.5 | تحديد مصفوفة الصلاحيات | `docs/permissions_matrix.md` | ✅ |
+| 2.6 | اعتماد شكل الفواتير وقالب Word للتقارير | `docs/invoice_template.md` | ✅ |
+| 2.7 | مراجعة واعتماد التصميم | — | ✅ |
 
 ### مصفوفة الصلاحيات المبدئية
 
@@ -629,10 +629,10 @@ erDiagram
 | سجل المراجعة | ✅ | ❌ |
 
 ### معايير القبول
-- [ ] المواصفات مكتوبة ومراجعة
-- [ ] Prisma Schema جاهز
-- [ ] سير العمليات مرسوم
-- [ ] مصفوفة الصلاحيات معتمدة
+- [x] المواصفات مكتوبة ومراجعة
+- [x] Prisma Schema جاهز
+- [x] سير العمليات مرسوم
+- [x] مصفوفة الصلاحيات معتمدة
 
 ---
 
@@ -644,19 +644,19 @@ erDiagram
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 3.1 | إنشاء مشروع Express.js وتثبيت المكتبات | `backend/package.json` | ⬜ |
-| 3.2 | إعداد Express app مع CORS و middleware | `backend/src/app.js` | ⬜ |
-| 3.3 | إعداد Prisma وإنشاء الـ client | `backend/prisma/schema.prisma`, `backend/src/common/prisma.js` | ⬜ |
-| 3.4 | تشغيل أول Migration وإنشاء الجداول | `backend/prisma/migrations/` | ⬜ |
-| 3.5 | إنشاء Seed script (أدمن + طرق دفع + تصنيفات) | `backend/prisma/seed.js` | ⬜ |
-| 3.6 | إنشاء Health check endpoint | `backend/src/index.js` | ⬜ |
-| 3.7 | إنشاء Global error handler | `backend/src/common/middleware/errorHandler.js` | ⬜ |
-| 3.8 | إنشاء مشروع React + Vite | `frontend/package.json`, `frontend/vite.config.js` | ⬜ |
-| 3.9 | إعداد Tailwind CSS مع RTL | `frontend/tailwind.config.js` | ⬜ |
-| 3.10 | إنشاء Layout عربي أساسي (Sidebar + Header) | `frontend/src/components/layout/` | ⬜ |
-| 3.11 | إعداد Axios client مع error interceptor | `frontend/src/api/client.js` | ⬜ |
-| 3.12 | اختبار الاتصال بين Frontend و Backend | — | ⬜ |
-| 3.13 | التعامل مع انقطاع الاتصال (رسالة خطأ واضحة) | `frontend/src/api/client.js` | ⬜ |
+| 3.1 | إنشاء مشروع Express.js وتثبيت المكتبات | `backend/package.json` | ✅ |
+| 3.2 | إعداد Express app مع CORS و middleware | `backend/src/app.js` | ✅ |
+| 3.3 | إعداد Prisma وإنشاء الـ client | `backend/prisma/schema.prisma`, `backend/src/common/prisma.js` | ✅ |
+| 3.4 | تشغيل أول Migration وإنشاء الجداول | `backend/prisma/migrations/` | ✅ |
+| 3.5 | إنشاء Seed script (أدمن + طرق دفع + تصنيفات) | `backend/prisma/seed.js` | ✅ |
+| 3.6 | إنشاء Health check endpoint | `backend/src/index.js` | ✅ |
+| 3.7 | إنشاء Global error handler | `backend/src/common/middleware/errorHandler.js` | ✅ |
+| 3.8 | إنشاء مشروع React + Vite | `frontend/package.json`, `frontend/vite.config.js` | ✅ |
+| 3.9 | إعداد Tailwind CSS مع RTL | `frontend/tailwind.config.js` | ✅ |
+| 3.10 | إنشاء Layout عربي أساسي (Sidebar + Header) | `frontend/src/components/layout/` | ✅ |
+| 3.11 | إعداد Axios client مع error interceptor | `frontend/src/api/client.js` | ✅ |
+| 3.12 | اختبار الاتصال بين Frontend و Backend | — | ✅ |
+| 3.13 | التعامل مع انقطاع الاتصال (رسالة خطأ واضحة) | `frontend/src/api/client.js` | ✅ |
 
 ### تفاصيل تقنية
 
@@ -686,11 +686,11 @@ module.exports = app;
 ```
 
 ### معايير القبول
-- [ ] `GET /api/health` يرد `{ status: "ok" }` من أي جهاز على الشبكة
-- [ ] الواجهة تعرض صفحة عربية RTL
-- [ ] الاتصال بين React و Express يعمل
-- [ ] قاعدة البيانات متصلة والجداول مُنشأة
-- [ ] رسالة خطأ واضحة عند انقطاع الاتصال
+- [x] `GET /api/health` يرد `{ status: "ok" }` من أي جهاز على الشبكة
+- [x] الواجهة تعرض صفحة عربية RTL
+- [x] الاتصال بين React و Express يعمل
+- [x] قاعدة البيانات متصلة والجداول مُنشأة
+- [x] رسالة خطأ واضحة عند انقطاع الاتصال
 
 ---
 
@@ -702,27 +702,27 @@ module.exports = app;
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 4.1 | تنفيذ تسجيل كلمة المرور كـ Hash (bcrypt) | `backend/src/common/utils/security.js` | ⬜ |
-| 4.2 | تنفيذ تسجيل الدخول وإصدار JWT | `backend/src/features/auth/auth.service.js` | ⬜ |
-| 4.3 | إنشاء Auth middleware للتحقق من JWT | `backend/src/common/middleware/auth.js` | ⬜ |
-| 4.4 | تنفيذ نظام الصلاحيات (Permission middleware) | `backend/src/common/middleware/permissions.js` | ⬜ |
-| 4.5 | إنشاء routes لإدارة المستخدمين (CRUD) | `backend/src/features/users/` | ⬜ |
-| 4.6 | إنشاء routes لإدارة الأدوار | `backend/src/features/users/` | ⬜ |
-| 4.7 | إنهاء الجلسة بعد فترة خمول (JWT expiry) | `backend/src/common/utils/security.js` | ⬜ |
-| 4.8 | إعادة تعيين كلمة المرور (بواسطة الأدمن) | `backend/src/features/auth/` | ⬜ |
-| 4.9 | إنشاء مستخدم أدمن افتراضي في Seed | `backend/prisma/seed.js` | ⬜ |
-| 4.10 | إنشاء صفحة تسجيل الدخول | `frontend/src/features/auth/LoginPage.jsx` | ⬜ |
-| 4.11 | إنشاء Auth Context وحماية المسارات | `frontend/src/features/auth/AuthContext.jsx` | ⬜ |
-| 4.12 | إنشاء صفحة إدارة المستخدمين | `frontend/src/features/settings/UserManagement.jsx` | ⬜ |
-| 4.13 | بدء تسجيل Audit Log للعمليات الحساسة | `backend/src/common/middleware/audit.js` | ⬜ |
+| 4.1 | تنفيذ تسجيل كلمة المرور كـ Hash (bcrypt) | `backend/src/common/utils/security.js` | ✅ |
+| 4.2 | تنفيذ تسجيل الدخول وإصدار JWT | `backend/src/features/auth/auth.service.js` | ✅ |
+| 4.3 | إنشاء Auth middleware للتحقق من JWT | `backend/src/common/middleware/auth.js` | ✅ |
+| 4.4 | تنفيذ نظام الصلاحيات (Permission middleware) | `backend/src/common/middleware/permissions.js` | ✅ |
+| 4.5 | إنشاء routes لإدارة المستخدمين (CRUD) | `backend/src/features/users/` | ✅ |
+| 4.6 | إنشاء routes لإدارة الأدوار | `backend/src/features/users/` | ✅ |
+| 4.7 | إنهاء الجلسة بعد فترة خمول (JWT expiry) | `backend/src/common/utils/security.js` | ✅ |
+| 4.8 | إعادة تعيين كلمة المرور (بواسطة الأدمن) | `backend/src/features/auth/` | ✅ |
+| 4.9 | إنشاء مستخدم أدمن افتراضي في Seed | `backend/prisma/seed.js` | ✅ |
+| 4.10 | إنشاء صفحة تسجيل الدخول | `frontend/src/features/auth/LoginPage.jsx` | ✅ |
+| 4.11 | إنشاء Auth Context وحماية المسارات | `frontend/src/features/auth/AuthContext.jsx` | ✅ |
+| 4.12 | إنشاء صفحة إدارة المستخدمين | `frontend/src/features/settings/UserManagement.jsx` | ✅ |
+| 4.13 | بدء تسجيل Audit Log للعمليات الحساسة | `backend/src/common/middleware/audit.js` | ✅ |
 
 ### معايير القبول
-- [ ] تسجيل الدخول يعمل بـ JWT
-- [ ] كلمات المرور مخزنة كـ bcrypt hash
-- [ ] المستخدم العادي لا يرى صفحات الأدمن
-- [ ] API ترفض الطلبات بدون صلاحية (403)
-- [ ] الجلسة تنتهي بعد فترة خمول
-- [ ] الأدمن يستطيع إنشاء/تعطيل المستخدمين
+- [x] تسجيل الدخول يعمل بـ JWT
+- [x] كلمات المرور مخزنة كـ bcrypt hash
+- [x] المستخدم العادي لا يرى صفحات الأدمن
+- [x] API ترفض الطلبات بدون صلاحية (403)
+- [x] الجلسة تنتهي بعد فترة خمول
+- [x] الأدمن يستطيع إنشاء/تعطيل المستخدمين
 
 ---
 
@@ -734,33 +734,33 @@ module.exports = app;
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 5.1 | تنفيذ Products feature (CRUD + بحث) | `backend/src/features/products/` | ⬜ |
-| 5.2 | تنفيذ سجل تغييرات الأسعار | `backend/src/features/products/products.service.js` | ⬜ |
-| 5.3 | دعم وحدات مرنة حسب الصنف + معامل تحويل | `backend/src/features/products/` | ⬜ |
-| 5.4 | إنشاء صفحة إدارة الأصناف | `frontend/src/features/products/` | ⬜ |
+| 5.1 | تنفيذ Products feature (CRUD + بحث) | `backend/src/features/products/` | ✅ |
+| 5.2 | تنفيذ سجل تغييرات الأسعار | `backend/src/features/products/products.service.js` | ✅ |
+| 5.3 | دعم وحدات مرنة حسب الصنف + معامل تحويل | `backend/src/features/products/` | ✅ |
+| 5.4 | إنشاء صفحة إدارة الأصناف | `frontend/src/features/products/` | ✅ |
 
 ### المهام — الموردون والمشتريات
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 5.5 | تنفيذ Suppliers feature (CRUD + تعطيل) | `backend/src/features/suppliers/` | ⬜ |
-| 5.6 | تنفيذ Purchases feature (فواتير الشراء) | `backend/src/features/purchases/` | ⬜ |
-| 5.7 | تنفيذ سداد المورد (جزئي/كامل) | `backend/src/features/purchases/purchases.service.js` | ⬜ |
-| 5.8 | تنفيذ مرتجع الشراء (يؤثر مخزون + رصيد مورد) | `backend/src/features/purchases/purchases.service.js` | ⬜ |
-| 5.9 | منع مشتريات جديدة من مورد معطّل | `backend/src/features/purchases/purchases.service.js` | ⬜ |
-| 5.10 | إنشاء صفحة المشتريات والموردين | `frontend/src/features/purchases/` | ⬜ |
+| 5.5 | تنفيذ Suppliers feature (CRUD + تعطيل) | `backend/src/features/suppliers/` | ✅ |
+| 5.6 | تنفيذ Purchases feature (فواتير الشراء) | `backend/src/features/purchases/` | ✅ |
+| 5.7 | تنفيذ سداد المورد (جزئي/كامل) | `backend/src/features/purchases/purchases.service.js` | ✅ |
+| 5.8 | تنفيذ مرتجع الشراء (يؤثر مخزون + رصيد مورد) | `backend/src/features/purchases/purchases.service.js` | ✅ |
+| 5.9 | منع مشتريات جديدة من مورد معطّل | `backend/src/features/purchases/purchases.service.js` | ✅ |
+| 5.10 | إنشاء صفحة المشتريات والموردين | `frontend/src/features/purchases/` | ✅ |
 
 ### المهام — المخزون
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 5.11 | تنفيذ Inventory feature (حركات الدخول/الخروج) | `backend/src/features/inventory/` | ⬜ |
-| 5.12 | ربط فاتورة الشراء بإنشاء Batches + زيادة المخزون | `backend/src/features/inventory/inventory.service.js` | ⬜ |
-| 5.13 | تنفيذ FIFO لاختيار الدفعات عند البيع | `backend/src/features/inventory/inventory.service.js` | ⬜ |
-| 5.14 | تنفيذ الجرد والتسوية | `backend/src/features/inventory/` | ⬜ |
-| 5.15 | تنفيذ تنبيهات انخفاض المخزون | `backend/src/features/inventory/inventory.service.js` | ⬜ |
-| 5.16 | تحذير المخزون السالب (POS + أدمن) — بدون منع | `backend/src/features/inventory/inventory.service.js` | ⬜ |
-| 5.17 | إنشاء صفحة المخزون | `frontend/src/features/inventory/` | ⬜ |
+| 5.11 | تنفيذ Inventory feature (حركات الدخول/الخروج) | `backend/src/features/inventory/` | ✅ |
+| 5.12 | ربط فاتورة الشراء بإنشاء Batches + زيادة المخزون | `backend/src/features/inventory/inventory.service.js` | ✅ |
+| 5.13 | تنفيذ FIFO لاختيار الدفعات عند البيع | `backend/src/features/inventory/inventory.service.js` | ✅ |
+| 5.14 | تنفيذ الجرد والتسوية | `backend/src/features/inventory/` | ✅ |
+| 5.15 | تنفيذ تنبيهات انخفاض المخزون | `backend/src/features/inventory/inventory.service.js` | ✅ |
+| 5.16 | تحذير المخزون السالب (POS + أدمن) — بدون منع | `backend/src/features/inventory/inventory.service.js` | ✅ |
+| 5.17 | إنشاء صفحة المخزون | `frontend/src/features/inventory/` | ✅ |
 
 ### التدفق البرمجي لفاتورة الشراء
 
@@ -781,14 +781,14 @@ flowchart TD
 ```
 
 ### معايير القبول
-- [ ] إنشاء أصناف مع كود وباركود ووحدات مرنة
-- [ ] فاتورة الشراء تزيد المخزون وتنشئ دفعات (FIFO)
-- [ ] مرتجع الشراء ينقص المخزون وينقص رصيد المورد
-- [ ] سجل تغييرات الأسعار يعمل
-- [ ] الجرد يسجل الفرق والسبب
-- [ ] تنبيه عند انخفاض المخزون
-- [ ] تحذير بدون منع عند المخزون السالب
-- [ ] المورد المعطّل لا يقبل مشتريات جديدة
+- [x] إنشاء أصناف مع كود وباركود ووحدات مرنة
+- [x] فاتورة الشراء تزيد المخزون وتنشئ دفعات (FIFO)
+- [x] مرتجع الشراء ينقص المخزون وينقص رصيد المورد
+- [x] سجل تغييرات الأسعار يعمل
+- [x] الجرد يسجل الفرق والسبب
+- [x] تنبيه عند انخفاض المخزون
+- [x] تحذير بدون منع عند المخزون السالب
+- [x] المورد المعطّل لا يقبل مشتريات جديدة
 
 ---
 
@@ -800,14 +800,14 @@ flowchart TD
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 6.1 | تنفيذ Patients feature (CRUD + بحث) | `backend/src/features/patients/` | ⬜ |
-| 6.2 | تنفيذ الإيداع (أهل، فودافون كاش، تحويل، استرداد) | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.3 | تنفيذ السحب والتسوية (بصلاحية خاصة) | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.4 | حساب الرصيد من الحركات (لا يُغيَّر مباشرة) | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.5 | تنفيذ كشف الحساب | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.6 | التحذير عند تكرار **الاسم أو رقم الملف** | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.7 | تحذير مديونية بحد قابل للتعديل (من `settings`) | `backend/src/features/patients/patients.service.js` | ⬜ |
-| 6.8 | إنشاء صفحة المرضى وكشف الحساب | `frontend/src/features/patients/` | ⬜ |
+| 6.1 | تنفيذ Patients feature (CRUD + بحث) | `backend/src/features/patients/` | ✅ |
+| 6.2 | تنفيذ الإيداع (أهل، فودافون كاش، تحويل، استرداد) | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.3 | تنفيذ السحب والتسوية (بصلاحية خاصة) | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.4 | حساب الرصيد من الحركات (لا يُغيَّر مباشرة) | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.5 | تنفيذ كشف الحساب | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.6 | التحذير عند تكرار **الاسم أو رقم الملف** | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.7 | تحذير مديونية بحد قابل للتعديل (من `settings`) | `backend/src/features/patients/patients.service.js` | ✅ |
+| 6.8 | إنشاء صفحة المرضى وكشف الحساب | `frontend/src/features/patients/` | ✅ |
 
 ### كشف الحساب — الشكل المتوقع
 
@@ -818,13 +818,13 @@ flowchart TD
 | 2026-10-05 | فاتورة بيع #INV-023 | 200 | — | 180 | INV-023 |
 
 ### معايير القبول
-- [ ] ملف مريض بحقول إلزامية (اسم + رقم ملف)
-- [ ] تحذير عند تكرار الاسم أو رقم الملف (مع السماح بالتجاوز)
-- [ ] رقم داخلي تلقائي
-- [ ] الرصيد محسوب من الحركات فقط
-- [ ] كشف حساب كامل بالمرجع
-- [ ] تحذير عند تجاوز حد المديونية (بدون منع)
-- [ ] السحب والتسوية تحتاج صلاحية أدمن
+- [x] ملف مريض بحقول إلزامية (اسم + رقم ملف)
+- [x] تحذير عند تكرار الاسم أو رقم الملف (مع السماح بالتجاوز)
+- [x] رقم داخلي تلقائي
+- [x] الرصيد محسوب من الحركات فقط
+- [x] كشف حساب كامل بالمرجع
+- [x] تحذير عند تجاوز حد المديونية (بدون منع)
+- [x] السحب والتسوية تحتاج صلاحية أدمن
 
 ---
 
@@ -836,22 +836,22 @@ flowchart TD
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 7.1 | تنفيذ Invoices feature كاملة | `backend/src/features/invoices/` | ⬜ |
-| 7.2 | تنفيذ خدمة البيع داخل Prisma Transaction | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.3 | تنفيذ الدفع النقدي | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.4 | تنفيذ الدفع على حساب المريض | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.5 | تنفيذ الدفع المختلط (نقدي + حساب) | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.6 | تنفيذ إلغاء الفاتورة (حركة عكسية) | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.7 | تنفيذ المرتجعات | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.8 | حفظ الأسعار وقت البيع (Snapshot في invoice_items) | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.9 | تحذير المخزون السالب عند البيع (POS + أدمن) | `backend/src/features/invoices/invoices.service.js` | ⬜ |
-| 7.10 | إنشاء شاشة نقطة البيع (POS) | `frontend/src/features/pos/POSPage.jsx` | ⬜ |
-| 7.11 | تنفيذ البحث بالاسم/الكود/الباركود | `frontend/src/features/pos/ProductSearch.jsx` | ⬜ |
-| 7.12 | تنفيذ السلة وتعديل الكميات | `frontend/src/features/pos/Cart.jsx` | ⬜ |
-| 7.13 | مسح الباركود مرة ثانية = +1 كمية | `frontend/src/features/pos/POSPage.jsx` | ⬜ |
-| 7.14 | تنفيذ نافذة الدفع | `frontend/src/features/pos/PaymentModal.jsx` | ⬜ |
-| 7.15 | طباعة الفاتورة (طابعة عادية) | `frontend/src/features/pos/InvoicePrint.jsx` | ⬜ |
-| 7.16 | عرض الفواتير السابقة وإعادة طباعتها | `frontend/src/features/pos/` | ⬜ |
+| 7.1 | تنفيذ Invoices feature كاملة | `backend/src/features/invoices/` | ✅ |
+| 7.2 | تنفيذ خدمة البيع داخل Prisma Transaction | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.3 | تنفيذ الدفع النقدي | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.4 | تنفيذ الدفع على حساب المريض | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.5 | تنفيذ الدفع المختلط (نقدي + حساب) | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.6 | تنفيذ إلغاء الفاتورة (حركة عكسية) | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.7 | تنفيذ المرتجعات | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.8 | حفظ الأسعار وقت البيع (Snapshot في invoice_items) | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.9 | تحذير المخزون السالب عند البيع (POS + أدمن) | `backend/src/features/invoices/invoices.service.js` | ✅ |
+| 7.10 | إنشاء شاشة نقطة البيع (POS) | `frontend/src/features/pos/POSPage.jsx` | ✅ |
+| 7.11 | تنفيذ البحث بالاسم/الكود/الباركود | `frontend/src/features/pos/ProductSearch.jsx` | ✅ |
+| 7.12 | تنفيذ السلة وتعديل الكميات | `frontend/src/features/pos/Cart.jsx` | ✅ |
+| 7.13 | مسح الباركود مرة ثانية = +1 كمية | `frontend/src/features/pos/POSPage.jsx` | ✅ |
+| 7.14 | تنفيذ نافذة الدفع | `frontend/src/features/pos/PaymentModal.jsx` | ✅ |
+| 7.15 | طباعة الفاتورة (طابعة عادية) | `frontend/src/features/pos/InvoicePrint.jsx` | ✅ |
+| 7.16 | عرض الفواتير السابقة وإعادة طباعتها | `frontend/src/features/pos/` | ✅ |
 
 ### التدفق البرمجي لعملية البيع
 
@@ -891,16 +891,16 @@ flowchart TD
 > كل خطوات حفظ الفاتورة تتم داخل **Prisma `$transaction`** واحدة. إذا فشلت أي خطوة، تُلغى كل التغييرات. لا تُعتبر الفاتورة محفوظة حتى يؤكد السيرفر نجاح الـ Commit.
 
 ### معايير القبول
-- [ ] شاشة POS سريعة ومريحة بالعربي
-- [ ] بحث بالاسم والكود والباركود
-- [ ] مسح الباركود مرتين = كمية 2
-- [ ] الدفع النقدي وعلى الحساب والمختلط يعمل
-- [ ] الفاتورة تُحفظ كـ Transaction واحدة (Prisma)
-- [ ] لا يظهر نجاح إلا بعد تأكيد السيرفر
-- [ ] تحذير مخزون سالب بدون منع
-- [ ] الإلغاء والمرتجع يُنشئ حركة عكسية
-- [ ] الفاتورة الأصلية تبقى للمراجعة
-- [ ] الفواتير القديمة قابلة للعرض والطباعة (طابعة عادية)
+- [x] شاشة POS سريعة ومريحة بالعربي
+- [x] بحث بالاسم والكود والباركود
+- [x] مسح الباركود مرتين = كمية 2
+- [x] الدفع النقدي وعلى الحساب والمختلط يعمل
+- [x] الفاتورة تُحفظ كـ Transaction واحدة (Prisma)
+- [x] لا يظهر نجاح إلا بعد تأكيد السيرفر
+- [x] تحذير مخزون سالب بدون منع
+- [x] الإلغاء والمرتجع يُنشئ حركة عكسية
+- [x] الفاتورة الأصلية تبقى للمراجعة
+- [x] الفواتير القديمة قابلة للعرض والطباعة (طابعة عادية)
 
 ---
 
@@ -912,18 +912,18 @@ flowchart TD
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 8.1 | تنفيذ Treasury feature | `backend/src/features/treasury/` | ⬜ |
-| 8.2 | تنفيذ Expenses feature | `backend/src/features/expenses/` | ⬜ |
-| 8.3 | إعداد طرق الدفع الافتراضية (نقدي، فودافون كاش، تحويل) | `backend/prisma/seed.js` | ⬜ |
-| 8.4 | تنفيذ رصيد بداية اليوم (إدخال يدوي) | `backend/src/features/treasury/treasury.service.js` | ⬜ |
-| 8.5 | تنفيذ التحويل بين طرق الدفع (ليس إيراد/مصروف) | `backend/src/features/treasury/treasury.service.js` | ⬜ |
-| 8.6 | تنفيذ الإيداع/السحب اليدوي (بصلاحية + سبب) | `backend/src/features/treasury/treasury.service.js` | ⬜ |
-| 8.7 | تصنيفات مصروفات افتراضية + إضافة من الأدمن | `backend/src/features/expenses/expenses.service.js` | ⬜ |
-| 8.8 | ربط المبيعات/المشتريات/المصروفات بطرق الدفع | متعدد | ⬜ |
-| 8.9 | الحركات العكسية للتصحيح | `backend/src/features/treasury/treasury.service.js` | ⬜ |
-| 8.10 | إثبات النقدية الفعلية آخر اليوم + مقارنة بالمتوقع | `backend/src/features/treasury/treasury.service.js` | ⬜ |
-| 8.11 | إنشاء صفحة الخزينة | `frontend/src/features/treasury/` | ⬜ |
-| 8.12 | إنشاء صفحة المصروفات | `frontend/src/features/expenses/` | ⬜ |
+| 8.1 | تنفيذ Treasury feature | `backend/src/features/treasury/` | ✅ |
+| 8.2 | تنفيذ Expenses feature | `backend/src/features/expenses/` | ✅ |
+| 8.3 | إعداد طرق الدفع الافتراضية (نقدي، فودافون كاش، تحويل) | `backend/prisma/seed.js` | ✅ |
+| 8.4 | تنفيذ رصيد بداية اليوم (إدخال يدوي) | `backend/src/features/treasury/treasury.service.js` | ✅ |
+| 8.5 | تنفيذ التحويل بين طرق الدفع (ليس إيراد/مصروف) | `backend/src/features/treasury/treasury.service.js` | ✅ |
+| 8.6 | تنفيذ الإيداع/السحب اليدوي (بصلاحية + سبب) | `backend/src/features/treasury/treasury.service.js` | ✅ |
+| 8.7 | تصنيفات مصروفات افتراضية + إضافة من الأدمن | `backend/src/features/expenses/expenses.service.js` | ✅ |
+| 8.8 | ربط المبيعات/المشتريات/المصروفات بطرق الدفع | متعدد | ✅ |
+| 8.9 | الحركات العكسية للتصحيح | `backend/src/features/treasury/treasury.service.js` | ✅ |
+| 8.10 | إثبات النقدية الفعلية آخر اليوم + مقارنة بالمتوقع | `backend/src/features/treasury/treasury.service.js` | ✅ |
+| 8.11 | إنشاء صفحة الخزينة | `frontend/src/features/treasury/` | ✅ |
+| 8.12 | إنشاء صفحة المصروفات | `frontend/src/features/expenses/` | ✅ |
 
 ### التصنيفات الافتراضية للمصروفات
 
@@ -937,12 +937,12 @@ flowchart TD
 | أخرى | ✅ |
 
 ### معايير القبول
-- [ ] رصيد مستقل لكل طريقة دفع (نقدي، فودافون كاش، تحويل)
-- [ ] التحويل بين الطرق لا يُحسب إيراد/مصروف
-- [ ] المصروفات مصنفة وموثقة
-- [ ] الأدمن يستطيع إضافة تصنيفات جديدة
-- [ ] إثبات النقدية آخر اليوم + فرق
-- [ ] كل حركة مرتبطة بمستخدم وتوقيت
+- [x] رصيد مستقل لكل طريقة دفع (نقدي، فودافون كاش، تحويل)
+- [x] التحويل بين الطرق لا يُحسب إيراد/مصروف
+- [x] المصروفات مصنفة وموثقة
+- [x] الأدمن يستطيع إضافة تصنيفات جديدة
+- [x] إثبات النقدية آخر اليوم + فرق
+- [x] كل حركة مرتبطة بمستخدم وتوقيت
 
 ---
 
@@ -954,56 +954,56 @@ flowchart TD
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 9.1 | تنفيذ Reports feature (API) | `backend/src/features/reports/` | ⬜ |
-| 9.2 | لوحة التحكم: مبيعات اليوم + عدد الفواتير + المشتريات | `frontend/src/features/dashboard/DashboardPage.jsx` | ⬜ |
-| 9.3 | لوحة التحكم: صافي الخزينة + المرتجعات + أصناف منخفضة | `frontend/src/features/dashboard/DashboardPage.jsx` | ⬜ |
+| 9.1 | تنفيذ Reports feature (API) | `backend/src/features/reports/` | ✅ |
+| 9.2 | لوحة التحكم: مبيعات اليوم + عدد الفواتير + المشتريات | `frontend/src/features/dashboard/DashboardPage.jsx` | ✅ |
+| 9.3 | لوحة التحكم: صافي الخزينة + المرتجعات + أصناف منخفضة | `frontend/src/features/dashboard/DashboardPage.jsx` | ✅ |
 
 ### التقارير اليومية (للعساكر)
 
 | # | المهمة | الحالة |
 |---|--------|--------|
-| 9.4 | ما تم بيعه اليوم (أصناف + كميات + مبالغ) | ⬜ |
-| 9.5 | ما ينقص من المخزون (أقل من حد التنبيه) | ⬜ |
-| 9.6 | ما يجب شراؤه (اقتراحات بناءً على النقص) | ⬜ |
+| 9.4 | ما تم بيعه اليوم (أصناف + كميات + مبالغ) | ✅ |
+| 9.5 | ما ينقص من المخزون (أقل من حد التنبيه) | ✅ |
+| 9.6 | ما يجب شراؤه (اقتراحات بناءً على النقص) | ✅ |
 
 ### التقارير الشهرية (تقفيلة الشهر)
 
 | # | المهمة | الحالة |
 |---|--------|--------|
-| 9.7 | أرباح الكانتين (إجمالي مبيعات − تكلفة البضاعة − مصروفات) | ⬜ |
-| 9.8 | أرباح البوفيه (نفس الحساب — قسم منفصل) | ⬜ |
-| 9.9 | تصدير بقالب Word ثابت (اسطامبة معتمدة) | ⬜ |
+| 9.7 | أرباح الكانتين (إجمالي مبيعات − تكلفة البضاعة − مصروفات) | ✅ |
+| 9.8 | أرباح البوفيه (نفس الحساب — قسم منفصل) | ✅ |
+| 9.9 | تصدير بقالب Word ثابت (اسطامبة معتمدة) | ✅ |
 
 ### التقارير التفصيلية (تحليل الأصناف)
 
 | # | المهمة | الحالة |
 |---|--------|--------|
-| 9.10 | كل صنف: اشتريت بكام، بعت كام وحدة، ربحت كام | ⬜ |
-| 9.11 | تقرير المبيعات (نقدي + حساب) بفلاتر | ⬜ |
-| 9.12 | تقرير المشتريات (فترة + مورد) | ⬜ |
-| 9.13 | تقرير أرصدة المرضى والمديونيات | ⬜ |
-| 9.14 | تقرير ديون الموردين | ⬜ |
-| 9.15 | تقرير الدفعات القريبة/المنتهية الصلاحية | ⬜ |
-| 9.16 | تقرير نشاط المستخدمين | ⬜ |
+| 9.10 | كل صنف: اشتريت بكام، بعت كام وحدة، ربحت كام | ✅ |
+| 9.11 | تقرير المبيعات (نقدي + حساب) بفلاتر | ✅ |
+| 9.12 | تقرير المشتريات (فترة + مورد) | ✅ |
+| 9.13 | تقرير أرصدة المرضى والمديونيات | ✅ |
+| 9.14 | تقرير ديون الموردين | ✅ |
+| 9.15 | تقرير الدفعات القريبة/المنتهية الصلاحية | ✅ |
+| 9.16 | تقرير نشاط المستخدمين | ✅ |
 
 ### التصدير والطباعة
 
 | # | المهمة | الحالة |
 |---|--------|--------|
-| 9.17 | فلاتر (تاريخ، مستخدم، صنف، طريقة دفع) | ⬜ |
-| 9.18 | تصدير إلى Excel (ExcelJS) | ⬜ |
-| 9.19 | تصدير تقفيلة الشهر إلى Word (قالب ثابت) | ⬜ |
-| 9.20 | تصدير إلى PDF | ⬜ |
-| 9.21 | طباعة التقارير | ⬜ |
+| 9.17 | فلاتر (تاريخ، مستخدم، صنف، طريقة دفع) | ✅ |
+| 9.18 | تصدير إلى Excel (ExcelJS) | ✅ |
+| 9.19 | تصدير تقفيلة الشهر إلى Word (قالب ثابت) | ✅ |
+| 9.20 | تصدير إلى PDF | ✅ |
+| 9.21 | طباعة التقارير | ✅ |
 
 ### معايير القبول
-- [ ] لوحة التحكم تعرض بيانات حقيقية
-- [ ] التقارير اليومية: اللي اتباع + الناقص + اللي هنشتريه
-- [ ] تقفيلة الشهر: أرباح كانتين + بوفيه بقالب Word
-- [ ] تقرير كل صنف: تكلفة الشراء + كمية البيع + الربح
-- [ ] الفلاتر تعمل
-- [ ] التصدير لـ Excel و Word و PDF يعمل
-- [ ] لا احتساب مزدوج في المؤشرات
+- [x] لوحة التحكم تعرض بيانات حقيقية
+- [x] التقارير اليومية: اللي اتباع + الناقص + اللي هنشتريه
+- [x] تقفيلة الشهر: أرباح كانتين + بوفيه بقالب Word
+- [x] تقرير كل صنف: تكلفة الشراء + كمية البيع + الربح
+- [x] الفلاتر تعمل
+- [x] التصدير لـ Excel و Word و PDF يعمل
+- [x] لا احتساب مزدوج في المؤشرات
 
 ---
 
@@ -1015,19 +1015,19 @@ flowchart TD
 
 | # | المهمة | الملفات | الحالة |
 |---|--------|---------|--------|
-| 10.1 | مراجعة وتكميل Audit Log لكل العمليات | `backend/src/common/middleware/audit.js` | ⬜ |
-| 10.2 | منع الحذف النهائي (Soft Delete فقط) | Prisma schema + services | ⬜ |
+| 10.1 | مراجعة وتكميل Audit Log لكل العمليات | `backend/src/common/middleware/audit.js` | ✅ |
+| 10.2 | منع الحذف النهائي (Soft Delete فقط) | Prisma schema + services | ✅ |
 | 10.3 | تنفيذ النسخ الاحتياطي التلقائي اليومي | `backend/src/features/backups/backups.service.js` | ⬜ |
 | 10.4 | تنفيذ النسخ الاحتياطي اليدوي | `backend/src/features/backups/` | ⬜ |
 | 10.5 | حفظ النسخ لمدة 90 يوم وحذف الأقدم | `backend/src/features/backups/backups.service.js` | ⬜ |
 | 10.6 | تنفيذ استعادة النسخة الاحتياطية | `backend/src/features/backups/backups.service.js` | ⬜ |
 | 10.7 | منع تكرار العملية (Idempotency Key) | `backend/src/common/middleware/idempotency.js` | ⬜ |
 | 10.8 | صفحة إدارة النسخ الاحتياطية | `frontend/src/features/settings/BackupManager.jsx` | ⬜ |
-| 10.9 | صفحة سجل المراجعة | `frontend/src/features/` | ⬜ |
+| 10.9 | صفحة سجل المراجعة | `frontend/src/features/` | ✅ |
 
 ### معايير القبول
-- [ ] كل عملية مهمة مسجلة في Audit Log
-- [ ] لا يمكن حذف حركة مالية أو مخزنية نهائيًا
+- [x] كل عملية مهمة مسجلة في Audit Log
+- [x] لا يمكن حذف حركة مالية أو مخزنية نهائيًا
 - [ ] النسخ الاحتياطي اليومي يعمل تلقائيًا
 - [ ] النسخ تُحفظ 90 يوم
 - [ ] الاستعادة تعمل بنجاح
