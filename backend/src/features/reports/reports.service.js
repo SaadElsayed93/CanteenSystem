@@ -49,28 +49,28 @@ const getDashboardMetrics = async () => {
     _sum: { currentDebt: true }
   });
 
-  // Low stock products count
-  const lowStockProducts = await prisma.product.count({
-    where: { 
-      batches: {
-        some: { quantityRemaining: { gt: 0 } }
-      },
-      // Note: A true low stock needs aggregation of batches. 
-      // We can just fetch all products with their batches and filter in memory for accuracy
-    }
-  });
-
   const products = await prisma.product.findMany({
+    where: { isActive: true },
     include: { batches: true }
   });
   
   let lowStockCount = 0;
   let inventoryValue = 0;
+  const lowStockItems = [];
 
   products.forEach(p => {
     const totalQty = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
-    if (totalQty <= Number(p.minStockLevel)) lowStockCount++;
     inventoryValue += totalQty * Number(p.purchasePrice);
+    if (totalQty <= Number(p.alertThreshold) || totalQty === 0) {
+      lowStockCount++;
+      lowStockItems.push({
+        id: p.id,
+        name: p.name,
+        quantity: totalQty,
+        alertThreshold: p.alertThreshold,
+        unit: p.unit
+      });
+    }
   });
 
   return {
@@ -80,6 +80,7 @@ const getDashboardMetrics = async () => {
     totalPatientDebt: Math.abs(Number(patientDebts._sum.currentDebt || 0)),
     totalPatientDeposits: Number(patientDeposits._sum.currentDebt || 0),
     lowStockCount,
+    lowStockItems,
     inventoryValue
   };
 };
@@ -324,6 +325,44 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
 
     return {
       summary: { totalValue, totalItems, uniqueProducts: products.length },
+      data
+    };
+  }
+
+  if (type === 'LOW_STOCK') {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      include: { batches: true },
+      orderBy: { name: 'asc' }
+    });
+
+    let lowStockCount = 0;
+    const data = [];
+
+    products.forEach(p => {
+      const qty = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+      const threshold = Number(p.alertThreshold) || 0;
+      if (qty <= threshold || qty === 0) {
+        lowStockCount++;
+        const suggestedQty = Math.max(0, (threshold * 2) - qty) || 10;
+        data.push({
+          id: p.internalCode || `#${p.id}`,
+          name: p.name,
+          unit: p.unit || 'قطعة',
+          quantity: qty,
+          threshold: threshold,
+          purchasePrice: Number(p.purchasePrice),
+          suggestedQty: suggestedQty,
+          estimatedCost: suggestedQty * Number(p.purchasePrice)
+        });
+      }
+    });
+
+    return {
+      summary: {
+        lowStockCount,
+        uniqueProducts: data.length
+      },
       data
     };
   }

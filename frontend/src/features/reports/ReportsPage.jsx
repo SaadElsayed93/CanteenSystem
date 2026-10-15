@@ -38,8 +38,13 @@ const formatDateTime = (dateString) => {
   return `${day}/${month}/${year} - ${hours}:${minutes} ${ampm}`;
 };
 
-const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel }) => (
-  <div className="bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-colors">
+const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel, onClick, clickableText }) => (
+  <div 
+    onClick={onClick}
+    className={`bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-all ${
+      onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : ''
+    }`}
+  >
     <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform`}></div>
     <div className="flex justify-between items-start mb-4">
       <div>
@@ -51,11 +56,18 @@ const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel }) => (
       </div>
     </div>
     {subValue && (
-      <div className="flex items-center gap-2 text-sm mt-4 pt-4 border-t border-gray-50">
-        <span className={`font-bold ${subValue > 0 ? 'text-green-500' : 'text-gray-500'}`}>
-          {subValue}
-        </span>
-        <span className="text-gray-400 font-bold">{subLabel}</span>
+      <div className="flex items-center justify-between text-sm mt-4 pt-4 border-t border-gray-50">
+        <div className="flex items-center gap-2">
+          <span className={`font-bold ${subValue > 0 ? 'text-green-500' : 'text-gray-500'}`}>
+            {subValue}
+          </span>
+          <span className="text-gray-400 font-bold">{subLabel}</span>
+        </div>
+        {clickableText && (
+          <span className={`text-xs font-bold text-${color}-600 hover:underline`}>
+            {clickableText} »
+          </span>
+        )}
       </div>
     )}
   </div>
@@ -73,6 +85,7 @@ const ReportsPage = () => {
   });
   const [endDate, setEndDate] = useState(() => new Date());
   const [detailedData, setDetailedData] = useState(null);
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const generateReport = async () => {
@@ -174,6 +187,8 @@ const ReportsPage = () => {
               color="amber" 
               subValue={`${metrics.inventoryValue} ج.م`}
               subLabel="قيمة المخزون الحالي"
+              onClick={() => setShowLowStockModal(true)}
+              clickableText="استعراض النواقص"
             />
           </div>
 
@@ -253,6 +268,7 @@ const ReportsPage = () => {
                 <option value="PURCHASES">تقرير المشتريات والموردين</option>
                 <option value="EXPENSES">تقرير المصروفات</option>
                 <option value="INVENTORY">تقرير تقييم المخزون الحالي</option>
+                <option value="LOW_STOCK">تقرير نواقص المخزون والاحتياجات</option>
               </select>
             </div>
             
@@ -264,7 +280,7 @@ const ReportsPage = () => {
                 dateFormat="dd/MM/yyyy"
                 locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
-                disabled={reportType === 'INVENTORY'}
+                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK'}
               />
             </div>
 
@@ -276,7 +292,7 @@ const ReportsPage = () => {
                 dateFormat="dd/MM/yyyy"
                 locale="ar-EG"
                 className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-500 focus:ring-0"
-                disabled={reportType === 'INVENTORY'}
+                disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK'}
               />
             </div>
 
@@ -301,13 +317,14 @@ const ReportsPage = () => {
                   {reportType === 'PURCHASES' && 'تقرير المشتريات الشامل'}
                   {reportType === 'EXPENSES' && 'تقرير المصروفات الشامل'}
                   {reportType === 'INVENTORY' && 'تقرير تقييم المخزون الشامل'}
+                  {reportType === 'LOW_STOCK' && 'تقرير نواقص المخزون والاحتياجات (أصناف تحتاج شراء)'}
                 </h1>
-                {reportType !== 'INVENTORY' && (
+                {reportType !== 'INVENTORY' && reportType !== 'LOW_STOCK' && (
                   <p className="text-lg font-bold text-gray-500">
                     عن الفترة من {formatDate(startDate)} إلى {formatDate(endDate)}
                   </p>
                 )}
-                {reportType === 'INVENTORY' && (
+                {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
                   <p className="text-lg font-bold text-gray-500">
                     التاريخ: {formatDate(new Date())}
                   </p>
@@ -333,11 +350,13 @@ const ReportsPage = () => {
                       {key === 'totalExpenses' && 'إجمالي المصروفات'}
                       {key === 'expenseCount' && 'عدد المصروفات'}
                       {key === 'totalValue' && 'القيمة الإجمالية للمخزون'}
+                      {key === 'lowStockCount' && 'عدد الأصناف الناقصة'}
+                      {key === 'totalNeededCost' && 'التكلفة التقديرية لإعادة الطلب'}
                       {key === 'totalItems' && 'إجمالي كمية القطع'}
                       {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
                     </p>
                     <p className="text-2xl font-black text-indigo-700">
-                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'productCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' 
+                      {typeof val === 'number' && key !== 'invoiceCount' && key !== 'purchaseCount' && key !== 'productCount' && key !== 'expenseCount' && key !== 'totalItems' && key !== 'uniqueProducts' && key !== 'lowStockCount' 
                         ? `${val} ج.م` 
                         : val}
                     </p>
@@ -378,7 +397,7 @@ const ReportsPage = () => {
                           <th className="p-3 font-bold text-indigo-800">المبلغ</th>
                         </>
                       )}
-                      {reportType === 'INVENTORY' && (
+                      {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
                         <>
                           <th className="p-3 font-bold text-indigo-800">الصنف</th>
                           <th className="p-3 font-bold text-indigo-800">الوحدة</th>
@@ -420,7 +439,7 @@ const ReportsPage = () => {
                             <td className="p-3 font-black text-red-600">{row.amount} ج</td>
                           </>
                         )}
-                        {reportType === 'INVENTORY' && (
+                        {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
                           <>
                             <td className="p-3 font-bold text-gray-800">{row.name}</td>
                             <td className="p-3 text-gray-600">{row.category}</td>
@@ -458,6 +477,59 @@ const ReportsPage = () => {
         </div>
       )}
 
+
+      {/* Low Stock Quick Modal */}
+      {showLowStockModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-lg flex flex-col max-h-[85vh]">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={24} />
+                <h3 className="text-xl font-black text-gray-800">قائمة نواقص المخزون</h3>
+              </div>
+              <button 
+                onClick={() => setShowLowStockModal(false)}
+                className="text-gray-400 hover:text-gray-600 font-bold p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mb-4">
+              {!metrics.lowStockItems || metrics.lowStockItems.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 font-bold">
+                  🎉 ممتاز! لا توجد نواقص في المخزون حالياً.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {metrics.lowStockItems.map(item => (
+                    <div key={item.id} className="flex justify-between items-center p-3.5 bg-gray-50 rounded-2xl border border-gray-100 hover:bg-gray-100/60 transition-colors">
+                      <div>
+                        <div className="font-bold text-gray-800">{item.name}</div>
+                        <div className="text-xs text-gray-400 font-bold mt-0.5">حد التنبيه الأدنى: {item.alertThreshold} {item.unit || 'قطعة'}</div>
+                      </div>
+                      <div className="text-left">
+                        <span className="bg-red-100 text-red-700 px-3 py-1 rounded-xl font-black text-sm inline-block">
+                          المتبقي: {item.quantity}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+              <button 
+                onClick={() => setShowLowStockModal(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-6 py-2.5 rounded-xl transition-colors"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
