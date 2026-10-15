@@ -55,4 +55,21 @@ const transfer = async (req, res, next) => {
   }
 };
 
-module.exports = { getBalances, getTransactions, getExpCategories, getExpensesList, addExpense, transfer };
+const settleShift = async (req, res, next) => {
+  try {
+    const result = await treasuryService.settleDailyShift(req.body, req.user.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { 
+  getBalances, 
+  getTransactions, 
+  getExpCategories, 
+  getExpensesList, 
+  addExpense, 
+  transfer,
+  settleShift
+};

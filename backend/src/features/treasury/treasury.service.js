@@ -164,11 +164,129 @@ const transferFunds = async (data, userId) => {
   });
 };
 
+const settleDailyShift = async (data, userId) => {
+  const { countedAmount, transferAmount, leaveInDrawer = 0, notes } = data;
+  const numCounted = Number(countedAmount);
+  const numTransfer = Number(transferAmount);
+
+  if (isNaN(numCounted) || numCounted < 0) {
+    throw new Error('يرجى إدخال مبلغ النقدية المعدودة في الدرج بشكل صحيح');
+  }
+
+  if (isNaN(numTransfer) || numTransfer <= 0) {
+    throw new Error('مبلغ التوريد إلى الخزينة الرئيسية يجب أن يكون أكبر من صفر');
+  }
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Find Drawer payment method
+    const drawerMethod = await tx.paymentMethod.findFirst({
+      where: { name: { contains: 'درج' } }
+    });
+    if (!drawerMethod) throw new Error('قناة نقدي (الدرج) غير موجودة بالنظام');
+
+    // 2. Find Main Treasury payment method
+    const mainTreasuryMethod = await tx.paymentMethod.findFirst({
+      where: { name: { contains: 'الخزينة' } }
+    });
+    if (!mainTreasuryMethod) throw new Error('قناة الخزينة (الرئيسية) غير موجودة بالنظام');
+
+    const systemDrawerBalance = Number(drawerMethod.currentBalance);
+
+    if (numTransfer > systemDrawerBalance) {
+      throw new Error(`مبلغ التوريد (${numTransfer} ج.م) أكبر من الرصيد المتوفر بالدرج في النظام (${systemDrawerBalance} ج.م)`);
+    }
+
+    const discrepancy = numCounted - systemDrawerBalance;
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { fullName: true, username: true }
+    });
+
+    // 3. Deduct from Drawer
+    await tx.paymentMethod.update({
+      where: { id: drawerMethod.id },
+      data: { currentBalance: systemDrawerBalance - numTransfer }
+    });
+
+    // 4. Add to Main Treasury
+    const updatedMain = await tx.paymentMethod.update({
+      where: { id: mainTreasuryMethod.id },
+      data: { currentBalance: Number(mainTreasuryMethod.currentBalance) + numTransfer }
+    });
+
+    let discrepancyText = 'مطابق للنظام';
+    if (discrepancy > 0) discrepancyText = `زيادة نقدية (+${discrepancy.toFixed(2)} ج.م)`;
+    else if (discrepancy < 0) discrepancyText = `عجز نقدي (${discrepancy.toFixed(2)} ج.م)`;
+
+    // 5. Drawer Out Transaction
+    const outTx = await tx.treasuryTransaction.create({
+      data: {
+        paymentMethodId: drawerMethod.id,
+        type: 'OUT',
+        amount: numTransfer,
+        description: `تقفيل يومية وتوريد للخزينة الرئيسية (${discrepancyText}) - ${notes || 'إغلاق وردية'}`,
+        referenceType: 'DAILY_SETTLEMENT',
+        createdBy: userId
+      }
+    });
+
+    // 6. Main Treasury In Transaction
+    await tx.treasuryTransaction.create({
+      data: {
+        paymentMethodId: mainTreasuryMethod.id,
+        type: 'IN',
+        amount: numTransfer,
+        description: `توريد يومية وارد من الدرج (تقفيل وردية) - ${notes || 'إغلاق وردية'}`,
+        referenceType: 'DAILY_SETTLEMENT',
+        referenceId: outTx.id,
+        createdBy: userId
+      }
+    });
+
+    // 7. Audit Log
+    await tx.auditLog.create({
+      data: {
+        action: 'DAILY_SETTLEMENT',
+        entityType: 'TREASURY',
+        entityId: outTx.id,
+        newValues: JSON.stringify({
+          'المسؤول': user?.fullName || user?.username,
+          'رصيد الدرج بالنظام': `${systemDrawerBalance.toFixed(2)} ج.م`,
+          'العد الفعلي': `${numCounted.toFixed(2)} ج.م`,
+          'الفرق': discrepancyText,
+          'المبلغ المورد للخزينة': `${numTransfer.toFixed(2)} ج.م`,
+          'المتبقي بالدرج': `${(systemDrawerBalance - numTransfer).toFixed(2)} ج.م`,
+          'ملاحظات': notes || 'بدون ملاحظات'
+        }),
+        userId
+      }
+    });
+
+    return {
+      success: true,
+      message: 'تم تقفيل اليوم وتوريد النقدية إلى الخزينة بنجاح',
+      settlement: {
+        systemDrawerBalance,
+        countedAmount: numCounted,
+        discrepancy,
+        discrepancyText,
+        transferAmount: numTransfer,
+        remainingInDrawer: systemDrawerBalance - numTransfer,
+        mainTreasuryBalance: Number(updatedMain.currentBalance),
+        settledBy: user?.fullName || user?.username,
+        settledAt: new Date(),
+        notes: notes || ''
+      }
+    };
+  });
+};
+
 module.exports = { 
   getPaymentMethods, 
   getTreasuryTransactions, 
   getExpenseCategories, 
   createExpense, 
   getExpenses,
-  transferFunds
+  transferFunds,
+  settleDailyShift
 };
