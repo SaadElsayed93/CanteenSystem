@@ -3,6 +3,10 @@ import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Link } from 'react-router-dom';
+import { 
+  Building2, FileText, Printer, AlertCircle, 
+  CheckCircle2, X, ShoppingCart, DollarSign, Wallet 
+} from 'lucide-react';
 
 const SuppliersPage = () => {
   const [suppliers, setSuppliers] = useState([]);
@@ -12,6 +16,11 @@ const SuppliersPage = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', notes: '' });
+
+  // Statement Modal State
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
+  const [statementData, setStatementData] = useState(null);
+  const [isLoadingStatement, setIsLoadingStatement] = useState(false);
 
   useEffect(() => {
     fetchSuppliers();
@@ -51,18 +60,55 @@ const SuppliersPage = () => {
     }
   };
 
-  if (loading) return <div className="text-center mt-10 font-bold text-gray-500">جاري التحميل...</div>;
+  const openStatement = async (supplierId) => {
+    setIsLoadingStatement(true);
+    setIsStatementOpen(true);
+    setStatementData(null);
+    try {
+      const res = await client.get(`/purchases/suppliers/${supplierId}/statement`);
+      setStatementData(res.data.data);
+    } catch (err) {
+      toast.error('فشل تحميل كشف حساب المورد');
+      setIsStatementOpen(false);
+    } finally {
+      setIsLoadingStatement(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex justify-center items-center h-96">
+      <div className="text-xl font-bold text-gray-500 animate-pulse">جاري تحميل بيانات الموردين...</div>
+    </div>
+  );
+
+  const totalDebtAllSuppliers = suppliers.reduce((acc, s) => acc + Number(s.currentDebt || 0), 0);
+  const totalPurchasesAll = suppliers.reduce((acc, s) => acc + Number(s.totalPurchases || 0), 0);
+  const totalPaidAll = suppliers.reduce((acc, s) => acc + Number(s.totalPaid || 0), 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-800">إدارة الموردين 🏢</h2>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 gap-4">
+        <div>
+          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+            <Building2 className="text-indigo-600" size={28} />
+            <span>إدارة الموردين وحسابات المشتريات</span>
+          </h2>
+          <p className="text-gray-400 font-bold text-sm mt-1">كشوفات حسابات الموردين، رصد الديون المستحقة، وإدارة الفواتير</p>
+        </div>
         {hasPermission('MANAGE_PURCHASES') && (
-          <div className="flex gap-3">
-            <Link to="/purchases/new" className="bg-indigo-600 text-white font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200">
-              + فاتورة مشتريات جديدة
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <Link 
+              to="/purchases/new" 
+              className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center justify-center gap-2"
+            >
+              <ShoppingCart size={18} />
+              <span>+ فاتورة مشتريات جديدة</span>
             </Link>
-            <button onClick={() => setIsModalOpen(true)} className="bg-white text-indigo-600 border-2 border-indigo-600 font-bold px-6 py-2.5 rounded-xl hover:bg-indigo-50 transition-all shadow-sm">
+            <button 
+              onClick={() => setIsModalOpen(true)} 
+              className="flex-1 sm:flex-none bg-white hover:bg-indigo-50 text-indigo-600 border-2 border-indigo-600 font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm"
+            >
               + إضافة مورد جديد
             </button>
           </div>
@@ -71,72 +117,376 @@ const SuppliersPage = () => {
 
       {error && <div className="bg-red-50 border-r-4 border-red-500 text-red-700 p-4 rounded-xl font-bold">{error}</div>}
 
-      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Total Debt Card */}
+        <div className="bg-gradient-to-br from-red-50 to-rose-50/50 p-6 rounded-2xl border-2 border-red-200 shadow-sm relative overflow-hidden">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <span className="text-xs font-bold text-red-700 block mb-1">إجمالي ديون كافة الموردين</span>
+              <div className="text-3xl font-black text-red-600">
+                {totalDebtAllSuppliers.toFixed(2)} <span className="text-sm font-bold text-red-400">ج.م</span>
+              </div>
+            </div>
+            <div className="p-3 bg-red-100/80 rounded-xl text-red-600">
+              <AlertCircle size={26} />
+            </div>
+          </div>
+          <p className="text-xs font-bold text-red-500 mt-2">المبالغ المستحق سدادها للموردين</p>
+        </div>
+
+        {/* Total Purchases Card */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <span className="text-xs font-bold text-gray-500 block mb-1">إجمالي المشتريات المسجلة</span>
+              <div className="text-3xl font-black text-gray-900">
+                {totalPurchasesAll.toFixed(2)} <span className="text-sm font-bold text-gray-400">ج.م</span>
+              </div>
+            </div>
+            <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+              <ShoppingCart size={26} />
+            </div>
+          </div>
+          <p className="text-xs font-bold text-gray-400 mt-2">قيمة كل فواتير الشراء</p>
+        </div>
+
+        {/* Total Paid Card */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <span className="text-xs font-bold text-gray-500 block mb-1">إجمالي ما تم سداده</span>
+              <div className="text-3xl font-black text-emerald-600">
+                {totalPaidAll.toFixed(2)} <span className="text-sm font-bold text-emerald-400">ج.م</span>
+              </div>
+            </div>
+            <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+              <CheckCircle2 size={26} />
+            </div>
+          </div>
+          <p className="text-xs font-bold text-gray-400 mt-2">دفعات الشراء والسداد النقدي</p>
+        </div>
+
+        {/* Suppliers Count Card */}
+        <div className="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <span className="text-xs font-bold text-gray-500 block mb-1">عدد الموردين المسجلين</span>
+              <div className="text-3xl font-black text-gray-900">
+                {suppliers.length} <span className="text-sm font-bold text-gray-400">مورد</span>
+              </div>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-xl text-gray-600">
+              <Building2 size={26} />
+            </div>
+          </div>
+          <p className="text-xs font-bold text-gray-400 mt-2">النشط: {suppliers.filter(s => s.isActive).length} مورد</p>
+        </div>
+      </div>
+
+      {/* Suppliers Table */}
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-right border-collapse">
-            <thead className="bg-gray-50 text-gray-700">
+          <table className="w-full text-right border-collapse text-sm">
+            <thead className="bg-gray-50 text-gray-700 border-b border-gray-100">
               <tr>
-                <th className="p-4 border-b font-bold">اسم المورد</th>
-                <th className="p-4 border-b font-bold">العنوان/التليفون</th>
-                <th className="p-4 border-b font-bold">المديونية (له)</th>
-                <th className="p-4 border-b font-bold">ملاحظات</th>
-                <th className="p-4 border-b font-bold">الحالة</th>
-                <th className="p-4 border-b font-bold">الإجراءات</th>
+                <th className="p-4 font-bold">اسم المورد</th>
+                <th className="p-4 font-bold">العنوان / التليفون</th>
+                <th className="p-4 font-bold">إجمالي الفواتير</th>
+                <th className="p-4 font-bold">المسدد</th>
+                <th className="p-4 font-bold text-red-600">المديونية (المستحق له)</th>
+                <th className="p-4 font-bold">ملاحظات</th>
+                <th className="p-4 font-bold">الحالة</th>
+                <th className="p-4 font-bold text-center">الإجراءات</th>
               </tr>
             </thead>
-            <tbody className="text-gray-600">
-              {suppliers.map(s => (
-                <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${!s.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
-                  <td className="p-4 border-b font-bold text-gray-800">{s.name}</td>
-                  <td className="p-4 border-b text-sm">{s.address || '-'}</td>
-                  <td className="p-4 border-b font-bold text-red-600">{s.totalDebt}</td>
-                  <td className="p-4 border-b text-sm">{s.notes || '-'}</td>
-                  <td className="p-4 border-b">
-                    {s.isActive ? (
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold border border-green-200">نشط</span>
-                    ) : (
-                      <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold border border-red-200">معطل</span>
-                    )}
-                  </td>
-                  <td className="p-4 border-b">
-                    {hasPermission('MANAGE_PURCHASES') && (
-                      <button onClick={() => toggleStatus(s.id, s.isActive)} className={`font-bold transition-all hover:underline ${s.isActive ? 'text-red-500 hover:text-red-700' : 'text-green-500 hover:text-green-700'}`}>
-                        {s.isActive ? 'إيقاف التعامل' : 'تفعيل'}
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-gray-100">
+              {suppliers.map(s => {
+                const debt = Number(s.currentDebt || 0);
+                return (
+                  <tr key={s.id} className={`hover:bg-gray-50/80 transition-colors ${!s.isActive ? 'bg-gray-50/50 opacity-60' : ''}`}>
+                    <td className="p-4 font-black text-gray-900 text-base">{s.name}</td>
+                    <td className="p-4 font-bold text-gray-600">{s.address || '-'}</td>
+                    <td className="p-4 font-bold text-gray-800">{Number(s.totalPurchases || 0).toFixed(2)} ج.م</td>
+                    <td className="p-4 font-bold text-emerald-600">{Number(s.totalPaid || 0).toFixed(2)} ج.م</td>
+                    <td className="p-4">
+                      {debt > 0 ? (
+                        <span className="font-black text-red-600 bg-red-50 border border-red-200 px-3 py-1 rounded-full text-sm inline-block">
+                          {debt.toFixed(2)} ج.م
+                        </span>
+                      ) : (
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full text-xs inline-block">
+                          خالص (0.00 ج.م)
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-xs font-bold text-gray-500 max-w-xs truncate">{s.notes || '-'}</td>
+                    <td className="p-4">
+                      {s.isActive ? (
+                        <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-200">نشط</span>
+                      ) : (
+                        <span className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200">معطل</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button 
+                          onClick={() => openStatement(s.id)}
+                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5"
+                          title="عرض كشف الحساب التفصيلي"
+                        >
+                          <FileText size={15} />
+                          <span>كشف الحساب</span>
+                        </button>
+
+                        {hasPermission('MANAGE_PURCHASES') && (
+                          <button 
+                            onClick={() => toggleStatus(s.id, s.isActive)} 
+                            className={`font-bold text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                              s.isActive 
+                                ? 'bg-gray-50 hover:bg-red-50 text-gray-600 hover:text-red-600 border-gray-200 hover:border-red-200' 
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                            }`}
+                          >
+                            {s.isActive ? 'إيقاف' : 'تفعيل'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {suppliers.length === 0 && (
-                <tr><td colSpan="6" className="p-8 text-center text-gray-400 font-bold">لا يوجد موردين مسجلين حتى الآن</td></tr>
+                <tr><td colSpan="8" className="p-8 text-center text-gray-400 font-bold">لا يوجد موردين مسجلين حتى الآن</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* ================= Add Supplier Modal ================= */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800 border-b border-gray-100 pb-4">🏢 إضافة مورد جديد</h3>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                <Building2 className="text-indigo-600" size={22} />
+                <span>إضافة مورد جديد</span>
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">اسم المورد</label>
-                <input required type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.name} onChange={e=>setForm({...form, name: e.target.value})}/>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">اسم المورد أو الشركة:</label>
+                <input 
+                  required 
+                  type="text" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm text-gray-800" 
+                  placeholder="مثال: شركة الأمل للمشروبات..."
+                  value={form.name} 
+                  onChange={e => setForm({...form, name: e.target.value})}
+                />
               </div>
+
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">العنوان أو التليفون (اختياري)</label>
-                <input type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" value={form.address} onChange={e=>setForm({...form, address: e.target.value})}/>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">العنوان أو رقم الهاتف (اختياري):</label>
+                <input 
+                  type="text" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm text-gray-800" 
+                  placeholder="رقم الهاتف أو العنوان..."
+                  value={form.address} 
+                  onChange={e => setForm({...form, address: e.target.value})}
+                />
               </div>
+
               <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
-                <textarea className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all min-h-[100px]" value={form.notes} onChange={e=>setForm({...form, notes: e.target.value})}></textarea>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">ملاحظات (اختياري):</label>
+                <textarea 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 text-sm font-bold text-gray-800" 
+                  rows="2"
+                  placeholder="شروط السداد، المندوب، إلخ..."
+                  value={form.notes} 
+                  onChange={e => setForm({...form, notes: e.target.value})}
+                />
               </div>
-              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">حفظ المورد</button>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all"
+                >
+                  حفظ المورد
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= Supplier Statement Modal ================= */}
+      {isStatementOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-4xl max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl">
+                  <FileText size={26} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900">
+                    كشف حساب المورد: {statementData ? statementData.supplier.name : 'جاري التحميل...'}
+                  </h3>
+                  {statementData && (
+                    <p className="text-xs font-bold text-gray-400 mt-0.5">
+                      {statementData.supplier.address && <span>{statementData.supplier.address} • </span>}
+                      <span>تاريخ الكشف: {new Date().toLocaleDateString('ar-EG')}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => window.print()} 
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs"
+                >
+                  <Printer size={16} />
+                  <span>طباعة الكشف</span>
+                </button>
+                <button 
+                  onClick={() => setIsStatementOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2 rounded-xl font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto py-5 space-y-5" id="supplier-statement-print">
+              {isLoadingStatement && (
+                <div className="py-20 text-center font-bold text-gray-400 animate-pulse">
+                  جاري جلب حركات كشف الحساب من قاعدة البيانات...
+                </div>
+              )}
+
+              {statementData && (
+                <>
+                  {/* Summary Badges */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl text-center">
+                      <span className="text-xs font-bold text-gray-500 block mb-1">إجمالي فواتير المشتريات</span>
+                      <span className="text-2xl font-black text-gray-800">
+                        {statementData.summary.totalPurchases.toFixed(2)} ج.م
+                      </span>
+                    </div>
+
+                    <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center">
+                      <span className="text-xs font-bold text-emerald-800 block mb-1">إجمالي ما تم سداده للمورد</span>
+                      <span className="text-2xl font-black text-emerald-700">
+                        {statementData.summary.totalPaid.toFixed(2)} ج.م
+                      </span>
+                    </div>
+
+                    <div className="bg-red-50 border border-red-200 p-4 rounded-2xl text-center">
+                      <span className="text-xs font-bold text-red-800 block mb-1">صافي المديونية المتبقية له</span>
+                      <span className="text-2xl font-black text-red-600">
+                        {statementData.summary.currentDebt.toFixed(2)} ج.م
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Ledger Table */}
+                  <div className="border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                    <table className="w-full text-right border-collapse text-xs">
+                      <thead className="bg-gray-50 text-gray-700 border-b border-gray-100">
+                        <tr>
+                          <th className="p-3 font-bold">التاريخ</th>
+                          <th className="p-3 font-bold">نوع الحركة</th>
+                          <th className="p-3 font-bold">المرجع</th>
+                          <th className="p-3 font-bold">البيان والتفاصيل</th>
+                          <th className="p-3 font-bold text-red-600">دائن (فاتورة +)</th>
+                          <th className="p-3 font-bold text-emerald-600">مدين (سداد -)</th>
+                          <th className="p-3 font-bold text-gray-900">الرصيد المستحق</th>
+                          <th className="p-3 font-bold">المسؤول</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {statementData.entries.length === 0 && (
+                          <tr><td colSpan="8" className="p-8 text-center text-gray-400 font-bold">لا توجد حركات مسجلة لهذا المورد</td></tr>
+                        )}
+                        {statementData.entries.map(entry => (
+                          <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="p-3 text-gray-500 font-bold whitespace-nowrap">
+                              {new Date(entry.date).toLocaleString('ar-EG')}
+                            </td>
+                            <td className="p-3">
+                              {entry.type === 'PURCHASE' ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  فاتورة مشتريات
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  سداد نقدي
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 font-mono font-bold text-gray-700">{entry.reference}</td>
+                            <td className="p-3 font-bold text-gray-800">
+                              <div>{entry.description}</div>
+                              {entry.items && entry.items.length > 0 && (
+                                <div className="text-[11px] text-gray-400 mt-1 space-x-1 space-x-reverse">
+                                  {entry.items.map((it, idx) => (
+                                    <span key={idx} className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 inline-block mr-1">
+                                      {it.productName} ({it.quantity} {it.unitName})
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 font-black text-red-600">
+                              {entry.credit > 0 ? `${entry.credit.toFixed(2)} ج.م` : '-'}
+                            </td>
+                            <td className="p-3 font-black text-emerald-600">
+                              {entry.debit > 0 ? `${entry.debit.toFixed(2)} ج.م` : '-'}
+                            </td>
+                            <td className="p-3 font-black text-gray-900 bg-gray-50/70">
+                              {entry.runningBalance.toFixed(2)} ج.م
+                            </td>
+                            <td className="p-3 text-gray-400 font-bold">{entry.user}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-gray-100 flex justify-end">
+              <button 
+                type="button" 
+                onClick={() => setIsStatementOpen(false)} 
+                className="px-6 py-2.5 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-900 transition-all text-sm"
+              >
+                إغلاق كشف الحساب
+              </button>
+            </div>
           </div>
         </div>
       )}

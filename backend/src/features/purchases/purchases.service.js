@@ -3,11 +3,149 @@ const prisma = new PrismaClient();
 
 // === Suppliers ===
 const getAllSuppliers = async () => {
-  return prisma.supplier.findMany({
+  const suppliers = await prisma.supplier.findMany({
     include: {
-      purchases: { select: { totalAmount: true, paidAmount: true } }
+      purchases: {
+        select: {
+          id: true,
+          totalAmount: true,
+          paidAmount: true,
+          status: true,
+          createdAt: true
+        }
+      },
+      payments: {
+        select: {
+          id: true,
+          amount: true,
+          createdAt: true
+        }
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  return suppliers.map(s => {
+    const totalPurchases = s.purchases.reduce((acc, p) => acc + Number(p.totalAmount), 0);
+    const totalPaid = s.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
+    const currentDebt = totalPurchases - totalPaid;
+
+    return {
+      id: s.id,
+      name: s.name,
+      address: s.address,
+      notes: s.notes,
+      isActive: s.isActive,
+      createdAt: s.createdAt,
+      totalPurchases,
+      totalPaid,
+      totalDebt: currentDebt,
+      currentDebt,
+      purchasesCount: s.purchases.length
+    };
+  });
+};
+
+const getSupplierStatement = async (supplierId) => {
+  const supplier = await prisma.supplier.findUnique({
+    where: { id: Number(supplierId) },
+    include: {
+      purchases: {
+        include: {
+          items: {
+            include: { product: { select: { name: true, unit: true } } }
+          },
+          user: { select: { fullName: true } }
+        },
+        orderBy: { createdAt: 'asc' }
+      },
+      payments: {
+        include: {
+          paymentMethod: { select: { name: true } },
+          user: { select: { fullName: true } }
+        },
+        orderBy: { createdAt: 'asc' }
+      }
     }
   });
+
+  if (!supplier) throw new Error('المورد غير موجود');
+
+  // Build unified chronological timeline
+  const timeline = [];
+
+  for (const p of supplier.purchases) {
+    timeline.push({
+      id: `PURCHASE-${p.id}`,
+      date: p.createdAt,
+      type: 'PURCHASE',
+      typeName: 'فاتورة مشتريات',
+      reference: p.referenceNo || `#${p.id}`,
+      description: `فاتورة شراء #${p.id} (${p.items.length} أصناف)`,
+      amount: Number(p.totalAmount),
+      debit: 0, // ما سُدد للمورد
+      credit: Number(p.totalAmount), // استحقاق إضافي للمورد
+      user: p.user?.fullName || '-',
+      status: p.status,
+      items: p.items.map(it => ({
+        productName: it.product?.name,
+        quantity: Number(it.quantity),
+        unitName: it.product?.unit || 'قطعة',
+        unitCost: Number(it.unitCost),
+        subtotal: Number(it.subtotal)
+      }))
+    });
+  }
+
+  for (const pay of supplier.payments) {
+    timeline.push({
+      id: `PAYMENT-${pay.id}`,
+      date: pay.createdAt,
+      type: 'PAYMENT',
+      typeName: 'دفعة سداد نقدية',
+      reference: pay.purchaseId ? `فاتورة #${pay.purchaseId}` : `سداد حساب`,
+      description: `سداد للمورد عبر [${pay.paymentMethod?.name || 'الخزينة'}]`,
+      amount: Number(pay.amount),
+      debit: Number(pay.amount), // سداد يخفض مديونيتنا
+      credit: 0,
+      user: pay.user?.fullName || '-',
+      paymentMethod: pay.paymentMethod?.name || '-'
+    });
+  }
+
+  // Sort chronological ascending
+  timeline.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Compute running balance (الرصيد التراكمي للمديونية)
+  let runningDebt = 0;
+  const entries = timeline.map(entry => {
+    runningDebt += (entry.credit - entry.debit);
+    return {
+      ...entry,
+      runningBalance: runningDebt
+    };
+  });
+
+  const totalPurchases = supplier.purchases.reduce((acc, p) => acc + Number(p.totalAmount), 0);
+  const totalPaid = supplier.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
+  const currentDebt = totalPurchases - totalPaid;
+
+  return {
+    supplier: {
+      id: supplier.id,
+      name: supplier.name,
+      address: supplier.address,
+      notes: supplier.notes,
+      isActive: supplier.isActive,
+      createdAt: supplier.createdAt
+    },
+    summary: {
+      totalPurchases,
+      totalPaid,
+      currentDebt
+    },
+    entries
+  };
 };
 
 const createSupplier = async (data) => {
@@ -221,5 +359,13 @@ const getPurchaseById = async (id) => {
   return purchase;
 };
 
-module.exports = { getAllSuppliers, createSupplier, updateSupplierStatus, createPurchase, paySupplier, getPurchaseById };
+module.exports = { 
+  getAllSuppliers, 
+  getSupplierStatement,
+  createSupplier, 
+  updateSupplierStatus, 
+  createPurchase, 
+  paySupplier, 
+  getPurchaseById 
+};
 

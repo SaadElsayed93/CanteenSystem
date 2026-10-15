@@ -8,6 +8,7 @@ const { logAudit } = require('../../common/middleware/audit');
 router.use(authMiddleware);
 
 router.get('/suppliers', checkPermission('MANAGE_PURCHASES'), purchasesController.getSuppliers);
+router.get('/suppliers/:id/statement', checkPermission('MANAGE_PURCHASES'), purchasesController.getSupplierStatement);
 router.post('/suppliers', checkPermission('MANAGE_PURCHASES'), logAudit('CREATE', 'SUPPLIER'), purchasesController.createSupplier);
 router.patch('/suppliers/:id/status', checkPermission('MANAGE_PURCHASES'), logAudit('UPDATE', 'SUPPLIER'), purchasesController.toggleSupplierStatus);
 

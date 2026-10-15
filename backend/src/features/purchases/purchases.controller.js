@@ -3,14 +3,18 @@ const purchasesService = require('./purchases.service');
 const getSuppliers = async (req, res, next) => {
   try {
     const suppliers = await purchasesService.getAllSuppliers();
-    const data = suppliers.map(s => {
-      // Calculate total debt for this supplier
-      const totalDebt = s.purchases.reduce((acc, p) => acc + (Number(p.totalAmount) - Number(p.paidAmount)), 0);
-      return { ...s, totalDebt };
-    });
-    res.json({ success: true, data });
+    res.json({ success: true, data: suppliers });
   } catch (error) {
     next(error);
+  }
+};
+
+const getSupplierStatement = async (req, res, next) => {
+  try {
+    const statement = await purchasesService.getSupplierStatement(req.params.id);
+    res.json({ success: true, data: statement });
+  } catch (error) {
+    res.status(404).json({ success: false, message: error.message });
   }
 };
 
@@ -61,5 +65,13 @@ const getPurchaseById = async (req, res, next) => {
   }
 };
 
-module.exports = { getSuppliers, createSupplier, toggleSupplierStatus, createPurchase, paySupplier, getPurchaseById };
+module.exports = { 
+  getSuppliers, 
+  getSupplierStatement,
+  createSupplier, 
+  toggleSupplierStatus, 
+  createPurchase, 
+  paySupplier, 
+  getPurchaseById 
+};
 
