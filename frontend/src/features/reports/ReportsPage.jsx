@@ -926,13 +926,21 @@ const ReportsPage = () => {
                     </div>
                   )}
 
-                  {/* Section: Top 10 Products */}
+                  {/* Section: All Sold Products */}
                   {detailedData.topProducts && (
                     <div className="space-y-3">
-                      <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
-                        <span>3. أعلى 10 أصناف مبيعاً وربحية خلال الشهر</span>
-                      </h3>
-                      <div className="overflow-x-auto rounded-xl border border-gray-200">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
+                          <span>3. بيان كافة الأصناف المباعة وربحيتها خلال الشهر</span>
+                          <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                            {detailedData.topProducts.length} صنف مباع
+                          </span>
+                        </h3>
+                        <div className="text-xs text-gray-500 font-bold">
+                          إجمالي القطع المباعة: <span className="font-black text-indigo-700">{detailedData.topProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0)}</span> قطعة
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto rounded-xl border border-gray-200 print:overflow-visible print:border-none">
                         <table className="w-full text-right text-xs font-bold">
                           <thead className="bg-gray-100 text-gray-700">
                             <tr>
@@ -949,11 +957,38 @@ const ReportsPage = () => {
                                 <td className="p-3 text-gray-400">{idx + 1}</td>
                                 <td className="p-3 text-gray-900">{p.name}</td>
                                 <td className="p-3 text-indigo-600">{p.quantity}</td>
-                                <td className="p-3 text-emerald-700">{(p.revenue || 0).toFixed(2)} ج.م</td>
-                                <td className="p-3 text-indigo-900">{(p.profit || 0).toFixed(2)} ج.م</td>
+                                <td className="p-3 text-emerald-700">{Number(p.revenue || 0).toFixed(2)} ج.م</td>
+                                <td className={`p-3 ${Number(p.profit || 0) >= 0 ? 'text-indigo-900' : 'text-red-600'}`}>
+                                  {Number(p.profit || 0).toFixed(2)} ج.م
+                                </td>
                               </tr>
                             ))}
+                            {detailedData.topProducts.length === 0 && (
+                              <tr>
+                                <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">
+                                  لا توجد مبيعات أصناف مسجلة خلال هذا الشهر.
+                                </td>
+                              </tr>
+                            )}
                           </tbody>
+                          {detailedData.topProducts.length > 0 && (
+                            <tfoot className="bg-gray-50 font-black text-gray-900 border-t-2 border-gray-200">
+                              <tr>
+                                <td colSpan="2" className="p-3 text-gray-800">
+                                  الإجمالي ({detailedData.topProducts.length} صنف)
+                                </td>
+                                <td className="p-3 text-indigo-700">
+                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0)} قطعة
+                                </td>
+                                <td className="p-3 text-emerald-700">
+                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.revenue || 0), 0).toFixed(2)} ج.م
+                                </td>
+                                <td className="p-3 text-indigo-900">
+                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.profit || 0), 0).toFixed(2)} ج.م
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
                         </table>
                       </div>
                     </div>

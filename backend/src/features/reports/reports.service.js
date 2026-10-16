@@ -457,7 +457,14 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       };
     }));
 
-    const topSelling = Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+    const allSoldProducts = Object.values(productMap)
+      .sort((a, b) => b.revenue - a.revenue)
+      .map(p => ({
+        ...p,
+        revenue: Number(Number(p.revenue || 0).toFixed(2)),
+        cost: Number(Number(p.cost || 0).toFixed(2)),
+        profit: Number(Number(p.profit || 0).toFixed(2))
+      }));
 
     return {
       reportType: 'MONTHLY_FINANCIAL',
@@ -483,9 +490,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       },
       expensesByCategory: Object.values(categoryMap),
       treasuryBalances,
-      topProducts: topSelling,
+      topProducts: allSoldProducts,
       suppliers: suppliersList,
-      data: topSelling
+      data: allSoldProducts
     };
   }
 
