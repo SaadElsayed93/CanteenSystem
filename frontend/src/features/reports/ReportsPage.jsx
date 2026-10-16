@@ -948,6 +948,7 @@ const ReportsPage = () => {
                               <th className="p-3">الصنف</th>
                               <th className="p-3">الكمية المباعة</th>
                               <th className="p-3">إجمالي الإيراد</th>
+                              <th className="p-3">تكلفة البضاعة (سعر الشراء)</th>
                               <th className="p-3">صافي الربح المحقق</th>
                             </tr>
                           </thead>
@@ -958,6 +959,7 @@ const ReportsPage = () => {
                                 <td className="p-3 text-gray-900">{p.name}</td>
                                 <td className="p-3 text-indigo-600">{p.quantity}</td>
                                 <td className="p-3 text-emerald-700">{Number(p.revenue || 0).toFixed(2)} ج.م</td>
+                                <td className="p-3 text-gray-700">{Number(p.cost || 0).toFixed(2)} ج.م</td>
                                 <td className={`p-3 ${Number(p.profit || 0) >= 0 ? 'text-indigo-900' : 'text-red-600'}`}>
                                   {Number(p.profit || 0).toFixed(2)} ج.م
                                 </td>
@@ -965,7 +967,7 @@ const ReportsPage = () => {
                             ))}
                             {detailedData.topProducts.length === 0 && (
                               <tr>
-                                <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">
+                                <td colSpan="6" className="p-6 text-center text-gray-400 font-bold">
                                   لا توجد مبيعات أصناف مسجلة خلال هذا الشهر.
                                 </td>
                               </tr>
@@ -982,6 +984,9 @@ const ReportsPage = () => {
                                 </td>
                                 <td className="p-3 text-emerald-700">
                                   {detailedData.topProducts.reduce((sum, p) => sum + Number(p.revenue || 0), 0).toFixed(2)} ج.م
+                                </td>
+                                <td className="p-3 text-gray-800">
+                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.cost || 0), 0).toFixed(2)} ج.م
                                 </td>
                                 <td className="p-3 text-indigo-900">
                                   {detailedData.topProducts.reduce((sum, p) => sum + Number(p.profit || 0), 0).toFixed(2)} ج.م

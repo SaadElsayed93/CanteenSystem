@@ -20,7 +20,12 @@ const getTreasuryTransactions = async (paymentMethodId) => {
 
 // === Expenses ===
 const getExpenseCategories = async () => {
-  return prisma.expenseCategory.findMany();
+  return prisma.expenseCategory.findMany({
+    where: {
+      name: { in: ['سداد لمورد', 'نثريات', 'حساب مستشفى'] }
+    },
+    orderBy: { id: 'asc' }
+  });
 };
 
 const createExpense = async (data, userId) => {

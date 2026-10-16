@@ -73,7 +73,7 @@ async function main() {
   }
 
   // 4. Default Expense Categories
-  const categories = ['مواد غذائية', 'نظافة', 'صيانة', 'نقل', 'سداد لمورد', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى', 'متنوع', 'أخرى'];
+  const categories = ['سداد لمورد', 'نثريات', 'حساب مستشفى', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى'];
   for (const cat of categories) {
     await prisma.expenseCategory.upsert({
       where: { name: cat },
