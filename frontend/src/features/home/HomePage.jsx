@@ -154,6 +154,9 @@ const HomePage = () => {
       {/* Welcome Header */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-indigo-100 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
+          <div className="inline-block bg-indigo-50 text-indigo-900 text-xs font-black px-3 py-1 rounded-full mb-2 border border-indigo-200">
+            المستشفى العسكري ق.م بالإسماعيلية
+          </div>
           <h1 className="text-2xl font-black text-indigo-900">أهلاً بك، {user.fullName} 👋</h1>
           <p className="text-gray-500 font-bold mt-1">
             {isAdmin ? 'نظرة عامة على أداء الكانتين والرقابة المالية.' : 'مكتب التشغيل اليومي - وردية موفقة!'}

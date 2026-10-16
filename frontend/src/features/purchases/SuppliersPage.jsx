@@ -347,6 +347,9 @@ const SuppliersPage = () => {
                   <FileText size={26} />
                 </div>
                 <div>
+                  <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200">
+                    المستشفى العسكري ق.م بالإسماعيلية - إدارة الكانتين
+                  </div>
                   <h3 className="text-xl font-black text-gray-900">
                     كشف حساب المورد: {statementData ? statementData.supplier.name : 'جاري التحميل...'}
                   </h3>

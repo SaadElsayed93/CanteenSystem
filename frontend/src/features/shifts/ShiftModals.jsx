@@ -329,9 +329,9 @@ export const ShiftModals = () => {
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2">
                   <CheckCircle2 size={28} />
                 </div>
-                <h4 className="text-lg font-black text-gray-900">نظام إدارة الكانتين</h4>
-                <p className="text-xs font-bold text-gray-500">
-                  إيصال تقفيل الوردية اليومية {closedReceipt.shiftNumber ? `(#${closedReceipt.shiftNumber})` : ''}
+                <h4 className="text-base font-black text-gray-900">المستشفى العسكري ق.م بالإسماعيلية</h4>
+                <p className="text-xs font-bold text-gray-600">
+                  إدارة الكانتين - إيصال تقفيل الوردية اليومية {closedReceipt.shiftNumber ? `(#${closedReceipt.shiftNumber})` : ''}
                 </p>
                 <p className="text-xs font-mono text-gray-400 mt-1">
                   {closedReceipt.settledAt ? new Date(closedReceipt.settledAt).toLocaleString('ar-EG') : new Date().toLocaleString('ar-EG')}
@@ -373,17 +373,6 @@ export const ShiftModals = () => {
                     <span className="text-gray-800">{closedReceipt.notes}</span>
                   </div>
                 )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-300 text-center text-xs font-bold text-gray-500">
-                <div>
-                  <p>توقيع الكاشير (المسلّم)</p>
-                  <div className="h-10 mt-1 border-b border-gray-300 border-dashed"></div>
-                </div>
-                <div>
-                  <p>توقيع المستلم / الإدارة</p>
-                  <div className="h-10 mt-1 border-b border-gray-300 border-dashed"></div>
-                </div>
               </div>
             </div>
 

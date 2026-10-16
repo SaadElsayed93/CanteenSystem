@@ -30,11 +30,14 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
       <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md border-2 border-gray-200">
         <div className="flex flex-col items-center mb-8">
-          <div className="bg-indigo-100 p-4 rounded-full mb-4">
+          <div className="bg-indigo-100 p-4 rounded-full mb-3">
             <Store className="text-indigo-600" size={40} />
           </div>
-          <h2 className="text-3xl font-bold text-gray-800">نظام إدارة الكانتين</h2>
-          <p className="text-gray-500 mt-2 text-sm">قم بتسجيل الدخول للمتابعة</p>
+          <div className="inline-block bg-indigo-50 text-indigo-900 text-xs font-black px-3.5 py-1 rounded-full mb-2 border border-indigo-200 shadow-sm">
+            المستشفى العسكري ق.م بالإسماعيلية
+          </div>
+          <h2 className="text-2xl font-black text-gray-800">منظومة إدارة الكانتين</h2>
+          <p className="text-gray-500 mt-1 text-sm font-bold">تسجيل الدخول لمنظومة الكانتين والخدمات</p>
         </div>
         
         {error && <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 text-sm font-bold">{error}</div>}

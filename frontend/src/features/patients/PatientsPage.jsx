@@ -308,6 +308,9 @@ const PatientsPage = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
               <div>
+                <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200">
+                  المستشفى العسكري ق.م بالإسماعيلية - إدارة الكانتين
+                </div>
                 <h3 className="text-2xl font-black text-gray-800">كشف حساب المريض</h3>
                 <p className="text-indigo-600 font-bold mt-1">{statementModal.fullName} (كود: {statementModal.fileNumber})</p>
               </div>

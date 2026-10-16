@@ -211,6 +211,9 @@ const ReportsPage = () => {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center print:hidden">
         <div>
+          <span className="text-xs font-black text-indigo-900 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 inline-block mb-1.5 shadow-sm">
+            المستشفى العسكري ق.م بالإسماعيلية
+          </span>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
             <FileText className="text-indigo-600" size={26} />
             <span>التقارير والإحصائيات المالية</span>
@@ -535,9 +538,15 @@ const ReportsPage = () => {
               
               {/* Formal Document Letterhead */}
               <div className="border-b-2 border-gray-900 pb-5 text-center relative">
-                <div className="flex justify-between items-center mb-3 text-xs text-gray-500 font-bold">
-                  <div>نظام إدارة الكانتين المتكامل v1.0</div>
-                  <div>تاريخ ووقت الطباعة: {formatDateTime(new Date())}</div>
+                <div className="flex justify-between items-center mb-3 text-xs text-gray-700 font-bold">
+                  <div className="text-right">
+                    <div className="text-base font-black text-gray-900">المستشفى العسكري ق.م بالإسماعيلية</div>
+                    <div className="text-xs text-indigo-900 font-bold">إدارة الكانتين والخدمات الغذائية</div>
+                  </div>
+                  <div className="text-left font-mono text-gray-500">
+                    <div>تاريخ ووقت الطباعة:</div>
+                    <div dir="ltr">{formatDateTime(new Date())}</div>
+                  </div>
                 </div>
 
                 <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
@@ -1140,18 +1149,6 @@ const ReportsPage = () => {
                   </div>
                 </div>
               )}
-
-              {/* Printable Signatures Area (Only printed at bottom of page) */}
-              <div className="pt-8 border-t border-gray-300 mt-12 grid grid-cols-2 text-center text-xs font-bold text-gray-800">
-                <div>
-                  <div>المحاسب / الكاشير المسؤول</div>
-                  <div className="mt-8 text-gray-400 font-mono">............................................</div>
-                </div>
-                <div>
-                  <div>اعتماد مدير إدارة الكانتين</div>
-                  <div className="mt-8 text-gray-400 font-mono">............................................</div>
-                </div>
-              </div>
 
             </div>
           )}

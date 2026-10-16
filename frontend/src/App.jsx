@@ -60,8 +60,13 @@ function MainLayout({ children }) {
       {/* Sidebar */}
       <aside className={`print:hidden bg-indigo-900 text-white transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
         <div className="h-16 flex items-center justify-center border-b border-indigo-800 px-4">
-          <Store className="text-indigo-300" size={32} />
-          {isSidebarOpen && <span className="mr-3 font-bold text-xl tracking-wide">الكانتين</span>}
+          <Store className="text-indigo-300 flex-shrink-0" size={28} />
+          {isSidebarOpen && (
+            <div className="mr-3 leading-tight overflow-hidden">
+              <div className="font-black text-sm tracking-wide text-white truncate">إدارة الكانتين</div>
+              <div className="text-[10px] text-indigo-300 font-bold truncate">المستشفى العسكري ق.م بالإسماعيلية</div>
+            </div>
+          )}
         </div>
         
         <nav className="flex-1 overflow-y-auto py-4">
@@ -122,8 +127,10 @@ function MainLayout({ children }) {
             <Menu size={24} />
           </button>
           
-          <div className="font-bold text-gray-700">
-            نظام إدارة الكانتين المتكامل
+          <div className="font-bold text-gray-700 flex items-center gap-2 text-xs sm:text-sm">
+            <span className="text-indigo-900 font-black">المستشفى العسكري ق.م بالإسماعيلية</span>
+            <span className="text-gray-300">|</span>
+            <span className="text-gray-600 font-bold">منظومة إدارة الكانتين</span>
           </div>
         </header>
 

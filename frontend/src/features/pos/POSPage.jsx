@@ -624,8 +624,8 @@ const POSPage = () => {
             {/* Printable Thermal Receipt Container */}
             <div id="thermal-receipt" className="flex-1 overflow-y-auto bg-gray-50/50 p-4 rounded-2xl border border-dashed border-gray-300 font-mono text-gray-800">
               <div className="text-center mb-3">
-                <h2 className="text-xl font-black text-gray-900 tracking-wider">كـانـتـيـن الـوحـدة</h2>
-                <p className="text-xs text-gray-500 font-sans mt-0.5">إيصال مبيعات الكانتين</p>
+                <h2 className="text-sm font-black text-gray-900 tracking-wide">المستشفى العسكري ق.م بالإسماعيلية</h2>
+                <p className="text-xs text-gray-600 font-sans font-black mt-0.5">إدارة الكانتين والخدمات</p>
                 <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
                 <div className="text-xs text-gray-600 space-y-1 text-right font-sans font-bold">
                   <div>رقم الفاتورة: <span className="font-mono font-black">{completedReceipt.invoiceNumber}</span></div>
