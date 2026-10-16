@@ -527,6 +527,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'SHIFTS',
       summary: {
         shiftsCount: shifts.length,
         totalStarting,
@@ -571,6 +572,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'SUPPLIERS',
       summary: {
         totalSuppliers: suppliers.length,
         totalPurchases,
@@ -642,6 +644,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     })).sort((a, b) => b.quantity - a.quantity);
 
     return {
+      reportType: 'SALES',
       summary: {
         totalSales: totalRevenue,
         totalCost,
@@ -686,6 +689,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'PURCHASES',
       summary: {
         totalPurchases,
         totalPaid,
@@ -719,6 +723,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'EXPENSES',
       summary: { totalExpenses, expenseCount: expenses.length },
       data
     };
@@ -752,6 +757,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'INVENTORY',
       summary: { totalValue, totalItems, uniqueProducts: products.length },
       data
     };
@@ -788,6 +794,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'LOW_STOCK',
       summary: {
         lowStockCount,
         uniqueProducts: data.length
@@ -834,6 +841,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     });
 
     return {
+      reportType: 'PATIENTS',
       summary: {
         totalDebts,
         totalDeposits,

@@ -182,6 +182,7 @@ const ReportsPage = () => {
 
   const generateReportForDates = async (typeToFetch, sDate, eDate) => {
     setIsGenerating(true);
+    setDetailedData(null); // Clear previous report data immediately to avoid schema collisions
     try {
       const sStr = formatDateISO(sDate);
       const eStr = formatDateISO(eDate);
@@ -201,6 +202,7 @@ const ReportsPage = () => {
 
   const handleReportTypeChange = (newType) => {
     setReportType(newType);
+    setDetailedData(null);
     if (newType === 'DAILY_FINANCIAL') {
       if (preset === 'THIS_MONTH' || preset === 'LAST_MONTH') {
         setPreset('TODAY');
@@ -575,8 +577,17 @@ const ReportsPage = () => {
             )}
           </div>
 
+          {/* Loading state indicator */}
+          {isGenerating && (
+            <div className="bg-white p-16 rounded-3xl shadow-sm border-2 border-indigo-100 flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+              <div className="text-xl font-black text-gray-800">جاري إعداد واستخراج بيانات التقرير...</div>
+              <div className="text-xs font-bold text-gray-400 mt-1">المستشفى العسكري ق.م بالإسماعيلية - نظام الكانتين</div>
+            </div>
+          )}
+
           {/* ================= REPORT DOCUMENT CONTAINER (PRINT READY) ================= */}
-          {detailedData && (
+          {!isGenerating && detailedData && (
             <div className="bg-white p-8 rounded-3xl shadow-sm border-2 border-gray-200 print:border-none print:shadow-none print:p-0 space-y-8">
               
               {/* Formal Document Letterhead */}
@@ -622,35 +633,35 @@ const ReportsPage = () => {
               </div>
 
               {/* ================= VIEW 1: DAILY FINANCIAL REPORT ================= */}
-              {reportType === 'DAILY_FINANCIAL' && detailedData.summary && (
+              {reportType === 'DAILY_FINANCIAL' && detailedData?.reportType === 'DAILY_FINANCIAL' && detailedData.summary && (
                 <div className="space-y-8">
                   {/* KPI Cards Banner */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-center">
                       <div className="text-xs font-bold text-indigo-700 mb-1">إجمالي المبيعات (كاش + حساب)</div>
-                      <div className="text-2xl font-black text-indigo-900">{(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-indigo-900">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">
-                        كاش: {(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {(detailedData.summary.creditSales || 0).toFixed(2)}
+                        كاش: {Number(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {Number(detailedData.summary.creditSales || 0).toFixed(2)}
                       </div>
                     </div>
 
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
                       <div className="text-xs font-bold text-gray-600 mb-1">تكلفة البضاعة المباعة (COGS)</div>
-                      <div className="text-2xl font-black text-gray-800">{(detailedData.summary.costOfGoodsSold || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-gray-800">{Number(detailedData.summary.costOfGoodsSold || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">سعر الشراء للأصناف المباعة</div>
                     </div>
 
                     <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات المنصرفة</div>
-                      <div className="text-2xl font-black text-amber-900">{(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">
-                        تشغيل: {(detailedData.summary.operationalExpenses || 0).toFixed(2)} | سداد مورد: {(detailedData.summary.supplierPayments || 0).toFixed(2)}
+                        تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)} | سداد مورد: {Number(detailedData.summary.supplierPayments || 0).toFixed(2)}
                       </div>
                     </div>
 
                     <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-300 text-center">
                       <div className="text-xs font-black text-emerald-800 mb-1">{isSingleDayMode ? 'صافي ربح اليوم الفعلي ✨' : 'صافي ربح الفترة الفعلي ✨'}</div>
-                      <div className="text-2xl font-black text-emerald-700">{(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-emerald-700">{Number(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-emerald-600 mt-1 font-bold">مجمل الربح - المصروفات التشغيلية</div>
                     </div>
                   </div>
@@ -682,21 +693,21 @@ const ReportsPage = () => {
                             <tr key={idx} className="hover:bg-gray-50">
                               <td className="p-3 font-mono">{s.shiftNumber}</td>
                               <td className="p-3">
-                                <span className={`px-2 py-0.5 rounded-full text-[10px] ${s.status.includes('مفتوحة') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] ${s.status?.includes('مفتوحة') ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
                                   {s.status}
                                 </span>
                               </td>
                               <td className="p-3">{s.openedBy}</td>
                               <td className="p-3 font-mono" dir="ltr">{formatDateTime(s.openedAt)}</td>
                               <td className="p-3 font-mono" dir="ltr">{s.closedAt ? formatDateTime(s.closedAt) : '-'}</td>
-                              <td className="p-3">{s.startingCash} ج</td>
-                              <td className="p-3">{s.systemBalance !== null ? `${s.systemBalance} ج` : '-'}</td>
-                              <td className="p-3">{s.actualBalance !== null ? `${s.actualBalance} ج` : '-'}</td>
-                              <td className={`p-3 ${s.discrepancy.includes('عجز') ? 'text-red-600' : s.discrepancy.includes('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
-                                {s.discrepancy}
+                              <td className="p-3">{Number(s.startingCash || 0).toFixed(2)} ج</td>
+                              <td className="p-3">{s.systemBalance !== null && s.systemBalance !== '-' ? `${Number(s.systemBalance).toFixed(2)} ج` : '-'}</td>
+                              <td className="p-3">{s.actualBalance !== null && s.actualBalance !== '-' ? `${Number(s.actualBalance).toFixed(2)} ج` : '-'}</td>
+                              <td className={`p-3 ${s.discrepancy?.includes?.('عجز') ? 'text-red-600' : s.discrepancy?.includes?.('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
+                                {s.discrepancy || 'مطابق للنظام'}
                               </td>
-                              <td className="p-3 text-indigo-700">{s.transferredCash} ج</td>
-                              <td className="p-3 text-emerald-700">{s.remainingCash} ج</td>
+                              <td className="p-3 text-indigo-700">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
+                              <td className="p-3 text-emerald-700">{Number(s.remainingCash || 0).toFixed(2)} ج</td>
                             </tr>
                           ))}
                           {(!detailedData.shifts || detailedData.shifts.length === 0) && (
@@ -771,7 +782,7 @@ const ReportsPage = () => {
                                 <td className="p-3 text-gray-600">{exp.description}</td>
                                 <td className="p-3 text-indigo-700">{exp.paymentMethod}</td>
                                 <td className="p-3 text-gray-700">{exp.user}</td>
-                                <td className="p-3 text-red-600 font-black">{exp.amount.toFixed(2)} ج.م</td>
+                                <td className="p-3 text-red-600 font-black">{Number(exp.amount || 0).toFixed(2)} ج.م</td>
                               </tr>
                             ))}
                           </tbody>
@@ -783,33 +794,33 @@ const ReportsPage = () => {
               )}
 
               {/* ================= VIEW 2: MONTHLY FINANCIAL CLOSING REPORT ================= */}
-              {reportType === 'MONTHLY_FINANCIAL' && detailedData.summary && (
+              {reportType === 'MONTHLY_FINANCIAL' && detailedData?.reportType === 'MONTHLY_FINANCIAL' && detailedData.summary && (
                 <div className="space-y-8">
                   {/* Monthly Summary Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-center">
                       <div className="text-xs font-bold text-indigo-700 mb-1">إجمالي مبيعات الشهر</div>
-                      <div className="text-2xl font-black text-indigo-900">{(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-indigo-900">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">
-                        كاش: {(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {(detailedData.summary.creditSales || 0).toFixed(2)}
+                        كاش: {Number(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {Number(detailedData.summary.creditSales || 0).toFixed(2)}
                       </div>
                     </div>
 
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
                       <div className="text-xs font-bold text-gray-600 mb-1">تكلفة البضاعة المباعة (COGS)</div>
-                      <div className="text-2xl font-black text-gray-800">{(detailedData.summary.costOfGoodsSold || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-gray-500 mt-1 font-bold">مجمل الربح: {(detailedData.summary.grossProfit || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-gray-800">{Number(detailedData.summary.costOfGoodsSold || 0).toFixed(2)} ج.م</div>
+                      <div className="text-[11px] text-gray-500 mt-1 font-bold">مجمل الربح: {Number(detailedData.summary.grossProfit || 0).toFixed(2)} ج.م</div>
                     </div>
 
                     <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات الشهرية</div>
-                      <div className="text-2xl font-black text-amber-900">{(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-gray-500 mt-1 font-bold">تشغيل: {(detailedData.summary.operationalExpenses || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
+                      <div className="text-[11px] text-gray-500 mt-1 font-bold">تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)} ج.م</div>
                     </div>
 
                     <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-300 text-center">
                       <div className="text-xs font-black text-emerald-800 mb-1">صافي أرباح تقفيلة الشهر ✨</div>
-                      <div className="text-2xl font-black text-emerald-700">{(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-emerald-700">{Number(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-emerald-600 mt-1 font-bold">الأرباح الفعلية المحققة للشهر</div>
                     </div>
                   </div>
@@ -825,7 +836,7 @@ const ReportsPage = () => {
                           <div key={idx} className="p-4 bg-white rounded-2xl border-2 border-gray-200 flex justify-between items-center shadow-sm">
                             <div>
                               <div className="text-xs text-gray-500 font-bold">{m.name}</div>
-                              <div className="text-xl font-black text-gray-900 mt-0.5">{m.balance.toFixed(2)} ج.م</div>
+                              <div className="text-xl font-black text-gray-900 mt-0.5">{Number(m.balance || 0).toFixed(2)} ج.م</div>
                             </div>
                             <Wallet className="text-indigo-600" size={26} />
                           </div>
@@ -852,14 +863,15 @@ const ReportsPage = () => {
                           </thead>
                           <tbody className="divide-y divide-gray-100 font-bold">
                             {detailedData.expensesByCategory.map((c, idx) => {
-                              const pct = detailedData.summary.totalExpenses > 0 
-                                ? ((c.total / detailedData.summary.totalExpenses) * 100).toFixed(1) 
+                              const totExp = Number(detailedData.summary.totalExpenses || 0);
+                              const pct = totExp > 0 
+                                ? ((Number(c.total || 0) / totExp) * 100).toFixed(1) 
                                 : 0;
                               return (
                                 <tr key={idx} className="hover:bg-gray-50">
                                   <td className="p-3 text-gray-900">{c.category}</td>
                                   <td className="p-3 text-gray-600">{c.count}</td>
-                                  <td className="p-3 text-red-600 font-black">{c.total.toFixed(2)} ج.م</td>
+                                  <td className="p-3 text-red-600 font-black">{Number(c.total || 0).toFixed(2)} ج.م</td>
                                   <td className="p-3 text-gray-500">{pct}%</td>
                                 </tr>
                               );
@@ -906,20 +918,20 @@ const ReportsPage = () => {
               )}
 
               {/* ================= VIEW 3: SHIFTS REPORT ================= */}
-              {reportType === 'SHIFTS' && detailedData.data && (
+              {reportType === 'SHIFTS' && detailedData?.reportType === 'SHIFTS' && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي عدد الورديات</div>
-                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.shiftsCount || detailedData.data.length}</div>
+                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.shiftsCount ?? detailedData.data.length}</div>
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي النقدية الموردة للخزينة</div>
-                      <div className="text-2xl font-black text-emerald-700">{(detailedData.summary?.totalTransferred || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-emerald-700">{Number(detailedData.summary?.totalTransferred || 0).toFixed(2)} ج.م</div>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي عهد البداية</div>
-                      <div className="text-2xl font-black text-gray-800">{(detailedData.summary?.totalStarting || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-gray-800">{Number(detailedData.summary?.totalStarting || 0).toFixed(2)} ج.م</div>
                     </div>
                   </div>
 
@@ -950,20 +962,27 @@ const ReportsPage = () => {
                                 {s.status}
                               </span>
                             </td>
-                            <td className="p-3">{s.openedBy}</td>
+                            <td className="p-3">{s.openedBy || '-'}</td>
                             <td className="p-3 font-mono" dir="ltr">{formatDateTime(s.openedAt)}</td>
-                            <td className="p-3">{s.closedBy}</td>
+                            <td className="p-3">{s.closedBy || '-'}</td>
                             <td className="p-3 font-mono" dir="ltr">{s.closedAt ? formatDateTime(s.closedAt) : '-'}</td>
-                            <td className="p-3">{s.startingCash} ج</td>
-                            <td className="p-3">{s.systemBalance !== '-' ? `${s.systemBalance} ج` : '-'}</td>
-                            <td className="p-3">{s.actualBalance !== '-' ? `${s.actualBalance} ج` : '-'}</td>
-                            <td className={`p-3 ${s.discrepancy.includes('عجز') ? 'text-red-600' : s.discrepancy.includes('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
-                              {s.discrepancy}
+                            <td className="p-3">{Number(s.startingCash || 0).toFixed(2)} ج</td>
+                            <td className="p-3">{s.systemBalance !== null && s.systemBalance !== '-' ? `${Number(s.systemBalance).toFixed(2)} ج` : '-'}</td>
+                            <td className="p-3">{s.actualBalance !== null && s.actualBalance !== '-' ? `${Number(s.actualBalance).toFixed(2)} ج` : '-'}</td>
+                            <td className={`p-3 ${s.discrepancy?.includes?.('عجز') ? 'text-red-600' : s.discrepancy?.includes?.('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
+                              {s.discrepancy || 'مطابق للنظام'}
                             </td>
-                            <td className="p-3 text-indigo-700">{s.transferredCash} ج</td>
-                            <td className="p-3 text-emerald-700">{s.remainingCash} ج</td>
+                            <td className="p-3 text-indigo-700">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
+                            <td className="p-3 text-emerald-700">{Number(s.remainingCash || 0).toFixed(2)} ج</td>
                           </tr>
                         ))}
+                        {detailedData.data.length === 0 && (
+                          <tr>
+                            <td colSpan="12" className="p-8 text-center text-gray-400 font-bold">
+                              لا توجد ورديات مسجلة في هذه الفترة
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -971,20 +990,20 @@ const ReportsPage = () => {
               )}
 
               {/* ================= VIEW 4: SUPPLIERS DEBTS REPORT ================= */}
-              {reportType === 'SUPPLIERS' && detailedData.data && (
+              {reportType === 'SUPPLIERS' && detailedData?.reportType === 'SUPPLIERS' && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي الموردين</div>
-                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.totalSuppliers || detailedData.data.length}</div>
+                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.totalSuppliers ?? detailedData.data.length}</div>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي المشتريات التاريخية</div>
-                      <div className="text-2xl font-black text-gray-800">{(detailedData.summary?.totalPurchases || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-gray-800">{Number(detailedData.summary?.totalPurchases || 0).toFixed(2)} ج.م</div>
                     </div>
                     <div className="p-4 bg-red-50 rounded-2xl border-2 border-red-200 text-center">
                       <div className="text-xs font-black text-red-700 mb-1">إجمالي ديون الموردين (علينا)</div>
-                      <div className="text-2xl font-black text-red-600">{(detailedData.summary?.totalDebt || 0).toFixed(2)} ج.م</div>
+                      <div className="text-2xl font-black text-red-600">{Number(detailedData.summary?.totalDebt || 0).toFixed(2)} ج.م</div>
                     </div>
                   </div>
 
@@ -1005,18 +1024,25 @@ const ReportsPage = () => {
                         {detailedData.data.map((s, idx) => (
                           <tr key={idx} className="hover:bg-gray-50">
                             <td className="p-3 text-gray-900 font-black">{s.name}</td>
-                            <td className="p-3 font-mono">{s.phone}</td>
-                            <td className="p-3">{s.purchasesCount}</td>
-                            <td className="p-3 text-gray-700">{s.totalPurchases.toFixed(2)} ج.م</td>
-                            <td className="p-3 text-emerald-700">{s.totalPaid.toFixed(2)} ج.م</td>
-                            <td className="p-3 text-red-600 font-black text-sm">{s.currentDebt.toFixed(2)} ج.م</td>
+                            <td className="p-3 font-mono">{s.phone || '-'}</td>
+                            <td className="p-3">{s.purchasesCount ?? 0}</td>
+                            <td className="p-3 text-gray-700">{Number(s.totalPurchases || 0).toFixed(2)} ج.م</td>
+                            <td className="p-3 text-emerald-700">{Number(s.totalPaid || 0).toFixed(2)} ج.م</td>
+                            <td className="p-3 text-red-600 font-black text-sm">{Number(s.currentDebt || 0).toFixed(2)} ج.م</td>
                             <td className="p-3">
-                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] ${s.currentDebt > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
-                                {s.status}
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] ${(s.currentDebt || 0) > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                                {s.status || ((s.currentDebt || 0) > 0 ? 'مستحق له مديونية' : 'خالص الحساب')}
                               </span>
                             </td>
                           </tr>
                         ))}
+                        {detailedData.data.length === 0 && (
+                          <tr>
+                            <td colSpan="7" className="p-8 text-center text-gray-400 font-bold">
+                              لا يوجد موردين مسجلين حالياً
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1024,7 +1050,7 @@ const ReportsPage = () => {
               )}
 
               {/* ================= VIEW 5: GENERAL REPORTS (SALES, PURCHASES, EXPENSES, INVENTORY, LOW_STOCK, PATIENTS) ================= */}
-              {!['DAILY_FINANCIAL', 'MONTHLY_FINANCIAL', 'SHIFTS', 'SUPPLIERS'].includes(reportType) && detailedData.data && (
+              {!['DAILY_FINANCIAL', 'MONTHLY_FINANCIAL', 'SHIFTS', 'SUPPLIERS'].includes(reportType) && detailedData?.reportType === reportType && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   {/* Summary Cards */}
                   {detailedData.summary && (
@@ -1058,7 +1084,7 @@ const ReportsPage = () => {
                           </p>
                           <p className="text-xl font-black text-indigo-700">
                             {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients'].includes(key)
-                              ? `${val.toFixed(2)} ج.م` 
+                              ? `${Number(val || 0).toFixed(2)} ج.م` 
                               : val}
                           </p>
                         </div>
@@ -1128,62 +1154,62 @@ const ReportsPage = () => {
                             {reportType === 'SALES' && (
                               <>
                                 <td className="p-3 text-gray-900 font-black">{row.name}</td>
-                                <td className="p-3 text-indigo-600">{row.quantity}</td>
-                                <td className="p-3 text-gray-600">{row.cost.toFixed(2)} ج</td>
-                                <td className="p-3 text-emerald-700">{row.revenue.toFixed(2)} ج</td>
-                                <td className="p-3 text-indigo-900">{row.profit.toFixed(2)} ج</td>
+                                <td className="p-3 text-indigo-600">{row.quantity ?? 0}</td>
+                                <td className="p-3 text-gray-600">{Number(row.cost || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-emerald-700">{Number(row.revenue || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-indigo-900">{Number(row.profit || 0).toFixed(2)} ج</td>
                               </>
                             )}
                             {reportType === 'PURCHASES' && (
                               <>
                                 <td className="p-3 font-mono">{row.id}</td>
                                 <td className="p-3 font-mono" dir="ltr">{formatDateTime(row.date)}</td>
-                                <td className="p-3 font-black text-gray-900">{row.supplierName}</td>
-                                <td className="p-3 text-gray-500 font-normal">{row.itemsSummary}</td>
-                                <td className="p-3 text-indigo-700">{row.total.toFixed(2)} ج</td>
-                                <td className="p-3 text-emerald-700">{row.paid.toFixed(2)} ج</td>
-                                <td className="p-3 text-red-600">{row.remaining.toFixed(2)} ج</td>
+                                <td className="p-3 font-black text-gray-900">{row.supplierName || 'غير محدد'}</td>
+                                <td className="p-3 text-gray-500 font-normal">{row.itemsSummary || '-'}</td>
+                                <td className="p-3 text-indigo-700">{Number(row.total || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-emerald-700">{Number(row.paid || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-red-600">{Number(row.remaining || 0).toFixed(2)} ج</td>
                               </>
                             )}
                             {reportType === 'EXPENSES' && (
                               <>
                                 <td className="p-3 font-mono" dir="ltr">{formatDate(row.date)}</td>
-                                <td className="p-3 text-gray-900">{row.category}</td>
-                                <td className="p-3 text-gray-600 font-normal">{row.description}</td>
-                                <td className="p-3 text-indigo-700">{row.paymentMethod}</td>
-                                <td className="p-3 text-red-600 font-black">{row.amount.toFixed(2)} ج</td>
+                                <td className="p-3 text-gray-900">{row.category || 'عام'}</td>
+                                <td className="p-3 text-gray-600 font-normal">{row.description || '-'}</td>
+                                <td className="p-3 text-indigo-700">{row.paymentMethod || 'نقدي (الدرج)'}</td>
+                                <td className="p-3 text-red-600 font-black">{Number(row.amount || 0).toFixed(2)} ج</td>
                               </>
                             )}
                             {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
                               <>
                                 <td className="p-3 text-gray-900 font-black">{row.name}</td>
-                                <td className="p-3 text-gray-500">{row.category || row.unit}</td>
-                                <td className="p-3 text-indigo-700 font-black">{row.quantity}</td>
-                                <td className="p-3 text-gray-700">{row.purchasePrice} ج</td>
-                                <td className="p-3 text-emerald-700 font-black">{(row.totalValue || row.estimatedCost || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-gray-500">{row.category || row.unit || '-'}</td>
+                                <td className="p-3 text-indigo-700 font-black">{row.quantity ?? 0}</td>
+                                <td className="p-3 text-gray-700">{Number(row.purchasePrice || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-emerald-700 font-black">{Number(row.totalValue || row.estimatedCost || 0).toFixed(2)} ج</td>
                               </>
                             )}
                             {reportType === 'PATIENTS' && (
                               <>
                                 <td className="p-3 font-mono">{row.id}</td>
                                 <td className="p-3 text-gray-900 font-black">{row.name}</td>
-                                <td className="p-3 text-gray-500">{row.internalNumber}</td>
+                                <td className="p-3 text-gray-500">{row.internalNumber || '-'}</td>
                                 <td className="p-3">
                                   <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-                                    row.currentDebt < 0 ? 'bg-red-100 text-red-800' : row.currentDebt > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'
+                                    (row.currentDebt || 0) < 0 ? 'bg-red-100 text-red-800' : (row.currentDebt || 0) > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'
                                   }`}>
                                     {row.type}
                                   </span>
                                 </td>
-                                <td className={`p-3 text-sm font-black ${row.currentDebt < 0 ? 'text-red-600' : row.currentDebt > 0 ? 'text-emerald-700' : 'text-gray-500'}`}>
-                                  {Math.abs(row.currentDebt).toFixed(2)} ج.م
+                                <td className={`p-3 text-sm font-black ${(row.currentDebt || 0) < 0 ? 'text-red-600' : (row.currentDebt || 0) > 0 ? 'text-emerald-700' : 'text-gray-500'}`}>
+                                  {Math.abs(Number(row.currentDebt || 0)).toFixed(2)} ج.م
                                 </td>
                                 <td className="p-3">
                                   <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800">
                                     {row.status}
                                   </span>
                                 </td>
-                                <td className="p-3 text-gray-400 font-normal">{row.notes}</td>
+                                <td className="p-3 text-gray-400 font-normal">{row.notes || '-'}</td>
                               </>
                             )}
                           </tr>
