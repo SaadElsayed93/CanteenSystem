@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { ShiftProvider } from './features/shifts/ShiftContext';
+import { ShiftModals } from './features/shifts/ShiftModals';
 import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import UserManagement from './features/settings/UserManagement';
@@ -139,8 +141,10 @@ function App() {
     <BrowserRouter>
       <Toaster position="top-center" reverseOrder={false} toastOptions={{ className: 'font-bold font-sans text-right' }} />
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
+        <ShiftProvider>
+          <ShiftModals />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
           
           <Route path="/" element={
             <ProtectedRoute>
@@ -226,7 +230,8 @@ function App() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </AuthProvider>
+      </ShiftProvider>
+    </AuthProvider>
     </BrowserRouter>
   );
 }

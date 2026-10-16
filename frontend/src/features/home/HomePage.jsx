@@ -4,10 +4,11 @@ import client from '../../api/client';
 import { 
   ShoppingCart, RotateCcw, PlusCircle, CreditCard, 
   AlertTriangle, TrendingUp, DollarSign, PackageOpen, 
-  Users, Activity, Wallet, Search
+  Users, Activity, Wallet, Search, Lock, Unlock, Clock
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useShift } from '../shifts/ShiftContext';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -20,9 +21,91 @@ const HomePage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  const { isOpen, setIsOpeningModal, setIsClosingModal } = useShift();
+
   useEffect(() => {
     fetchHomeData();
-  }, []);
+  }, [isOpen]);
+
+  const ShiftBanner = ({ shiftStats }) => {
+    if (!shiftStats) return null;
+
+    if (shiftStats.isOpen) {
+      return (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between border-2 border-emerald-400/30 gap-6">
+          <div className="flex-1 w-full">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-black border border-white/30 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                وردية نشطة #{shiftStats.shiftNumber}
+              </span>
+              {shiftStats.openedBy && (
+                <span className="text-emerald-100 text-xs font-bold">
+                  فتحها: {shiftStats.openedBy}
+                </span>
+              )}
+              {shiftStats.openedAt && (
+                <span className="text-emerald-200 text-xs font-mono">
+                  بدأت: {new Date(shiftStats.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
+            <p className="text-emerald-100 font-black text-sm mb-1 tracking-wide">النقدية المتوقعة في درج الكاشير الآن (تقفيل الوردية)</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">{Number(shiftStats.expectedCash).toFixed(2)} <span className="text-2xl font-bold text-emerald-200">ج.م</span></h2>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-black">
+              {Number(shiftStats.startingCash) > 0 && (
+                <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/30 text-emerald-100">عهدة بداية اليومية: {Number(shiftStats.startingCash).toFixed(2)} ج.م</span>
+              )}
+              <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">المبيعات النقدية: {Number(shiftStats.sales).toFixed(2)} ج.م</span>
+              <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">إيداعات المرضى: {Number(shiftStats.deposits).toFixed(2)} ج.م</span>
+              <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-rose-200">المنصرفات والمشتريات: {Number(shiftStats.expenses).toFixed(2)} ج.م</span>
+              {Number(shiftStats.transfers) > 0 && (
+                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-amber-200">توريدات وتحويلات سابقة: {Number(shiftStats.transfers).toFixed(2)} ج.م</span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <button
+              onClick={() => setIsClosingModal(true)}
+              className="w-full lg:w-auto bg-rose-600 hover:bg-rose-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center gap-2.5 border border-rose-400"
+            >
+              <Lock size={20} />
+              <span>تقفيل اليومية (توريد الدرج)</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 rounded-3xl p-6 text-white shadow-xl flex flex-col lg:flex-row items-center justify-between border-2 border-amber-400/30 gap-6">
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-black border border-white/30 flex items-center gap-1.5">
+              <Lock size={14} />
+              اليومية والوردية مغلقة
+            </span>
+            {shiftStats.lastShift && (
+              <span className="text-amber-100 text-xs font-bold">
+                آخر وردية مغلقة #{shiftStats.lastShift.shiftNumber} ({shiftStats.lastShift.userClosed?.fullName || 'الكاشير'})
+              </span>
+            )}
+          </div>
+          <h2 className="text-2xl font-black mb-1">الوردية مغلقة حالياً - يلزم فتح اليومية لبدء المبيعات</h2>
+          <p className="text-amber-100 text-sm font-bold">
+            الرصيد المتوفر بالدرج حالياً: <span className="text-white font-black text-lg">{Number(shiftStats.expectedCash || 0).toFixed(2)} ج.م</span>
+          </p>
+        </div>
+        <button
+          onClick={() => setIsOpeningModal(true)}
+          className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-emerald-950/30 transition-all flex items-center justify-center gap-2 border border-emerald-400"
+        >
+          <Unlock size={22} />
+          <span className="text-base">🔓 فتح يومية جديدة وبدء الوردية</span>
+        </button>
+      </div>
+    );
+  };
 
   const fetchHomeData = async () => {
     try {
@@ -81,24 +164,7 @@ const HomePage = () => {
         <div className="space-y-6">
           
           {/* Shift Cash Widget */}
-          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row items-center justify-between border-2 border-emerald-400/30">
-            <div>
-              <p className="text-emerald-100 font-black text-sm mb-1 tracking-wide">النقدية المتوقعة في درج الكاشير الآن (تقفيل الوردية)</p>
-              <h2 className="text-5xl font-black tracking-tight">{data.shiftStats.expectedCash} <span className="text-2xl font-bold text-emerald-200">ج.م</span></h2>
-              <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs font-black">
-                {Number(data.shiftStats.startingCash) > 0 && (
-                  <span className="bg-white/20 px-3 py-1.5 rounded-lg border border-white/30 text-emerald-100">عهدة بداية اليوم: {data.shiftStats.startingCash} ج.م</span>
-                )}
-                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">المبيعات النقدية: {data.shiftStats.sales} ج.م</span>
-                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20">إيداعات المرضى: {data.shiftStats.deposits} ج.م</span>
-                <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-rose-200">المنصرفات والمشتريات: {data.shiftStats.expenses} ج.م</span>
-                {Number(data.shiftStats.transfers) > 0 && (
-                  <span className="bg-white/15 px-3 py-1.5 rounded-lg border border-white/20 text-amber-200">توريدات وتحويلات سابقة: {data.shiftStats.transfers} ج.م</span>
-                )}
-              </div>
-            </div>
-            <Wallet size={80} className="opacity-25 mt-4 md:mt-0" />
-          </div>
+          <ShiftBanner shiftStats={data.shiftStats} />
 
           {/* Quick Actions Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -179,6 +245,9 @@ const HomePage = () => {
       ) : (
         /* ================= ADMIN DASHBOARD ================= */
         <div className="space-y-6">
+          {/* Shift Banner */}
+          <ShiftBanner shiftStats={data.shiftStats} />
+
           {/* Top KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white p-5 rounded-2xl border-2 border-indigo-50 shadow-sm flex items-center gap-3">

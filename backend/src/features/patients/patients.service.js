@@ -120,22 +120,41 @@ const addTransaction = async (data, userId) => {
       data: { currentDebt: newBalance }
     });
 
-    // Impact Treasury if a payment method is specified
-    if (paymentMethodId) {
-      const method = await tx.paymentMethod.findUnique({ where: { id: paymentMethodId } });
+    // Impact Treasury (Always track cash flow in Drawer/Vodafone/Treasury)
+    let resolvedMethodId = paymentMethodId ? Number(paymentMethodId) : null;
+    if (!resolvedMethodId && source) {
+      const matched = await tx.paymentMethod.findFirst({
+        where: {
+          OR: [
+            { name: { contains: source } },
+            { name: source }
+          ]
+        }
+      });
+      if (matched) resolvedMethodId = matched.id;
+    }
+    if (!resolvedMethodId) {
+      const drawer = await tx.paymentMethod.findFirst({
+        where: { name: { contains: 'درج' } }
+      });
+      if (drawer) resolvedMethodId = drawer.id;
+    }
+
+    if (resolvedMethodId) {
+      const method = await tx.paymentMethod.findUnique({ where: { id: resolvedMethodId } });
       if (method) {
         let treasuryType = type === 'DEPOSIT' ? 'IN' : 'OUT';
         let balanceChange = type === 'DEPOSIT' ? pAmount : -pAmount;
         
         await tx.paymentMethod.update({
-          where: { id: paymentMethodId },
+          where: { id: resolvedMethodId },
           data: { currentBalance: Number(method.currentBalance) + balanceChange }
         });
 
-        const txDesc = `حركة مريض (${patient.fullName}): ${description || type}`;
+        const txDesc = `حركة مريض (${patient.fullName}): ${description || (type === 'DEPOSIT' ? 'إيداع نقدي' : 'سحب نقدي')}`;
         await tx.treasuryTransaction.create({
           data: {
-            paymentMethodId: Number(paymentMethodId),
+            paymentMethodId: resolvedMethodId,
             type: treasuryType,
             amount: pAmount,
             description: txDesc,
@@ -156,7 +175,7 @@ const addTransaction = async (data, userId) => {
             data: {
               categoryId: withdrawalCat.id,
               amount: pAmount,
-              paymentMethodId: Number(paymentMethodId),
+              paymentMethodId: resolvedMethodId,
               description: `سحب نقدي من حساب المريض (${patient.fullName}) - ${description || 'سحب نقدية'}`,
               createdBy: userId
             }

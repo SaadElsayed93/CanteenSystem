@@ -35,6 +35,14 @@ const createSale = async (data, userId) => {
   if (!items || items.length === 0) throw new Error('لا توجد أصناف في الفاتورة');
 
   return prisma.$transaction(async (tx) => {
+    // 0. Verify that a Daily Shift is currently OPEN
+    const activeShift = await tx.dailyShift.findFirst({
+      where: { status: 'OPEN' }
+    });
+    if (!activeShift) {
+      throw new Error('اليومية مغلقة حالياً! يجب فتح اليومية أولاً لبدء عمليات البيع.');
+    }
+
     let totalAmount = 0;
     
     // 1. Calculate total and check stock
@@ -88,6 +96,7 @@ const createSale = async (data, userId) => {
         status: 'COMPLETED',
         createdBy: userId,
         patientId: patientId || null,
+        shiftId: activeShift.id
       }
     });
 

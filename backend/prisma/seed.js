@@ -29,7 +29,8 @@ async function main() {
         'VIEW_TREASURY',
         'VIEW_REPORTS',
         'MANAGE_PURCHASES',
-        'CREATE_EXPENSE'
+        'CREATE_EXPENSE',
+        'MANAGE_PRODUCTS'
       ]),
     },
   });

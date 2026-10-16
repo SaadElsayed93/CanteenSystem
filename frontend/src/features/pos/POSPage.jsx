@@ -4,11 +4,14 @@ import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { 
   Trash2, Printer, Zap, CheckCircle2, X, ShoppingCart, 
-  Search, AlertTriangle, User, CreditCard, RotateCcw
+  Search, AlertTriangle, User, CreditCard, RotateCcw,
+  Lock, Unlock
 } from 'lucide-react';
+import { useShift } from '../shifts/ShiftContext';
 
 const POSPage = () => {
   const { user } = useAuth();
+  const { isOpen, currentShift, setIsOpeningModal } = useShift();
   const [products, setProducts] = useState([]);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -157,6 +160,12 @@ const POSPage = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleCheckout = async (forcedType) => {
+    if (!isOpen) {
+      playTone(250, 0.3, 'sawtooth');
+      toast.error('اليومية مغلقة حالياً! يجب فتح اليومية والوردية أولاً لإتمام البيع');
+      setIsOpeningModal(true);
+      return;
+    }
     if (isSubmitting) return;
     if (cart.length === 0) return toast.error('الفاتورة فارغة');
     
@@ -241,6 +250,12 @@ const POSPage = () => {
       // F9: Fast Instant Cash Checkout
       else if (e.key === 'F9') {
         e.preventDefault();
+        if (!isOpen) {
+          playTone(250, 0.3, 'sawtooth');
+          toast.error('اليومية مغلقة حالياً! يجب فتح اليومية أولاً لإتمام البيع');
+          setIsOpeningModal(true);
+          return;
+        }
         if (cart.length > 0 && !isSubmitting) {
           setInvoiceType('CASH');
           handleCheckout('CASH');
@@ -291,23 +306,63 @@ const POSPage = () => {
           </span>
         </div>
         
-        {/* Show receipt toggle */}
-        <button 
-          onClick={toggleShowReceipt}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold transition-all border ${
-            showReceiptModal 
-              ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
-              : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-          }`}
-          title="تفعيل أو إخفاء نافذة بون الفاتورة بعد إتمام البيع"
-        >
-          <Printer size={16} />
-          <span>إظهار بون الفاتورة:</span>
-          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showReceiptModal ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-            {showReceiptModal ? 'مفعل' : 'معطل'}
-          </span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Shift Status Badge */}
+          {isOpen ? (
+            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              وردية نشطة #{currentShift?.shiftNumber}
+            </span>
+          ) : (
+            <button
+              onClick={() => setIsOpeningModal(true)}
+              className="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 transition"
+            >
+              <Lock size={12} />
+              اليومية مغلقة (اضغط لفتحها)
+            </button>
+          )}
+
+          {/* Show receipt toggle */}
+          <button 
+            onClick={toggleShowReceipt}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold transition-all border ${
+              showReceiptModal 
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+            }`}
+            title="تفعيل أو إخفاء نافذة بون الفاتورة بعد إتمام البيع"
+          >
+            <Printer size={16} />
+            <span>إظهار بون الفاتورة:</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showReceiptModal ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+              {showReceiptModal ? 'مفعل' : 'معطل'}
+            </span>
+          </button>
+        </div>
       </div>
+
+      {/* Closed Shift Alert Banner */}
+      {!isOpen && (
+        <div className="bg-gradient-to-r from-rose-600 via-red-600 to-amber-600 text-white p-4 rounded-2xl shadow-lg border-2 border-rose-300 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-xl">
+              <Lock size={24} className="text-white" />
+            </div>
+            <div>
+              <h4 className="font-black text-base">اليومية والوردية مغلقة حالياً!</h4>
+              <p className="text-rose-100 text-xs font-bold">لا يمكن إتمام أي عمليات بيع أو خصم من المخزون حتى يتم فتح اليومية.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsOpeningModal(true)}
+            className="w-full sm:w-auto bg-white text-rose-700 hover:bg-rose-50 font-black px-6 py-2.5 rounded-xl shadow transition-all flex items-center justify-center gap-2"
+          >
+            <Unlock size={18} />
+            <span>🔓 فتح اليومية للبدء</span>
+          </button>
+        </div>
+      )}
 
       {/* Main POS Workspace */}
       <div className="flex flex-col md:flex-row gap-6 h-[80vh]">
@@ -524,14 +579,25 @@ const POSPage = () => {
               </div>
             )}
 
-            <button 
-              onClick={() => handleCheckout()} 
-              disabled={cart.length === 0 || isSubmitting}
-              className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl text-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-            >
-              <CheckCircle2 size={22} />
-              <span>{isSubmitting ? 'جاري التأكيد...' : 'تأكيد وحفظ الفاتورة [F9]'}</span>
-            </button>
+            {!isOpen ? (
+              <button 
+                type="button"
+                onClick={() => setIsOpeningModal(true)} 
+                className="w-full bg-rose-600 text-white font-black py-4 rounded-xl text-base hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
+              >
+                <Lock size={20} />
+                <span>اليومية مغلقة - اضغط لفتح اليومية للبيع</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => handleCheckout()} 
+                disabled={cart.length === 0 || isSubmitting}
+                className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl text-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={22} />
+                <span>{isSubmitting ? 'جاري التأكيد...' : 'تأكيد وحفظ الفاتورة [F9]'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

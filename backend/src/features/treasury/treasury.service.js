@@ -280,13 +280,34 @@ const settleDailyShift = async (data, userId) => {
       select: { fullName: true, username: true }
     });
 
-    // 3. Deduct from Drawer
+    // 3. Close open DailyShift if exists
+    const activeShift = await tx.dailyShift.findFirst({
+      where: { status: 'OPEN' }
+    });
+    if (activeShift) {
+      await tx.dailyShift.update({
+        where: { id: activeShift.id },
+        data: {
+          status: 'CLOSED',
+          actualCash: numCounted,
+          expectedCash: systemDrawerBalance,
+          transferredCash: numTransfer,
+          remainingCash: numCounted - numTransfer,
+          discrepancy,
+          closedAt: new Date(),
+          closedBy: userId,
+          notes: notes || null
+        }
+      });
+    }
+
+    // 4. Deduct from Drawer
     await tx.paymentMethod.update({
       where: { id: drawerMethod.id },
       data: { currentBalance: systemDrawerBalance - numTransfer }
     });
 
-    // 4. Add to Main Treasury
+    // 5. Add to Main Treasury
     const updatedMain = await tx.paymentMethod.update({
       where: { id: mainTreasuryMethod.id },
       data: { currentBalance: Number(mainTreasuryMethod.currentBalance) + numTransfer }
@@ -296,7 +317,7 @@ const settleDailyShift = async (data, userId) => {
     if (discrepancy > 0) discrepancyText = `زيادة نقدية (+${discrepancy.toFixed(2)} ج.م)`;
     else if (discrepancy < 0) discrepancyText = `عجز نقدي (${discrepancy.toFixed(2)} ج.م)`;
 
-    // 5. Drawer Out Transaction
+    // 6. Drawer Out Transaction
     const outTx = await tx.treasuryTransaction.create({
       data: {
         paymentMethodId: drawerMethod.id,
@@ -304,11 +325,12 @@ const settleDailyShift = async (data, userId) => {
         amount: numTransfer,
         description: `تقفيل يومية وتوريد للخزينة الرئيسية (${discrepancyText}) - ${notes || 'إغلاق وردية'}`,
         referenceType: 'DAILY_SETTLEMENT',
+        referenceId: activeShift ? activeShift.id : undefined,
         createdBy: userId
       }
     });
 
-    // 6. Main Treasury In Transaction
+    // 7. Main Treasury In Transaction
     await tx.treasuryTransaction.create({
       data: {
         paymentMethodId: mainTreasuryMethod.id,

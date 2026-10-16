@@ -25,65 +25,101 @@ const getHomeDashboardData = async (userId, userRole) => {
     }
   });
 
-  // 2. Shift Stats (Today's Cash Flow for the Cash Drawer)
+  // 2. Shift Stats (Live Daily Shift Engine)
   const drawerMethod = await prisma.paymentMethod.findFirst({
     where: { name: { contains: 'درج' } }
   });
   const drawerId = drawerMethod ? drawerMethod.id : 1;
+  const expectedCash = drawerMethod ? Number(drawerMethod.currentBalance) : 0;
 
-  // Cash Sales (Cash portion of completed invoices)
-  const todayCashSales = await prisma.invoice.aggregate({
-    where: { createdAt: { gte: today }, status: 'COMPLETED' },
-    _sum: { cashAmount: true }
+  const activeShift = await prisma.dailyShift.findFirst({
+    where: { status: 'OPEN' },
+    include: { userOpened: { select: { fullName: true } } }
   });
-  const sales = Number(todayCashSales._sum.cashAmount || 0);
-  
-  // Cash Patient Deposits & Collections entering the drawer
-  const todayDrawerDeposits = await prisma.treasuryTransaction.aggregate({
-    where: { 
-      createdAt: { gte: today }, 
-      paymentMethodId: drawerId, 
-      type: 'IN', 
-      referenceType: 'PATIENT_TX' 
-    },
-    _sum: { amount: true }
-  });
-  const deposits = Number(todayDrawerDeposits._sum.amount || 0);
 
-  // Cash Outflows from Drawer (Operating Expenses + Supplier Payments + Patient Refunds/Withdrawals)
-  const todayDrawerExpenses = await prisma.expense.aggregate({
-    where: { 
-      createdAt: { gte: today }, 
-      paymentMethodId: drawerId 
-    },
-    _sum: { amount: true }
-  });
-  const expenses = Number(todayDrawerExpenses._sum.amount || 0);
+  let shiftStats;
 
-  // Cash Transfers & Settlements out of the Drawer
-  const todayDrawerTransfers = await prisma.treasuryTransaction.aggregate({
-    where: { 
-      createdAt: { gte: today }, 
-      paymentMethodId: drawerId, 
-      type: 'OUT', 
-      referenceType: { in: ['TRANSFER', 'DAILY_SETTLEMENT'] } 
-    },
-    _sum: { amount: true }
-  });
-  const transfers = Number(todayDrawerTransfers._sum.amount || 0);
+  if (activeShift) {
+    const shiftSince = activeShift.openedAt;
 
-  // Exact Expected Cash in Drawer right now
-  const expectedCash = drawerMethod ? Number(drawerMethod.currentBalance) : (sales + deposits - expenses - transfers);
-  const startingCash = Math.max(0, expectedCash - (sales + deposits - expenses - transfers));
+    // Cash Sales during this shift
+    const shiftCashSales = await prisma.invoice.aggregate({
+      where: { createdAt: { gte: shiftSince }, status: 'COMPLETED' },
+      _sum: { cashAmount: true }
+    });
+    const sales = Number(shiftCashSales._sum.cashAmount || 0);
+    
+    // Cash Patient Deposits & Collections entering the drawer during this shift
+    const shiftDrawerDeposits = await prisma.treasuryTransaction.aggregate({
+      where: { 
+        createdAt: { gte: shiftSince }, 
+        paymentMethodId: drawerId, 
+        type: 'IN', 
+        referenceType: 'PATIENT_TX' 
+      },
+      _sum: { amount: true }
+    });
+    const deposits = Number(shiftDrawerDeposits._sum.amount || 0);
 
-  const shiftStats = {
-    startingCash,
-    sales,
-    deposits,
-    expenses,
-    transfers,
-    expectedCash
-  };
+    // Cash Outflows from Drawer (Operating Expenses + Supplier Payments + Patient Refunds)
+    const shiftDrawerExpenses = await prisma.expense.aggregate({
+      where: { 
+        createdAt: { gte: shiftSince }, 
+        paymentMethodId: drawerId 
+      },
+      _sum: { amount: true }
+    });
+    const expenses = Number(shiftDrawerExpenses._sum.amount || 0);
+
+    // Cash Transfers & Settlements out of the Drawer during this shift
+    const shiftDrawerTransfers = await prisma.treasuryTransaction.aggregate({
+      where: { 
+        createdAt: { gte: shiftSince }, 
+        paymentMethodId: drawerId, 
+        type: 'OUT', 
+        referenceType: { in: ['TRANSFER', 'DAILY_SETTLEMENT'] } 
+      },
+      _sum: { amount: true }
+    });
+    const transfers = Number(shiftDrawerTransfers._sum.amount || 0);
+    const startingCash = Number(activeShift.startingCash);
+
+    shiftStats = {
+      isOpen: true,
+      shiftId: activeShift.id,
+      shiftNumber: activeShift.shiftNumber,
+      openedAt: activeShift.openedAt,
+      openedBy: activeShift.userOpened.fullName,
+      startingCash,
+      sales,
+      deposits,
+      expenses,
+      transfers,
+      expectedCash
+    };
+  } else {
+    const lastShift = await prisma.dailyShift.findFirst({
+      where: { status: 'CLOSED' },
+      orderBy: { closedAt: 'desc' },
+      include: {
+        userOpened: { select: { fullName: true } },
+        userClosed: { select: { fullName: true } }
+      }
+    });
+
+    shiftStats = {
+      isOpen: false,
+      shiftId: null,
+      shiftNumber: null,
+      lastShift,
+      startingCash: expectedCash,
+      sales: 0,
+      deposits: 0,
+      expenses: 0,
+      transfers: 0,
+      expectedCash
+    };
+  }
 
   // 3. Admin Stats
   // Patient Debts (Negative balance: what patients owe to the canteen)

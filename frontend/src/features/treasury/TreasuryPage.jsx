@@ -5,8 +5,9 @@ import { useAuth } from '../auth/AuthContext';
 import { 
   ArrowLeftRight, Wallet, Landmark, Banknote, 
   PlusCircle, MinusCircle, CheckCircle2, X, RefreshCw,
-  Lock, Printer, AlertTriangle, ShieldCheck
+  Lock, Unlock, Printer, AlertTriangle, ShieldCheck
 } from 'lucide-react';
+import { useShift } from '../shifts/ShiftContext';
 
 const TreasuryPage = () => {
   const [balances, setBalances] = useState([]);
@@ -19,24 +20,21 @@ const TreasuryPage = () => {
   const [error, setError] = useState('');
   
   const { hasPermission } = useAuth();
+  const { isOpen, currentShift, setIsOpeningModal, setIsClosingModal } = useShift();
   const [activeTab, setActiveTab] = useState('TREASURY'); // TREASURY or EXPENSES
   
-  // Modals
+  // Modals for Expenses and Transfers
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ categoryId: '', amount: '', paymentMethodId: '', description: '', supplierId: '' });
 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [transferForm, setTransferForm] = useState({ fromMethodId: '', toMethodId: '', amount: '', notes: '' });
 
-  const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
-  const [settlementForm, setSettlementForm] = useState({ countedAmount: '', transferAmount: '', notes: '' });
-  const [settlementReceipt, setSettlementReceipt] = useState(null);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [isOpen]);
 
   const fetchData = async () => {
     try {
@@ -197,23 +195,45 @@ const TreasuryPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 gap-4">
         <div>
-          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2 flex-wrap">
             <span>الخزينة والمعاملات المالية</span>
             <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-bold border border-indigo-100">3 قنوات معتمدة</span>
+            {isOpen ? (
+              <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold border border-emerald-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                وردية نشطة #{currentShift?.shiftNumber}
+              </span>
+            ) : (
+              <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full font-bold border border-amber-200 flex items-center gap-1">
+                <Lock size={12} />
+                اليومية مغلقة
+              </span>
+            )}
           </h2>
           <p className="text-gray-400 font-bold text-sm mt-1">إدارة أرصدة الدرج، المحافظ الإلكترونية، والخزينة الرئيسية</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {hasPermission('VIEW_TREASURY') && (
             <>
-              <button 
-                onClick={handleOpenSettlement} 
-                className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
-                title="تقفيل الوردية اليومية وتوريد النقدية من الدرج إلى الخزينة الرئيسية"
-              >
-                <Lock size={18} />
-                <span>تقفيل اليومية (توريد الدرج)</span>
-              </button>
+              {isOpen ? (
+                <button 
+                  onClick={() => setIsClosingModal(true)} 
+                  className="flex-1 sm:flex-none bg-rose-600 hover:bg-rose-700 text-white font-black px-5 py-2.5 rounded-xl transition-all shadow-md shadow-rose-200 flex items-center justify-center gap-2"
+                  title="تقفيل الوردية اليومية وتوريد النقدية من الدرج إلى الخزينة الرئيسية"
+                >
+                  <Lock size={18} />
+                  <span>تقفيل اليومية #{currentShift?.shiftNumber} (توريد الدرج)</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setIsOpeningModal(true)} 
+                  className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
+                  title="فتح يومية ووردية جديدة"
+                >
+                  <Unlock size={18} />
+                  <span>🔓 فتح يومية جديدة</span>
+                </button>
+              )}
 
               <button 
                 onClick={() => setIsTransferModalOpen(true)} 

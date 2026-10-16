@@ -32,6 +32,8 @@ model User {
   inventoryCounts       InventoryCount[]
   inventoryMovements    InventoryMovement[]
   createdReturns        Return[]
+  shiftsOpened          DailyShift[]           @relation("ShiftOpenedBy")
+  shiftsClosed          DailyShift[]           @relation("ShiftClosedBy")
   createdBackups        Backup[]
   auditLogs             AuditLog[]
 }
@@ -209,6 +211,8 @@ model Invoice {
 
   patient       Patient?      @relation(fields: [patientId], references: [id])
   user          User          @relation(fields: [createdBy], references: [id])
+  shiftId       Int?
+  shift         DailyShift?   @relation(fields: [shiftId], references: [id])
   items         InvoiceItem[]
   returns       Return[]
 }
@@ -370,4 +374,29 @@ model Setting {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// Daily Shifts & Day Accounting Engine
+// ==========================================
+
+model DailyShift {
+  id              Int       @id @default(autoincrement())
+  shiftNumber     Int
+  status          String    @default("OPEN") // "OPEN", "CLOSED"
+  startingCash    Decimal   @default(0)
+  actualCash      Decimal?
+  expectedCash    Decimal?
+  transferredCash Decimal?
+  remainingCash   Decimal?
+  discrepancy     Decimal?
+  notes           String?
+  openedBy        Int
+  openedAt        DateTime  @default(now())
+  closedBy        Int?
+  closedAt        DateTime?
+
+  userOpened      User      @relation("ShiftOpenedBy", fields: [openedBy], references: [id])
+  userClosed      User?     @relation("ShiftClosedBy", fields: [closedBy], references: [id])
+  invoices        Invoice[]
 }
