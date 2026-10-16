@@ -25,10 +25,8 @@ import {
 , BarChart2} from 'lucide-react';
 
 function MainLayout({ children }) {
-  const { user, logout, hasPermission } = useAuth();
+  const { user, logout, hasPermission, isAdmin } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-
-  const isAdmin = user?.role?.name === 'مدير' || user?.role?.name === 'أدمن';
 
   const navItems = [
     { to: "/", icon: <Home size={20} />, label: "الرئيسية", exact: true },
@@ -164,7 +162,7 @@ function App() {
           } />
 
           <Route path="/pos" element={
-            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowRoles={['أدمن', 'مدير']}>
+            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowAdmin={true} disallowRoles={['أدمن', 'مدير', 'ADMIN']}>
               <MainLayout>
                 <POSPage />
               </MainLayout>
@@ -172,7 +170,7 @@ function App() {
           } />
 
           <Route path="/returns" element={
-            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowRoles={['أدمن', 'مدير']}>
+            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowAdmin={true} disallowRoles={['أدمن', 'مدير', 'ADMIN']}>
               <MainLayout>
                 <ReturnsPage />
               </MainLayout>

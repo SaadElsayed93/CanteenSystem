@@ -3,3 +3,57 @@
 body {
   direction: rtl;
 }
+
+@media print {
+  @page {
+    margin: 8mm;
+    size: auto;
+  }
+
+  html, body {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Force modals and overlays to expand cleanly over multiple printed pages */
+  .fixed {
+    position: static !important;
+  }
+
+  .backdrop-blur-sm,
+  .bg-black\/60 {
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Remove all max heights and overflow scrollbars in print */
+  [class*="max-h-"],
+  [class*="overflow-"] {
+    max-height: none !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Table multi-page splitting */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure print:hidden elements never display */
+  .print\:hidden {
+    display: none !important;
+  }
+}

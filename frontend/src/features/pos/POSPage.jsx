@@ -111,10 +111,26 @@ const POSPage = () => {
 
   const addToCart = (product) => {
     if (product.totalStock <= 0) {
-      playTone(350, 0.2, 'triangle');
-      if (!window.confirm(`⚠️ هذا الصنف (${product.name}) انتهى من المخزون! هل أنت متأكد من بيعه وتخفيض المخزون بالسالب؟`)) {
-        return false;
-      }
+      playTone(450, 0.1, 'triangle');
+      toast((t) => (
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg">📦</span>
+          <div>
+            <div className="text-xs font-black text-white">تنبيه: {product.name} (رصيد المخزون صفر)</div>
+            <div className="text-[11px] text-amber-300 font-bold">تمت إضافته للسلة وسيتم تسجيل البيع بالسالب</div>
+          </div>
+        </div>
+      ), {
+        id: `stock-alert-${product.id}`,
+        duration: 2500,
+        style: {
+          background: '#0f172a',
+          color: '#fff',
+          borderRadius: '16px',
+          border: '1px solid #334155',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
+        }
+      });
     } else {
       playTone(850, 0.06);
     }
@@ -476,7 +492,14 @@ const POSPage = () => {
                     {cart.map(item => (
                       <tr key={item.productId} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
                         <td className="py-3 pr-1 w-2/5">
-                          <div className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</span>
+                            {item.maxStock <= 0 && (
+                              <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.2 rounded font-black whitespace-nowrap">
+                                سالب
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-400 font-bold">{item.price} ج.م</div>
                         </td>
                         <td className="py-3">

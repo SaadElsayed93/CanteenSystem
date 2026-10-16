@@ -48,8 +48,19 @@ export const AuthProvider = ({ children }) => {
     return user.permissions.includes('ALL') || user.permissions.includes(perm);
   };
 
+  const roleName = typeof user?.role === 'string' ? user.role : user?.role?.name;
+  const isAdmin = Boolean(
+    user && (
+      roleName === 'مدير' || 
+      roleName === 'أدمن' || 
+      roleName === 'ADMIN' || 
+      user?.permissions?.includes('ALL') || 
+      user?.username === 'admin'
+    )
+  );
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, hasPermission }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, hasPermission, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

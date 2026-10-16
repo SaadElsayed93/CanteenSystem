@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { Link } from 'react-router-dom';
 import { 
   Building2, FileText, Printer, AlertCircle, 
-  CheckCircle2, X, ShoppingCart, DollarSign, Wallet 
+  CheckCircle2, X, ShoppingCart, DollarSign, Wallet, Eye 
 } from 'lucide-react';
 
 const SuppliersPage = () => {
@@ -21,6 +21,23 @@ const SuppliersPage = () => {
   const [isStatementOpen, setIsStatementOpen] = useState(false);
   const [statementData, setStatementData] = useState(null);
   const [isLoadingStatement, setIsLoadingStatement] = useState(false);
+
+  // Purchase Invoice Details Modal State (viewable directly from statement)
+  const [selectedPurchase, setSelectedPurchase] = useState(null);
+  const [isLoadingPurchase, setIsLoadingPurchase] = useState(false);
+
+  const handleViewPurchase = async (purchaseId) => {
+    if (!purchaseId) return;
+    setIsLoadingPurchase(true);
+    try {
+      const res = await client.get(`/purchases/${purchaseId}`);
+      setSelectedPurchase(res.data.data);
+    } catch (err) {
+      toast.error('فشل في جلب تفاصيل الفاتورة');
+    } finally {
+      setIsLoadingPurchase(false);
+    }
+  };
 
   useEffect(() => {
     fetchSuppliers();
@@ -338,37 +355,37 @@ const SuppliersPage = () => {
 
       {/* ================= Supplier Statement Modal ================= */}
       {isStatementOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 print:static print:p-0 print:bg-white print:block">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-5xl max-h-[90vh] flex flex-col print:shadow-none print:border-none print:p-0 print:max-h-none print:h-auto print:max-w-none print:rounded-none">
             {/* Modal Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100 print:border-b-2 print:border-black print:pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl">
+                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl print:hidden">
                   <FileText size={26} />
                 </div>
                 <div>
-                  <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200">
+                  <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200 print:border-none print:p-0 print:text-black print:font-bold">
                     المستشفى العسكري ق.م بالإسماعيلية - إدارة الكانتين
                   </div>
                   <h3 className="text-xl font-black text-gray-900">
                     كشف حساب المورد: {statementData ? statementData.supplier.name : 'جاري التحميل...'}
                   </h3>
                   {statementData && (
-                    <p className="text-xs font-bold text-gray-400 mt-0.5">
+                    <p className="text-xs font-bold text-gray-500 mt-0.5">
                       {statementData.supplier.address && <span>{statementData.supplier.address} • </span>}
-                      <span>تاريخ الكشف: {new Date().toLocaleDateString('ar-EG')}</span>
+                      <span>تاريخ استخراج الكشف: {new Date().toLocaleDateString('ar-EG')}</span>
                     </p>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 print:hidden">
                 <button 
                   type="button" 
                   onClick={() => window.print()} 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-indigo-100"
                 >
                   <Printer size={16} />
-                  <span>طباعة الكشف</span>
+                  <span>طباعة الكشف كاملاً</span>
                 </button>
                 <button 
                   onClick={() => setIsStatementOpen(false)}
@@ -380,7 +397,7 @@ const SuppliersPage = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto py-5 space-y-5" id="supplier-statement-print">
+            <div className="flex-1 overflow-y-auto py-5 space-y-5 print:overflow-visible print:h-auto print:py-3 print:space-y-4" id="supplier-statement-print">
               {isLoadingStatement && (
                 <div className="py-20 text-center font-bold text-gray-400 animate-pulse">
                   جاري جلب حركات كشف الحساب من قاعدة البيانات...
@@ -414,9 +431,9 @@ const SuppliersPage = () => {
                   </div>
 
                   {/* Ledger Table */}
-                  <div className="border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                  <div className="border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm print:border print:border-gray-300">
                     <table className="w-full text-right border-collapse text-xs">
-                      <thead className="bg-gray-50 text-gray-700 border-b border-gray-100">
+                      <thead className="bg-gray-50 text-gray-700 border-b border-gray-100 print:bg-gray-100">
                         <tr>
                           <th className="p-3 font-bold">التاريخ</th>
                           <th className="p-3 font-bold">نوع الحركة</th>
@@ -439,18 +456,49 @@ const SuppliersPage = () => {
                             </td>
                             <td className="p-3">
                               {entry.type === 'PURCHASE' ? (
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                  فاتورة مشتريات
-                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewPurchase(entry.purchaseId)}
+                                  className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1 shadow-sm print:border-none print:p-0 print:text-indigo-900"
+                                  title="انقر لفتح تفاصيل الفاتورة كاملة"
+                                >
+                                  <Eye size={13} className="print:hidden" />
+                                  <span>فاتورة مشتريات</span>
+                                </button>
                               ) : (
                                 <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                   سداد نقدي
                                 </span>
                               )}
                             </td>
-                            <td className="p-3 font-mono font-bold text-gray-700">{entry.reference}</td>
+                            <td className="p-3 font-mono font-bold text-gray-700">
+                              {entry.type === 'PURCHASE' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewPurchase(entry.purchaseId)}
+                                  className="text-indigo-600 hover:text-indigo-900 hover:underline font-black cursor-pointer print:text-black"
+                                  title="فتح تفاصيل الفاتورة"
+                                >
+                                  {entry.reference}
+                                </button>
+                              ) : (
+                                entry.reference
+                              )}
+                            </td>
                             <td className="p-3 font-bold text-gray-800">
-                              <div>{entry.description}</div>
+                              <div className="flex items-center gap-2">
+                                <span>{entry.description}</span>
+                                {entry.type === 'PURCHASE' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewPurchase(entry.purchaseId)}
+                                    className="text-[10px] font-black text-indigo-600 hover:underline bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-100 transition-colors print:hidden"
+                                    title="عرض الفاتورة بالتفصيل"
+                                  >
+                                    فتح الفاتورة 🔍
+                                  </button>
+                                )}
+                              </div>
                               {entry.items && entry.items.length > 0 && (
                                 <div className="text-[11px] text-gray-400 mt-1 space-x-1 space-x-reverse">
                                   {entry.items.map((it, idx) => (
@@ -481,13 +529,132 @@ const SuppliersPage = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-4 border-t border-gray-100 flex justify-end">
+            <div className="pt-4 border-t border-gray-100 flex justify-end print:hidden">
               <button 
                 type="button" 
                 onClick={() => setIsStatementOpen(false)} 
                 className="px-6 py-2.5 bg-gray-800 text-white font-bold rounded-xl hover:bg-gray-900 transition-all text-sm"
               >
                 إغلاق كشف الحساب
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= Purchase Invoice Details Drilldown Modal ================= */}
+      {selectedPurchase && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl">
+                  <FileText size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900">
+                    فاتورة مشتريات #{selectedPurchase.id} {selectedPurchase.referenceNo ? `(${selectedPurchase.referenceNo})` : ''}
+                  </h3>
+                  <p className="text-xs font-bold text-gray-400 mt-0.5">
+                    المستشفى العسكري ق.م بالإسماعيلية • إدارة الكانتين
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedPurchase(null)}
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-xl font-bold bg-gray-100 hover:bg-gray-200 transition-colors"
+                title="إغلاق"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Meta info card */}
+            <div className="my-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs font-bold grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div>
+                <span className="text-gray-400 block mb-0.5">اسم المورد:</span>
+                <span className="text-indigo-900 font-black text-sm">{selectedPurchase.supplier?.name || '-'}</span>
+              </div>
+              <div>
+                <span className="text-gray-400 block mb-0.5">تاريخ ووقت الفاتورة:</span>
+                <span className="text-gray-800 font-mono" dir="ltr">{new Date(selectedPurchase.createdAt).toLocaleString('ar-EG')}</span>
+              </div>
+              <div>
+                <span className="text-gray-400 block mb-0.5">المسؤول / المدخل:</span>
+                <span className="text-gray-800">{selectedPurchase.user?.fullName || '-'}</span>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="flex-1 overflow-y-auto mb-4 border border-gray-100 rounded-2xl">
+              <table className="w-full text-right text-xs border-collapse">
+                <thead className="bg-gray-50 text-gray-700 border-b border-gray-100 font-bold sticky top-0">
+                  <tr>
+                    <th className="p-3">#</th>
+                    <th className="p-3">الصنف</th>
+                    <th className="p-3">الكمية</th>
+                    <th className="p-3">سعر الشراء (التكلفة)</th>
+                    <th className="p-3">الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 font-bold">
+                  {selectedPurchase.items?.map((it, idx) => (
+                    <tr key={it.id || idx} className="hover:bg-gray-50">
+                      <td className="p-3 text-gray-400">{idx + 1}</td>
+                      <td className="p-3 text-gray-900">{it.product?.name || it.productName || 'صنف مسجل'}</td>
+                      <td className="p-3 text-indigo-700">{it.quantity} {it.product?.unit || 'قطعة'}</td>
+                      <td className="p-3 text-gray-700">{Number(it.unitCost).toFixed(2)} ج.م</td>
+                      <td className="p-3 font-black text-gray-900">{Number(it.subtotal).toFixed(2)} ج.م</td>
+                    </tr>
+                  ))}
+                  {(!selectedPurchase.items || selectedPurchase.items.length === 0) && (
+                    <tr>
+                      <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">لا توجد أصناف مسجلة في الفاتورة</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Financial Summary Card */}
+            <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2 text-xs font-bold">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-indigo-900 font-black">إجمالي قيمة الفاتورة:</span>
+                <span className="text-xl font-black text-indigo-700">{Number(selectedPurchase.totalAmount).toFixed(2)} ج.م</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                <span className="text-emerald-800 font-bold">المبلغ المسدد من الخزينة:</span>
+                <span className="text-base font-black text-emerald-700">{Number(selectedPurchase.paidAmount || 0).toFixed(2)} ج.م</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+                <span className="text-red-700 font-bold">المتبقي كمديونية للمورد:</span>
+                <span className="text-base font-black text-red-600">
+                  {Math.max(0, Number(selectedPurchase.totalAmount) - Number(selectedPurchase.paidAmount || 0)).toFixed(2)} ج.م
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+              <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                Number(selectedPurchase.paidAmount || 0) >= Number(selectedPurchase.totalAmount)
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : Number(selectedPurchase.paidAmount || 0) > 0
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {Number(selectedPurchase.paidAmount || 0) >= Number(selectedPurchase.totalAmount)
+                  ? 'فاتورة خالصة ومسددة بالكامل'
+                  : Number(selectedPurchase.paidAmount || 0) > 0
+                  ? 'مسددة جزئياً'
+                  : 'فاتورة آجلة (غير مدفوعة)'}
+              </span>
+              <button 
+                onClick={() => setSelectedPurchase(null)}
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl transition-colors text-xs"
+              >
+                العودة لكشف الحساب
               </button>
             </div>
           </div>

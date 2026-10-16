@@ -77,12 +77,15 @@ const getSupplierStatement = async (supplierId) => {
   for (const p of supplier.purchases) {
     timeline.push({
       id: `PURCHASE-${p.id}`,
+      purchaseId: p.id,
       date: p.createdAt,
       type: 'PURCHASE',
       typeName: 'فاتورة مشتريات',
       reference: p.referenceNo || `#${p.id}`,
       description: `فاتورة شراء #${p.id} (${p.items.length} أصناف)`,
       amount: Number(p.totalAmount),
+      paidAmount: Number(p.paidAmount || 0),
+      remainingDebt: Number(p.totalAmount) - Number(p.paidAmount || 0),
       debit: 0, // ما سُدد للمورد
       credit: Number(p.totalAmount), // استحقاق إضافي للمورد
       user: p.user?.fullName || '-',
@@ -100,6 +103,7 @@ const getSupplierStatement = async (supplierId) => {
   for (const pay of supplier.payments) {
     timeline.push({
       id: `PAYMENT-${pay.id}`,
+      purchaseId: pay.purchaseId,
       date: pay.createdAt,
       type: 'PAYMENT',
       typeName: 'دفعة سداد نقدية',

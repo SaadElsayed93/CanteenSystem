@@ -11,7 +11,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useShift } from '../shifts/ShiftContext';
 
 const HomePage = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -146,8 +146,6 @@ const HomePage = () => {
   }, [searchQuery]);
 
   if (loading || !data) return <div className="text-center mt-20 font-bold text-gray-500 text-xl animate-pulse">جاري تحميل لوحة التحكم...</div>;
-
-  const isAdmin = user?.role?.name === 'مدير' || user?.permissions?.includes('ALL');
 
   return (
     <div className="space-y-8">
