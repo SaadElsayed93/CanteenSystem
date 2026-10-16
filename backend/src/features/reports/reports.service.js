@@ -37,15 +37,15 @@ const getDashboardMetrics = async () => {
   const todayRevenue = Number(todaySales._sum.totalAmount || 0);
   const todayProfit = todayRevenue - todayCost;
 
-  // Patient Debts (Total)
+  // Patient Debts (Total - Active Patients Only)
   const patientDebts = await prisma.patient.aggregate({
-    where: { currentDebt: { lt: 0 } }, // debt is negative
+    where: { isActive: true, currentDebt: { lt: 0 } }, // debt is negative
     _sum: { currentDebt: true }
   });
 
-  // Patient Deposits (Total)
+  // Patient Deposits (Total - Active Patients Only)
   const patientDeposits = await prisma.patient.aggregate({
-    where: { currentDebt: { gt: 0 } }, 
+    where: { isActive: true, currentDebt: { gt: 0 } }, 
     _sum: { currentDebt: true }
   });
 
@@ -369,6 +369,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
 
   if (type === 'PATIENTS') {
     const patients = await prisma.patient.findMany({
+      where: { isActive: true },
       orderBy: { currentDebt: 'asc' }
     });
 
@@ -395,7 +396,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         name: p.fullName,
         internalNumber: p.internalNumber,
         currentDebt: bal,
-        status: p.isActive ? 'نشط' : 'أرشيف',
+        status: 'نشط',
         accountStatus: statusArabic,
         type: typeArabic,
         notes: p.notes || '-'
@@ -408,7 +409,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         totalDeposits,
         netDifference: totalDeposits - totalDebts,
         totalPatients: patients.length,
-        activePatients: patients.filter(p => p.isActive).length
+        activePatients: patients.length
       },
       data
     };

@@ -277,7 +277,7 @@ const ReportsPage = () => {
                 <option value="EXPENSES">تقرير المصروفات</option>
                 <option value="INVENTORY">تقرير تقييم المخزون الحالي</option>
                 <option value="LOW_STOCK">تقرير نواقص المخزون والاحتياجات</option>
-                <option value="PATIENTS">تقرير أرصدة وحسابات المرضى (ديون وأمانات)</option>
+                <option value="PATIENTS">تقرير أرصدة وحسابات المرضى (النشطين فقط)</option>
               </select>
             </div>
             
@@ -327,15 +327,16 @@ const ReportsPage = () => {
                   {reportType === 'EXPENSES' && 'تقرير المصروفات الشامل'}
                   {reportType === 'INVENTORY' && 'تقرير تقييم المخزون الشامل'}
                   {reportType === 'LOW_STOCK' && 'تقرير نواقص المخزون والاحتياجات (أصناف تحتاج شراء)'}
+                  {reportType === 'PATIENTS' && 'تقرير أرصدة وحسابات المرضى الحاليين (النشطين فقط)'}
                 </h1>
-                {reportType !== 'INVENTORY' && reportType !== 'LOW_STOCK' && (
+                {reportType !== 'INVENTORY' && reportType !== 'LOW_STOCK' && reportType !== 'PATIENTS' && (
                   <p className="text-lg font-bold text-gray-500">
                     عن الفترة من {formatDate(startDate)} إلى {formatDate(endDate)}
                   </p>
                 )}
-                {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
+                {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK' || reportType === 'PATIENTS') && (
                   <p className="text-lg font-bold text-gray-500">
-                    التاريخ: {formatDate(new Date())}
+                    تاريخ ووقت الاستخراج: {formatDateTime(new Date())}
                   </p>
                 )}
               </div>
@@ -366,7 +367,7 @@ const ReportsPage = () => {
                       {key === 'totalDebts' && 'إجمالي ديون المرضى (لنا)'}
                       {key === 'totalDeposits' && 'إجمالي أموال المرضى (أمانات لهم)'}
                       {key === 'netDifference' && 'صافي الفارق المالي'}
-                      {key === 'totalPatients' && 'إجمالي عدد المرضى'}
+                      {key === 'totalPatients' && 'إجمالي عدد المرضى النشطين'}
                       {key === 'activePatients' && 'عدد المرضى النشطين'}
                     </p>
                     <p className="text-2xl font-black text-indigo-700">

@@ -122,20 +122,20 @@ const getHomeDashboardData = async (userId, userRole) => {
   }
 
   // 3. Admin Stats
-  // Patient Debts (Negative balance: what patients owe to the canteen)
+  // Patient Debts (Negative balance: what active patients owe to the canteen)
   const debts = await prisma.patient.aggregate({
-    where: { currentDebt: { lt: 0 } },
+    where: { isActive: true, currentDebt: { lt: 0 } },
     _sum: { currentDebt: true }
   });
 
-  // Patient Deposits (Positive balance: liabilities/deposits owed to patients upon discharge)
+  // Patient Deposits (Positive balance: liabilities/deposits owed to active patients upon discharge)
   const patientDepositsLiability = await prisma.patient.aggregate({
-    where: { currentDebt: { gt: 0 } },
+    where: { isActive: true, currentDebt: { gt: 0 } },
     _sum: { currentDebt: true }
   });
   
   const topDebtors = await prisma.patient.findMany({
-    where: { currentDebt: { lt: 0 } },
+    where: { isActive: true, currentDebt: { lt: 0 } },
     orderBy: { currentDebt: 'asc' }, // most negative first
     take: 5,
     select: { id: true, fullName: true, currentDebt: true }
