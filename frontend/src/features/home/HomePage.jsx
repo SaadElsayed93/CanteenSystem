@@ -64,15 +64,17 @@ const HomePage = () => {
               )}
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-            <button
-              onClick={() => setIsClosingModal(true)}
-              className="w-full lg:w-auto bg-rose-600 hover:bg-rose-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center gap-2.5 border border-rose-400"
-            >
-              <Lock size={20} />
-              <span>تقفيل اليومية (توريد الدرج)</span>
-            </button>
-          </div>
+          {!isAdmin && (
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+              <button
+                onClick={() => setIsClosingModal(true)}
+                className="w-full lg:w-auto bg-rose-600 hover:bg-rose-700 text-white font-black px-6 py-4 rounded-2xl shadow-lg shadow-rose-900/30 transition-all flex items-center justify-center gap-2.5 border border-rose-400"
+              >
+                <Lock size={20} />
+                <span>تقفيل اليومية (توريد الدرج)</span>
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -96,13 +98,19 @@ const HomePage = () => {
             الرصيد المتوفر بالدرج حالياً: <span className="text-white font-black text-lg">{Number(shiftStats.expectedCash || 0).toFixed(2)} ج.م</span>
           </p>
         </div>
-        <button
-          onClick={() => setIsOpeningModal(true)}
-          className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-emerald-950/30 transition-all flex items-center justify-center gap-2 border border-emerald-400"
-        >
-          <Unlock size={22} />
-          <span className="text-base">🔓 فتح يومية جديدة وبدء الوردية</span>
-        </button>
+        {!isAdmin ? (
+          <button
+            onClick={() => setIsOpeningModal(true)}
+            className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-emerald-950/30 transition-all flex items-center justify-center gap-2 border border-emerald-400"
+          >
+            <Unlock size={22} />
+            <span className="text-base">🔓 فتح يومية جديدة وبدء الوردية</span>
+          </button>
+        ) : (
+          <span className="bg-white/20 text-white font-bold px-5 py-3 rounded-2xl text-xs border border-white/30 text-center">
+            خاص بالكاشير فقط
+          </span>
+        )}
       </div>
     );
   };

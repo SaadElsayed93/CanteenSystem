@@ -156,10 +156,12 @@ const PatientsPage = () => {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <button onClick={() => setIsAddModalOpen(true)} className="w-full md:w-auto bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-          <span className="text-xl leading-none">+</span>
-          إضافة مريض جديد
-        </button>
+        {activeTab === 'ACTIVE' && (
+          <button onClick={() => setIsAddModalOpen(true)} className="w-full md:w-auto bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+            <span className="text-xl leading-none">+</span>
+            إضافة مريض جديد
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden">

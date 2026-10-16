@@ -19,7 +19,8 @@ const TreasuryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
+  const isAdmin = user?.role?.name === 'مدير' || user?.role?.name === 'أدمن';
   const { isOpen, currentShift, setIsOpeningModal, setIsClosingModal } = useShift();
   const [activeTab, setActiveTab] = useState('TREASURY'); // TREASURY or EXPENSES
   
@@ -120,49 +121,6 @@ const TreasuryPage = () => {
     }
   };
 
-  const handleOpenSettlement = () => {
-    const drawer = balances.find(b => b.name.includes('درج') || b.name.includes('نقدي'));
-    const current = drawer ? Number(drawer.currentBalance) : 0;
-    setSettlementForm({
-      countedAmount: current,
-      transferAmount: current,
-      notes: ''
-    });
-    setIsSettlementModalOpen(true);
-  };
-
-  const handleSettlementSubmit = async (e) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    const numCounted = Number(settlementForm.countedAmount);
-    const numTransfer = Number(settlementForm.transferAmount);
-
-    if (isNaN(numCounted) || numCounted < 0) {
-      return toast.error('يرجى إدخال مبلغ النقدية المعدودة بالدرج');
-    }
-    if (isNaN(numTransfer) || numTransfer <= 0) {
-      return toast.error('يرجى تحديد مبلغ صحيح للتوريد إلى الخزينة');
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await client.post('/treasury/settle-day', {
-        countedAmount: numCounted,
-        transferAmount: numTransfer,
-        notes: settlementForm.notes
-      });
-      setIsSettlementModalOpen(false);
-      setSettlementReceipt(res.data.settlement);
-      toast.success('تم تقفيل اليومية وتوريد النقدية إلى الخزينة بنجاح');
-      fetchData();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'فشل تقفيل الوردية');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const getMethodIcon = (name) => {
     if (name.includes('درج') || name.includes('نقدي')) return <Banknote className="text-emerald-600" size={26} />;
     if (name.includes('فودافون') || name.includes('كاش')) return <Wallet className="text-amber-600" size={26} />;
@@ -184,7 +142,6 @@ const TreasuryPage = () => {
   const selectedSource = balances.find(b => b.id === Number(transferForm.fromMethodId));
   const drawerChannel = balances.find(b => b.name.includes('درج') || b.name.includes('نقدي'));
   const drawerBalance = drawerChannel ? Number(drawerChannel.currentBalance) : 0;
-  const settlementDiscrepancy = Number(settlementForm.countedAmount || 0) - drawerBalance;
 
   const selectedExpenseCat = categories.find(c => c.id === Number(expenseForm.categoryId));
   const isSupplierCategory = selectedExpenseCat && selectedExpenseCat.name.includes('مورد');
@@ -213,7 +170,8 @@ const TreasuryPage = () => {
           <p className="text-gray-400 font-bold text-sm mt-1">إدارة أرصدة الدرج، المحافظ الإلكترونية، والخزينة الرئيسية</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {hasPermission('VIEW_TREASURY') && (
+          {/* Action buttons are strictly reserved for Cashier / Sales (Admin has supervisory view only) */}
+          {!isAdmin ? (
             <>
               {isOpen ? (
                 <button 
@@ -242,15 +200,21 @@ const TreasuryPage = () => {
                 <ArrowLeftRight size={18} />
                 <span>تحويل بين الخزائن</span>
               </button>
+
+              {hasPermission('CREATE_EXPENSE') && (
+                <button 
+                  onClick={() => setIsExpenseModalOpen(true)} 
+                  className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-red-200 flex items-center justify-center gap-2"
+                >
+                  <span>- سحب مصروف جديد</span>
+                </button>
+              )}
             </>
-          )}
-          {hasPermission('CREATE_EXPENSE') && (
-            <button 
-              onClick={() => setIsExpenseModalOpen(true)} 
-              className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-red-200 flex items-center justify-center gap-2"
-            >
-              <span>- سحب مصروف جديد</span>
-            </button>
+          ) : (
+            <span className="text-xs bg-indigo-50 text-indigo-700 px-3.5 py-2 rounded-xl font-bold border border-indigo-100 flex items-center gap-1.5">
+              <ShieldCheck size={16} />
+              <span>لوحة الرقابة والمتابعة المالية (الإدارة)</span>
+            </span>
           )}
         </div>
       </div>
@@ -638,223 +602,6 @@ const TreasuryPage = () => {
         </div>
       )}
 
-      {/* ================= Daily Settlement Modal ================= */}
-      {isSettlementModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
-              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                <Lock className="text-emerald-600" size={24} />
-                <span>تقفيل الوردية اليومية وتوريد النقدية</span>
-              </h3>
-              <button 
-                onClick={() => setIsSettlementModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Current Drawer Info Card */}
-            <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-emerald-800 block">رصيد الدرج المسجل بالنظام حالياً:</span>
-                <span className="text-2xl font-black text-emerald-700">{drawerBalance.toFixed(2)} ج.م</span>
-              </div>
-              <div className="p-3 bg-white rounded-xl shadow-sm border border-emerald-100">
-                <Banknote className="text-emerald-600" size={28} />
-              </div>
-            </div>
-
-            <form onSubmit={handleSettlementSubmit} className="space-y-4">
-              {/* Counted Cash Input */}
-              <div>
-                <label className="block mb-1.5 text-xs font-bold text-gray-700">
-                  العد الفعلي للنقدية الموجودة بالدرج (ج.م):
-                </label>
-                <input 
-                  required 
-                  type="number" 
-                  step="0.01" 
-                  min="0"
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-black text-emerald-700 text-lg" 
-                  placeholder="أدخل المبلغ بعد العد اليدوي..."
-                  value={settlementForm.countedAmount} 
-                  onChange={e => setSettlementForm({ ...settlementForm, countedAmount: e.target.value })}
-                />
-                
-                {/* Discrepancy Indicator */}
-                <div className="mt-2">
-                  {settlementDiscrepancy === 0 ? (
-                    <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                      <CheckCircle2 size={15} />
-                      <span>النقدية الفعلية مطابقة تماماً لرصيد النظام (الفرق: 0.00 ج.م)</span>
-                    </div>
-                  ) : settlementDiscrepancy > 0 ? (
-                    <div className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                      <AlertTriangle size={15} />
-                      <span>توجد زيادة نقدية بالدرج بمقدار: +{settlementDiscrepancy.toFixed(2)} ج.م</span>
-                    </div>
-                  ) : (
-                    <div className="text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                      <AlertTriangle size={15} />
-                      <span>يوجد عجز نقدي بالدرج بمقدار: {settlementDiscrepancy.toFixed(2)} ج.م</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Transfer Amount Input */}
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-bold text-gray-700">المبلغ المراد توريده إلى الخزينة الرئيسية (ج.م):</label>
-                  <button 
-                    type="button" 
-                    onClick={() => setSettlementForm({ ...settlementForm, transferAmount: drawerBalance })}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-bold underline"
-                  >
-                    توريد الرصيد كاملاً
-                  </button>
-                </div>
-                <input 
-                  required 
-                  type="number" 
-                  step="0.01" 
-                  min="0.01"
-                  max={drawerBalance}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-black text-indigo-700 text-lg" 
-                  placeholder="المبلغ المحول للخزينة..."
-                  value={settlementForm.transferAmount} 
-                  onChange={e => setSettlementForm({ ...settlementForm, transferAmount: e.target.value })}
-                />
-                <p className="text-xs text-gray-500 font-bold mt-1">
-                  المتبقي بالدرج بعد التوريد: <span className="font-black text-gray-800">{(drawerBalance - Number(settlementForm.transferAmount || 0)).toFixed(2)} ج.م</span> (يُترك كرصيد افتتاحي لليوم التالي).
-                </p>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block mb-1.5 text-xs font-bold text-gray-700">ملاحظات التقفيل (اختياري):</label>
-                <textarea 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800" 
-                  rows="2"
-                  placeholder="ملاحظات حول الوردية أو أسباب الفروقات إن وجدت..."
-                  value={settlementForm.notes} 
-                  onChange={e => setSettlementForm({ ...settlementForm, notes: e.target.value })}
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
-                <button 
-                  type="button" 
-                  onClick={() => setIsSettlementModalOpen(false)} 
-                  className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
-                >
-                  إلغاء
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Lock size={18} />
-                  <span>{isSubmitting ? 'جاري التقفيل والتوريد...' : 'تأكيد تقفيل اليوم والتوريد'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ================= Settlement Receipt Modal ================= */}
-      {settlementReceipt && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
-            {/* Printable Receipt Area */}
-            <div id="settlement-receipt-print" className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-200 space-y-4">
-              <div className="text-center border-b border-gray-300 pb-3">
-                <div className="flex justify-center mb-1">
-                  <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
-                    <ShieldCheck size={28} />
-                  </div>
-                </div>
-                <h4 className="text-lg font-black text-gray-900">نظام إدارة الكانتين</h4>
-                <p className="text-xs font-bold text-gray-500">إيصال تقفيل الوردية وتوريد النقدية</p>
-                <p className="text-xs font-mono text-gray-400 mt-1">
-                  {new Date(settlementReceipt.settledAt).toLocaleString('ar-EG')}
-                </p>
-              </div>
-
-              <div className="space-y-2 text-xs font-bold text-gray-700">
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">المسؤول / الكاشير:</span>
-                  <span className="text-gray-900">{settlementReceipt.settledBy}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">رصيد الدرج بالنظام:</span>
-                  <span className="text-gray-900">{Number(settlementReceipt.systemDrawerBalance).toFixed(2)} ج.م</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">العد الفعلي للنقدية:</span>
-                  <span className="text-gray-900">{Number(settlementReceipt.countedAmount).toFixed(2)} ج.م</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">حالة المطابقة:</span>
-                  <span className="font-black text-indigo-700">{settlementReceipt.discrepancyText}</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b-2 border-dashed border-gray-300 bg-emerald-50 px-2 rounded-lg">
-                  <span className="text-emerald-900 font-black">المبلغ المورد للخزينة:</span>
-                  <span className="text-emerald-700 font-black text-sm">{Number(settlementReceipt.transferAmount).toFixed(2)} ج.م</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">المتبقي بالدرج للغد:</span>
-                  <span className="text-gray-900">{Number(settlementReceipt.remainingInDrawer).toFixed(2)} ج.م</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">رصيد الخزينة الرئيسية الجديد:</span>
-                  <span className="text-gray-900">{Number(settlementReceipt.mainTreasuryBalance).toFixed(2)} ج.م</span>
-                </div>
-                {settlementReceipt.notes && (
-                  <div className="py-1 text-gray-500">
-                    <span>ملاحظات: </span>
-                    <span className="text-gray-800">{settlementReceipt.notes}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-300 text-center text-xs font-bold text-gray-500">
-                <div>
-                  <p>توقيع الكاشير (المسلّم)</p>
-                  <div className="h-10 mt-1 border-b border-gray-300 border-dashed"></div>
-                </div>
-                <div>
-                  <p>توقيع أمين الخزينة (المستلم)</p>
-                  <div className="h-10 mt-1 border-b border-gray-300 border-dashed"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 mt-5">
-              <button 
-                type="button" 
-                onClick={() => window.print()} 
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl transition-all flex items-center gap-2"
-              >
-                <Printer size={16} />
-                <span>طباعة الإيصال</span>
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setSettlementReceipt(null)} 
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all"
-              >
-                إغلاق
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

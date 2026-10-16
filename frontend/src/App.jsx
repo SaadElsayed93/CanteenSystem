@@ -28,9 +28,11 @@ function MainLayout({ children }) {
   const { user, logout, hasPermission } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
+  const isAdmin = user?.role?.name === 'مدير' || user?.role?.name === 'أدمن';
+
   const navItems = [
     { to: "/", icon: <Home size={20} />, label: "الرئيسية", exact: true },
-    ...(hasPermission('CREATE_INVOICE') ? [
+    ...((!isAdmin && hasPermission('CREATE_INVOICE')) ? [
       { to: "/pos", icon: <ShoppingCart size={20} />, label: "شاشة البيع (POS)" },
       { to: "/returns", icon: <RotateCcw size={20} />, label: "المرتجعات" }
     ] : []),
@@ -49,7 +51,7 @@ function MainLayout({ children }) {
     ] : []),
     ...(hasPermission('MANAGE_USERS') ? [
       { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" },
-    { to: "/settings/history", icon: <FileText size={20} />, label: "سجل الحركات (History)" }
+      { to: "/settings/history", icon: <FileText size={20} />, label: "سجل الحركات (History)" }
     ] : [])
   ];
 
@@ -155,7 +157,7 @@ function App() {
           } />
 
           <Route path="/pos" element={
-            <ProtectedRoute requiredPermission="CREATE_INVOICE">
+            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowRoles={['أدمن', 'مدير']}>
               <MainLayout>
                 <POSPage />
               </MainLayout>
@@ -163,7 +165,7 @@ function App() {
           } />
 
           <Route path="/returns" element={
-            <ProtectedRoute requiredPermission="CREATE_INVOICE">
+            <ProtectedRoute requiredPermission="CREATE_INVOICE" disallowRoles={['أدمن', 'مدير']}>
               <MainLayout>
                 <ReturnsPage />
               </MainLayout>
@@ -218,7 +220,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/settings/history" element={<ProtectedRoute requiredPermission="VIEW_REPORTS"><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />
+          <Route path="/settings/history" element={<ProtectedRoute requiredPermission="MANAGE_USERS"><MainLayout><HistoryPage /></MainLayout></ProtectedRoute>} />
 
           <Route path="/settings/users" element={
             <ProtectedRoute requiredPermission="MANAGE_USERS">

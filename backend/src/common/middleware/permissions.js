@@ -24,4 +24,21 @@ const checkPermission = (requiredPermission) => {
   };
 };
 
-module.exports = { checkPermission };
+const disallowRoles = (disallowedRoles = [], customMessage = 'غير مسموح بهذا الإجراء لهذا الدور') => {
+  return (req, res, next) => {
+    try {
+      const roleName = req.user?.role?.name;
+      if (roleName && disallowedRoles.includes(roleName)) {
+        return res.status(403).json({
+          success: false,
+          message: customMessage
+        });
+      }
+      return next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+module.exports = { checkPermission, disallowRoles };
