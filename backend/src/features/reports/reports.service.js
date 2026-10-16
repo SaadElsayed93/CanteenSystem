@@ -20,7 +20,6 @@ const getDashboardMetrics = async () => {
   });
 
   // Today's Profits (Sales - Cost)
-  // We need to calculate cost of goods sold (COGS) for today
   const todayInvoices = await prisma.invoice.findMany({
     where: { createdAt: { gte: today }, status: 'COMPLETED' },
     include: { items: { include: { product: true } } }
@@ -29,17 +28,22 @@ const getDashboardMetrics = async () => {
   let todayCost = 0;
   todayInvoices.forEach(inv => {
     inv.items.forEach(item => {
-      // Assuming product.purchasePrice is the cost at the time of sale. 
-      // For absolute accuracy, we should track cost per invoice item, but this is a good approximation.
-      todayCost += Number(item.quantity) * Number(item.product.purchasePrice);
+      todayCost += Number(item.quantity) * Number(item.product?.purchasePrice || 0);
     });
   });
   const todayRevenue = Number(todaySales._sum.totalAmount || 0);
   const todayProfit = todayRevenue - todayCost;
 
+  // Today's Expenses
+  const todayExpensesAgg = await prisma.expense.aggregate({
+    where: { createdAt: { gte: today } },
+    _sum: { amount: true }
+  });
+  const todayExpenses = Number(todayExpensesAgg._sum.amount || 0);
+
   // Patient Debts (Total - Active Patients Only)
   const patientDebts = await prisma.patient.aggregate({
-    where: { isActive: true, currentDebt: { lt: 0 } }, // debt is negative
+    where: { isActive: true, currentDebt: { lt: 0 } },
     _sum: { currentDebt: true }
   });
 
@@ -76,6 +80,7 @@ const getDashboardMetrics = async () => {
   return {
     todaySales: todayRevenue,
     todayProfit,
+    todayExpenses,
     monthSales: Number(monthSales._sum.totalAmount || 0),
     totalPatientDebt: Math.abs(Number(patientDebts._sum.currentDebt || 0)),
     totalPatientDeposits: Number(patientDeposits._sum.currentDebt || 0),
@@ -95,7 +100,6 @@ const getSalesChartData = async (days = 7) => {
     select: { createdAt: true, totalAmount: true }
   });
 
-  // Group by day
   const dailyData = {};
   for (let i = 0; i < days; i++) {
     const d = new Date(startDate);
@@ -131,7 +135,7 @@ const getTopProducts = async () => {
   items.forEach(item => {
     if (!productSales[item.productId]) {
       productSales[item.productId] = {
-        name: item.product.name,
+        name: item.product?.name || item.productName || 'صنف',
         quantity: 0,
         revenue: 0
       };
@@ -142,20 +146,443 @@ const getTopProducts = async () => {
 
   return Object.values(productSales)
     .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5); // Top 5
+    .slice(0, 5);
 };
-
 
 const getDetailedReport = async (type, startDateStr, endDateStr) => {
   // Parse dates and set boundaries (start of day to end of day)
   const startDate = startDateStr ? new Date(startDateStr) : new Date();
   startDate.setHours(0, 0, 0, 0);
   
-  const endDate = endDateStr ? new Date(endDateStr) : new Date();
+  const endDate = endDateStr ? new Date(endDateStr) : new Date(startDate);
   endDate.setHours(23, 59, 59, 999);
 
+  // ================= 1. DAILY COMPREHENSIVE FINANCIAL REPORT =================
+  if (type === 'DAILY_FINANCIAL') {
+    // A. Invoices
+    const invoices = await prisma.invoice.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
+      include: {
+        items: { include: { product: true } },
+        user: { select: { fullName: true } },
+        patient: { select: { fullName: true, fileNumber: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let cashSales = 0;
+    let creditSales = 0;
+    let totalSales = 0;
+    let costOfGoodsSold = 0;
+    const productMap = {};
+
+    invoices.forEach(inv => {
+      const invTotal = Number(inv.totalAmount);
+      totalSales += invTotal;
+      if (inv.paymentType === 'CASH') cashSales += invTotal;
+      else creditSales += invTotal;
+
+      inv.items.forEach(item => {
+        const qty = Number(item.quantity);
+        const rev = Number(item.subtotal);
+        const cost = qty * Number(item.product?.purchasePrice || 0);
+        costOfGoodsSold += cost;
+
+        const pid = item.productId;
+        if (!productMap[pid]) {
+          productMap[pid] = {
+            id: pid,
+            name: item.product?.name || item.productName || 'صنف',
+            quantity: 0,
+            revenue: 0,
+            cost: 0,
+            profit: 0
+          };
+        }
+        productMap[pid].quantity += qty;
+        productMap[pid].revenue += rev;
+        productMap[pid].cost += cost;
+        productMap[pid].profit += (rev - cost);
+      });
+    });
+
+    const grossProfit = totalSales - costOfGoodsSold;
+
+    // B. Daily Expenses
+    const expenses = await prisma.expense.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: { category: true, paymentMethod: true, user: { select: { fullName: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let totalExpenses = 0;
+    let supplierPayments = 0;
+    let patientRefunds = 0;
+    let operationalExpenses = 0;
+
+    const expensesList = expenses.map(exp => {
+      const amt = Number(exp.amount);
+      totalExpenses += amt;
+      const catName = exp.category?.name || '';
+      if (catName.includes('مورد')) supplierPayments += amt;
+      else if (catName.includes('أمانات') || catName.includes('مريض')) patientRefunds += amt;
+      else operationalExpenses += amt;
+
+      return {
+        id: exp.id,
+        date: exp.createdAt,
+        category: catName,
+        amount: amt,
+        description: exp.description || '-',
+        paymentMethod: exp.paymentMethod?.name || 'نقدي (الدرج)',
+        user: exp.user?.fullName || 'النظام'
+      };
+    });
+
+    const netProfit = grossProfit - operationalExpenses;
+
+    // C. Patient Transactions
+    const patientTxs = await prisma.patientTransaction.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: { patient: { select: { fullName: true, fileNumber: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let patientDeposits = 0;
+    let patientWithdrawals = 0;
+    patientTxs.forEach(tx => {
+      const amt = Number(tx.amount);
+      if (tx.type === 'DEPOSIT') patientDeposits += amt;
+      else if (tx.type === 'WITHDRAWAL') patientWithdrawals += amt;
+    });
+
+    // D. Daily Shifts
+    const shifts = await prisma.dailyShift.findMany({
+      where: { openedAt: { gte: startDate, lte: endDate } },
+      include: {
+        userOpened: { select: { fullName: true } },
+        userClosed: { select: { fullName: true } }
+      },
+      orderBy: { shiftNumber: 'asc' }
+    });
+
+    const shiftsList = shifts.map(s => {
+      const start = Number(s.startingCash || 0);
+      const actual = s.actualBalance !== null ? Number(s.actualBalance) : null;
+      const system = s.systemBalance !== null ? Number(s.systemBalance) : null;
+      const disc = s.discrepancy !== null ? Number(s.discrepancy) : 0;
+      const transferred = Number(s.transferredCash || 0);
+      const remaining = Number(s.remainingCash || 0);
+
+      let statusArabic = s.status === 'OPEN' ? 'وردية مفتوحة حالياً' : 'مغلقة ومقفلة';
+      let discrepancyArabic = 'مطابق للنظام';
+      if (disc > 0) discrepancyArabic = `زيادة (+${disc.toFixed(2)} ج.م)`;
+      else if (disc < 0) discrepancyArabic = `عجز (${disc.toFixed(2)} ج.م)`;
+
+      return {
+        id: s.shiftNumber,
+        shiftNumber: `#${s.shiftNumber}`,
+        status: statusArabic,
+        openedBy: s.userOpened?.fullName || '-',
+        openedAt: s.openedAt,
+        closedBy: s.userClosed?.fullName || '-',
+        closedAt: s.closedAt,
+        startingCash: start,
+        systemBalance: system,
+        actualBalance: actual,
+        discrepancy: discrepancyArabic,
+        transferredCash: transferred,
+        remainingCash: remaining
+      };
+    });
+
+    const productsList = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
+
+    return {
+      reportType: 'DAILY_FINANCIAL',
+      date: startDate,
+      summary: {
+        totalSales,
+        cashSales,
+        creditSales,
+        invoiceCount: invoices.length,
+        costOfGoodsSold,
+        grossProfit,
+        totalExpenses,
+        operationalExpenses,
+        supplierPayments,
+        patientRefunds,
+        netProfit,
+        patientDeposits,
+        patientWithdrawals,
+        shiftsCount: shifts.length
+      },
+      shifts: shiftsList,
+      products: productsList,
+      expenses: expensesList,
+      data: productsList // for generic table viewers
+    };
+  }
+
+  // ================= 2. MONTHLY COMPREHENSIVE CLOSING REPORT =================
+  if (type === 'MONTHLY_FINANCIAL') {
+    // A. Month Invoices
+    const invoices = await prisma.invoice.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
+      include: { items: { include: { product: true } } }
+    });
+
+    let totalSales = 0;
+    let cashSales = 0;
+    let creditSales = 0;
+    let costOfGoodsSold = 0;
+    const productMap = {};
+
+    invoices.forEach(inv => {
+      const invTotal = Number(inv.totalAmount);
+      totalSales += invTotal;
+      if (inv.paymentType === 'CASH') cashSales += invTotal;
+      else creditSales += invTotal;
+
+      inv.items.forEach(item => {
+        const qty = Number(item.quantity);
+        const rev = Number(item.subtotal);
+        const cost = qty * Number(item.product?.purchasePrice || 0);
+        costOfGoodsSold += cost;
+
+        const pid = item.productId;
+        if (!productMap[pid]) {
+          productMap[pid] = {
+            id: pid,
+            name: item.product?.name || item.productName || 'صنف',
+            quantity: 0,
+            revenue: 0,
+            cost: 0,
+            profit: 0
+          };
+        }
+        productMap[pid].quantity += qty;
+        productMap[pid].revenue += rev;
+        productMap[pid].cost += cost;
+        productMap[pid].profit += (rev - cost);
+      });
+    });
+
+    const grossProfit = totalSales - costOfGoodsSold;
+
+    // B. Month Expenses
+    const expenses = await prisma.expense.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: { category: true }
+    });
+
+    const categoryMap = {};
+    let totalExpenses = 0;
+    let supplierPayments = 0;
+    let operationalExpenses = 0;
+
+    expenses.forEach(exp => {
+      const amt = Number(exp.amount);
+      totalExpenses += amt;
+      const cat = exp.category?.name || 'مصروفات متنوعة';
+      if (cat.includes('مورد')) supplierPayments += amt;
+      else operationalExpenses += amt;
+
+      if (!categoryMap[cat]) categoryMap[cat] = { category: cat, total: 0, count: 0 };
+      categoryMap[cat].total += amt;
+      categoryMap[cat].count += 1;
+    });
+
+    const netProfit = grossProfit - operationalExpenses;
+
+    // C. Month Purchases
+    const purchases = await prisma.supplierPurchase.findMany({
+      where: { createdAt: { gte: startDate, lte: endDate } },
+      include: { supplier: true }
+    });
+
+    let totalPurchases = 0;
+    let totalPaidPurchases = 0;
+    purchases.forEach(p => {
+      totalPurchases += Number(p.totalAmount);
+      totalPaidPurchases += Number(p.paidAmount);
+    });
+
+    // D. Active Patients Overview
+    const patientDebts = await prisma.patient.aggregate({
+      where: { isActive: true, currentDebt: { lt: 0 } },
+      _sum: { currentDebt: true }
+    });
+    const patientDeposits = await prisma.patient.aggregate({
+      where: { isActive: true, currentDebt: { gt: 0 } },
+      _sum: { currentDebt: true }
+    });
+    const activePatientsCount = await prisma.patient.count({ where: { isActive: true } });
+
+    // E. Active Suppliers Overview
+    const suppliers = await prisma.supplier.findMany({
+      where: { isActive: true },
+      include: { purchases: true, payments: true }
+    });
+
+    let totalSupplierDebts = 0;
+    const suppliersList = suppliers.map(s => {
+      const totPurch = s.purchases.reduce((sum, p) => sum + Number(p.totalAmount), 0);
+      const totPaid = s.purchases.reduce((sum, p) => sum + Number(p.paidAmount), 0) + 
+                      s.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const debt = Math.max(0, totPurch - totPaid);
+      totalSupplierDebts += debt;
+      return {
+        id: s.id,
+        name: s.name,
+        phone: s.phone || '-',
+        totalPurchases: totPurch,
+        totalPaid: totPaid,
+        currentDebt: debt
+      };
+    });
+
+    // F. Treasury Balances
+    const methods = await prisma.paymentMethod.findMany();
+    const treasuryBalances = await Promise.all(methods.map(async m => {
+      const txs = await prisma.treasuryTransaction.findMany({ where: { paymentMethodId: m.id } });
+      const bal = txs.reduce((sum, t) => sum + (t.type === 'IN' ? Number(t.amount) : -Number(t.amount)), 0);
+      return {
+        name: m.name,
+        balance: bal
+      };
+    }));
+
+    const topSelling = Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+
+    return {
+      reportType: 'MONTHLY_FINANCIAL',
+      period: { startDate, endDate },
+      summary: {
+        totalSales,
+        cashSales,
+        creditSales,
+        invoiceCount: invoices.length,
+        costOfGoodsSold,
+        grossProfit,
+        totalExpenses,
+        operationalExpenses,
+        supplierPayments,
+        netProfit,
+        totalPurchases,
+        totalPaidPurchases,
+        totalRemainingPurchases: totalPurchases - totalPaidPurchases,
+        totalPatientDeposits: Number(patientDeposits._sum.currentDebt || 0),
+        totalPatientDebts: Math.abs(Number(patientDebts._sum.currentDebt || 0)),
+        activePatientsCount,
+        totalSupplierDebts
+      },
+      expensesByCategory: Object.values(categoryMap),
+      treasuryBalances,
+      topProducts: topSelling,
+      suppliers: suppliersList,
+      data: topSelling
+    };
+  }
+
+  // ================= 3. SHIFTS HISTORY REPORT =================
+  if (type === 'SHIFTS') {
+    const shifts = await prisma.dailyShift.findMany({
+      where: { openedAt: { gte: startDate, lte: endDate } },
+      include: {
+        userOpened: { select: { fullName: true } },
+        userClosed: { select: { fullName: true } }
+      },
+      orderBy: { shiftNumber: 'desc' }
+    });
+
+    let totalTransferred = 0;
+    let totalStarting = 0;
+
+    const data = shifts.map(s => {
+      const disc = Number(s.discrepancy || 0);
+      let discText = 'مطابق للنظام';
+      if (disc > 0) discText = `زيادة (+${disc.toFixed(2)} ج.م)`;
+      else if (disc < 0) discText = `عجز (${disc.toFixed(2)} ج.م)`;
+
+      const transferred = Number(s.transferredCash || 0);
+      totalTransferred += transferred;
+      totalStarting += Number(s.startingCash || 0);
+
+      return {
+        id: s.shiftNumber,
+        shiftNumber: `#${s.shiftNumber}`,
+        openedAt: s.openedAt,
+        openedBy: s.userOpened?.fullName || '-',
+        closedAt: s.closedAt,
+        closedBy: s.userClosed?.fullName || (s.status === 'OPEN' ? 'مفتوحة حالياً' : '-'),
+        status: s.status === 'OPEN' ? 'مفتوحة' : 'مغلقة',
+        startingCash: Number(s.startingCash || 0),
+        systemBalance: s.systemBalance !== null ? Number(s.systemBalance) : '-',
+        actualBalance: s.actualBalance !== null ? Number(s.actualBalance) : '-',
+        discrepancy: discText,
+        transferredCash: transferred,
+        remainingCash: Number(s.remainingCash || 0)
+      };
+    });
+
+    return {
+      summary: {
+        shiftsCount: shifts.length,
+        totalStarting,
+        totalTransferred
+      },
+      data
+    };
+  }
+
+  // ================= 4. SUPPLIERS DEBTS REPORT =================
+  if (type === 'SUPPLIERS') {
+    const suppliers = await prisma.supplier.findMany({
+      where: { isActive: true },
+      include: { purchases: true, payments: true },
+      orderBy: { name: 'asc' }
+    });
+
+    let totalDebt = 0;
+    let totalPurchases = 0;
+    let totalPaid = 0;
+
+    const data = suppliers.map(s => {
+      const purchTotal = s.purchases.reduce((sum, p) => sum + Number(p.totalAmount), 0);
+      const paidTotal = s.purchases.reduce((sum, p) => sum + Number(p.paidAmount), 0) +
+                        s.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const debt = Math.max(0, purchTotal - paidTotal);
+
+      totalDebt += debt;
+      totalPurchases += purchTotal;
+      totalPaid += paidTotal;
+
+      return {
+        id: s.id,
+        name: s.name,
+        phone: s.phone || '-',
+        totalPurchases: purchTotal,
+        totalPaid: paidTotal,
+        currentDebt: debt,
+        status: debt > 0 ? 'مستحق له مديونية' : 'خالص الحساب',
+        purchasesCount: s.purchases.length
+      };
+    });
+
+    return {
+      summary: {
+        totalSuppliers: suppliers.length,
+        totalPurchases,
+        totalPaid,
+        totalDebt
+      },
+      data
+    };
+  }
+
+  // ================= 5. SALES BY PRODUCT REPORT =================
   if (type === 'SALES') {
-    // We want to group sales by product
     const items = await prisma.invoiceItem.findMany({
       where: {
         invoice: {
@@ -175,8 +602,6 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     let cashSales = 0;
     let creditSales = 0;
     
-    // We also need to get total cash/credit correctly. 
-    // Since we group by items, it's easier to just fetch invoices for the summary
     const invoices = await prisma.invoice.findMany({
       where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
       select: { paymentType: true, totalAmount: true }
@@ -192,7 +617,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       if (!productMap[pid]) {
         productMap[pid] = {
           id: pid,
-          name: item.product.name,
+          name: item.product?.name || item.productName || 'صنف',
           quantity: 0,
           revenue: 0,
           cost: 0
@@ -201,7 +626,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       
       const qty = Number(item.quantity);
       const rev = Number(item.subtotal);
-      const cost = qty * Number(item.product.purchasePrice);
+      const cost = qty * Number(item.product?.purchasePrice || 0);
 
       productMap[pid].quantity += qty;
       productMap[pid].revenue += rev;
@@ -214,7 +639,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     const data = Object.values(productMap).map(p => ({
       ...p,
       profit: p.revenue - p.cost
-    })).sort((a, b) => b.quantity - a.quantity); // sort by highest qty
+    })).sort((a, b) => b.quantity - a.quantity);
 
     return {
       summary: {
@@ -223,12 +648,14 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         totalProfit: totalRevenue - totalCost,
         cashSales,
         creditSales,
+        invoiceCount: invoices.length,
         productCount: data.length
       },
       data
     };
   }
 
+  // ================= 6. PURCHASES REPORT =================
   if (type === 'PURCHASES') {
     const purchases = await prisma.supplierPurchase.findMany({
       where: { createdAt: { gte: startDate, lte: endDate } },
@@ -254,7 +681,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         paid: Number(pur.paidAmount),
         remaining: Number(pur.totalAmount) - Number(pur.paidAmount),
         status: pur.status === 'PAID' ? 'خالصة' : pur.status === 'PARTIAL' ? 'مدفوعة جزئياً' : 'غير مدفوعة',
-        itemsSummary: pur.items.map(i => `${i.quantity}x ${i.product.name}`).join('، ')
+        itemsSummary: pur.items.map(i => `${i.quantity}x ${i.product?.name || 'صنف'}`).join('، ')
       };
     });
 
@@ -269,6 +696,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     };
   }
 
+  // ================= 7. EXPENSES REPORT =================
   if (type === 'EXPENSES') {
     const expenses = await prisma.expense.findMany({
       where: { createdAt: { gte: startDate, lte: endDate } },
@@ -283,10 +711,10 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       return {
         id: exp.id,
         date: exp.createdAt,
-        category: exp.category.name,
+        category: exp.category?.name || 'عام',
         amount: Number(exp.amount),
         description: exp.description || 'بدون وصف',
-        paymentMethod: exp.paymentMethod.name
+        paymentMethod: exp.paymentMethod?.name || 'نقدي (الدرج)'
       };
     });
 
@@ -296,8 +724,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     };
   }
   
+  // ================= 8. INVENTORY VALUATION =================
   if (type === 'INVENTORY') {
-    // Inventory is a snapshot, no date filtering applies usually, but we return current state
     const products = await prisma.product.findMany({
       include: { batches: true },
       orderBy: { name: 'asc' }
@@ -313,7 +741,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       totalItems += qty;
 
       return {
-        id: p.id,
+        id: p.internalCode || `#${p.id}`,
         name: p.name,
         category: p.unit || '-',
         quantity: qty,
@@ -329,6 +757,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     };
   }
 
+  // ================= 9. LOW STOCK & REORDER REPORT =================
   if (type === 'LOW_STOCK') {
     const products = await prisma.product.findMany({
       where: { isActive: true },
@@ -367,6 +796,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     };
   }
 
+  // ================= 10. ACTIVE PATIENTS REPORT =================
   if (type === 'PATIENTS') {
     const patients = await prisma.patient.findMany({
       where: { isActive: true },
@@ -418,4 +848,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
   throw new Error('نوع التقرير غير مدعوم');
 };
 
-module.exports = { getDashboardMetrics, getSalesChartData, getTopProducts, getDetailedReport };
+module.exports = { 
+  getDashboardMetrics, 
+  getSalesChartData, 
+  getTopProducts, 
+  getDetailedReport 
+};
