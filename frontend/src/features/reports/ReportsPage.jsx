@@ -659,11 +659,33 @@ const ReportsPage = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-300 text-center">
-                      <div className="text-xs font-black text-emerald-800 mb-1">{isSingleDayMode ? 'صافي ربح اليوم الفعلي ✨' : 'صافي ربح الفترة الفعلي ✨'}</div>
-                      <div className="text-2xl font-black text-emerald-700">{Number(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-emerald-600 mt-1 font-bold">مجمل الربح - المصروفات التشغيلية</div>
-                    </div>
+                    {(() => {
+                      const profitVal = Number(detailedData.summary.netProfit || 0);
+                      const isProfit = profitVal >= 0;
+                      return (
+                        <div className={`p-4 rounded-2xl border-2 text-center transition-colors ${
+                          isProfit 
+                            ? 'bg-emerald-50 border-emerald-300' 
+                            : 'bg-rose-50 border-rose-300'
+                        }`}>
+                          <div className={`text-xs font-black mb-1 ${
+                            isProfit ? 'text-emerald-800' : 'text-rose-800'
+                          }`}>
+                            {isSingleDayMode ? 'صافي ربح اليوم الفعلي ✨' : 'صافي ربح الفترة الفعلي ✨'}
+                          </div>
+                          <div className={`text-2xl font-black ${
+                            isProfit ? 'text-emerald-700' : 'text-rose-600'
+                          }`}>
+                            {profitVal.toFixed(2)} ج.م
+                          </div>
+                          <div className={`text-[11px] mt-1 font-bold ${
+                            isProfit ? 'text-emerald-600' : 'text-rose-500'
+                          }`}>
+                            {isProfit ? 'مجمل الربح - المصروفات التشغيلية (أرباح)' : 'مجمل الربح - المصروفات التشغيلية (عجز / خسارة)'}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Section A: Shifts & Cash Box Drawer */}
@@ -818,11 +840,33 @@ const ReportsPage = () => {
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)} ج.م</div>
                     </div>
 
-                    <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-300 text-center">
-                      <div className="text-xs font-black text-emerald-800 mb-1">صافي أرباح تقفيلة الشهر ✨</div>
-                      <div className="text-2xl font-black text-emerald-700">{Number(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-emerald-600 mt-1 font-bold">الأرباح الفعلية المحققة للشهر</div>
-                    </div>
+                    {(() => {
+                      const profitVal = Number(detailedData.summary.netProfit || 0);
+                      const isProfit = profitVal >= 0;
+                      return (
+                        <div className={`p-4 rounded-2xl border-2 text-center transition-colors ${
+                          isProfit 
+                            ? 'bg-emerald-50 border-emerald-300' 
+                            : 'bg-rose-50 border-rose-300'
+                        }`}>
+                          <div className={`text-xs font-black mb-1 ${
+                            isProfit ? 'text-emerald-800' : 'text-rose-800'
+                          }`}>
+                            صافي أرباح تقفيلة الشهر ✨
+                          </div>
+                          <div className={`text-2xl font-black ${
+                            isProfit ? 'text-emerald-700' : 'text-rose-600'
+                          }`}>
+                            {profitVal.toFixed(2)} ج.م
+                          </div>
+                          <div className={`text-[11px] mt-1 font-bold ${
+                            isProfit ? 'text-emerald-600' : 'text-rose-500'
+                          }`}>
+                            {isProfit ? 'الأرباح الفعلية المحققة للشهر' : 'صافي عجز / خسائر الشهر'}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Section: Treasury Balances at Month End */}

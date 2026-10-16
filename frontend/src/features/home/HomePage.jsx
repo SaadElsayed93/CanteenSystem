@@ -267,13 +267,25 @@ const HomePage = () => {
               </div>
             </div>
             
-            <div className="bg-white p-5 rounded-2xl border-2 border-emerald-50 shadow-sm flex items-center gap-3">
-              <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600"><TrendingUp size={24} /></div>
-              <div>
-                <p className="text-gray-500 font-bold text-xs">صافي ربح الشهر</p>
-                <h3 className="text-xl font-black text-emerald-600">{Number(data.adminStats.netProfit || 0).toFixed(2)} ج.م</h3>
-              </div>
-            </div>
+            {(() => {
+              const profitVal = Number(data.adminStats.netProfit || 0);
+              const isProfit = profitVal >= 0;
+              return (
+                <div className={`p-5 rounded-2xl border-2 shadow-sm flex items-center gap-3 transition-colors ${
+                  isProfit ? 'bg-white border-emerald-50' : 'bg-red-50/60 border-red-200'
+                }`}>
+                  <div className={`p-3 rounded-xl ${
+                    isProfit ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+                  }`}><TrendingUp size={24} /></div>
+                  <div>
+                    <p className="text-gray-500 font-bold text-xs">صافي ربح الشهر</p>
+                    <h3 className={`text-xl font-black ${
+                      isProfit ? 'text-emerald-600' : 'text-red-600'
+                    }`}>{profitVal.toFixed(2)} ج.م</h3>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="bg-white p-5 rounded-2xl border-2 border-red-50 shadow-sm flex items-center gap-3">
               <div className="bg-red-100 p-3 rounded-xl text-red-600"><Users size={24} /></div>
