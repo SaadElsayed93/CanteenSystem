@@ -78,15 +78,15 @@ const getDashboardMetrics = async () => {
   });
 
   return {
-    todaySales: todayRevenue,
-    todayProfit,
-    todayExpenses,
-    monthSales: Number(monthSales._sum.totalAmount || 0),
-    totalPatientDebt: Math.abs(Number(patientDebts._sum.currentDebt || 0)),
-    totalPatientDeposits: Number(patientDeposits._sum.currentDebt || 0),
+    todaySales: Number(todayRevenue.toFixed(2)),
+    todayProfit: Number(todayProfit.toFixed(2)),
+    todayExpenses: Number(todayExpenses.toFixed(2)),
+    monthSales: Number(Number(monthSales._sum.totalAmount || 0).toFixed(2)),
+    totalPatientDebt: Math.abs(Number(Number(patientDebts._sum.currentDebt || 0).toFixed(2))),
+    totalPatientDeposits: Number(Number(patientDeposits._sum.currentDebt || 0).toFixed(2)),
     lowStockCount,
     lowStockItems,
-    inventoryValue
+    inventoryValue: Number(inventoryValue.toFixed(2))
   };
 };
 
@@ -117,7 +117,7 @@ const getSalesChartData = async (days = 7) => {
 
   return Object.entries(dailyData).map(([date, amount]) => ({
     date,
-    المبيعات: amount
+    المبيعات: Number(Number(amount || 0).toFixed(2))
   }));
 };
 
@@ -146,7 +146,11 @@ const getTopProducts = async () => {
 
   return Object.values(productSales)
     .sort((a, b) => b.quantity - a.quantity)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map(p => ({
+      ...p,
+      revenue: Number(Number(p.revenue || 0).toFixed(2))
+    }));
 };
 
 const getDetailedReport = async (type, startDateStr, endDateStr) => {

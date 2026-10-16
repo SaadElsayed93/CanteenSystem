@@ -90,12 +90,12 @@ const getHomeDashboardData = async (userId, userRole) => {
       shiftNumber: activeShift.shiftNumber,
       openedAt: activeShift.openedAt,
       openedBy: activeShift.userOpened.fullName,
-      startingCash,
-      sales,
-      deposits,
-      expenses,
-      transfers,
-      expectedCash
+      startingCash: Number(startingCash.toFixed(2)),
+      sales: Number(sales.toFixed(2)),
+      deposits: Number(deposits.toFixed(2)),
+      expenses: Number(expenses.toFixed(2)),
+      transfers: Number(transfers.toFixed(2)),
+      expectedCash: Number(expectedCash.toFixed(2))
     };
   } else {
     const lastShift = await prisma.dailyShift.findFirst({
@@ -112,12 +112,12 @@ const getHomeDashboardData = async (userId, userRole) => {
       shiftId: null,
       shiftNumber: null,
       lastShift,
-      startingCash: expectedCash,
+      startingCash: Number(expectedCash.toFixed(2)),
       sales: 0,
       deposits: 0,
       expenses: 0,
       transfers: 0,
-      expectedCash
+      expectedCash: Number(expectedCash.toFixed(2))
     };
   }
 
@@ -134,12 +134,16 @@ const getHomeDashboardData = async (userId, userRole) => {
     _sum: { currentDebt: true }
   });
   
-  const topDebtors = await prisma.patient.findMany({
+  const topDebtorsRaw = await prisma.patient.findMany({
     where: { isActive: true, currentDebt: { lt: 0 } },
     orderBy: { currentDebt: 'asc' }, // most negative first
     take: 5,
     select: { id: true, fullName: true, currentDebt: true }
   });
+  const topDebtors = topDebtorsRaw.map(p => ({
+    ...p,
+    currentDebt: Number(Math.abs(Number(p.currentDebt || 0)).toFixed(2))
+  }));
 
   // Monthly Net Profit
   const monthInvoices = await prisma.invoice.findMany({
@@ -172,11 +176,11 @@ const getHomeDashboardData = async (userId, userRole) => {
   const treasuryBalance = activeMethods.reduce((sum, m) => sum + Number(m.currentBalance), 0);
 
   const adminStats = {
-    inventoryValue,
-    totalDebts: Math.abs(Number(debts._sum.currentDebt || 0)),
-    totalPatientDeposits: Number(patientDepositsLiability._sum.currentDebt || 0),
-    netProfit,
-    treasuryBalance
+    inventoryValue: Number(inventoryValue.toFixed(2)),
+    totalDebts: Number(Math.abs(Number(debts._sum.currentDebt || 0)).toFixed(2)),
+    totalPatientDeposits: Number(Number(patientDepositsLiability._sum.currentDebt || 0).toFixed(2)),
+    netProfit: Number(netProfit.toFixed(2)),
+    treasuryBalance: Number(treasuryBalance.toFixed(2))
   };
 
 

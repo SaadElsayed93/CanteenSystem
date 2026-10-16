@@ -242,7 +242,7 @@ const HomePage = () => {
                         <div className="font-bold text-gray-800">{p.name}</div>
                         <div className="text-xs text-gray-500 font-bold">{p.internalCode}</div>
                       </div>
-                      <div className="font-black text-indigo-600">{p.sellingPrice} ج.م</div>
+                      <div className="font-black text-indigo-600">{Number(p.sellingPrice || 0).toFixed(2)} ج.م</div>
                     </div>
                   ))}
                 </div>
@@ -263,7 +263,7 @@ const HomePage = () => {
               <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600"><PackageOpen size={24} /></div>
               <div>
                 <p className="text-gray-500 font-bold text-xs">قيمة البضاعة</p>
-                <h3 className="text-xl font-black text-gray-800">{data.adminStats.inventoryValue} ج</h3>
+                <h3 className="text-xl font-black text-gray-800">{Number(data.adminStats.inventoryValue || 0).toFixed(2)} ج.م</h3>
               </div>
             </div>
             
@@ -271,7 +271,7 @@ const HomePage = () => {
               <div className="bg-emerald-100 p-3 rounded-xl text-emerald-600"><TrendingUp size={24} /></div>
               <div>
                 <p className="text-gray-500 font-bold text-xs">صافي ربح الشهر</p>
-                <h3 className="text-xl font-black text-emerald-600">{data.adminStats.netProfit} ج</h3>
+                <h3 className="text-xl font-black text-emerald-600">{Number(data.adminStats.netProfit || 0).toFixed(2)} ج.م</h3>
               </div>
             </div>
 
@@ -279,7 +279,7 @@ const HomePage = () => {
               <div className="bg-red-100 p-3 rounded-xl text-red-600"><Users size={24} /></div>
               <div>
                 <p className="text-gray-500 font-bold text-xs">ديون المرضى (لنا)</p>
-                <h3 className="text-xl font-black text-red-600">{data.adminStats.totalDebts} ج</h3>
+                <h3 className="text-xl font-black text-red-600">{Number(data.adminStats.totalDebts || 0).toFixed(2)} ج.م</h3>
               </div>
             </div>
 
@@ -287,7 +287,7 @@ const HomePage = () => {
               <div className="bg-amber-100 p-3 rounded-xl text-amber-700"><CreditCard size={24} /></div>
               <div>
                 <p className="text-gray-500 font-bold text-xs">أموال المرضى (أمانات)</p>
-                <h3 className="text-xl font-black text-amber-600">{(data.adminStats.totalPatientDeposits || 0).toFixed(2)} ج</h3>
+                <h3 className="text-xl font-black text-amber-600">{Number(data.adminStats.totalPatientDeposits || 0).toFixed(2)} ج.م</h3>
               </div>
             </div>
 
@@ -295,7 +295,7 @@ const HomePage = () => {
               <div className="bg-blue-100 p-3 rounded-xl text-blue-600"><Wallet size={24} /></div>
               <div>
                 <p className="text-gray-500 font-bold text-xs">سيولة الخزائن</p>
-                <h3 className="text-xl font-black text-gray-800">{data.adminStats.treasuryBalance} ج</h3>
+                <h3 className="text-xl font-black text-gray-800">{Number(data.adminStats.treasuryBalance || 0).toFixed(2)} ج.م</h3>
               </div>
             </div>
           </div>
@@ -338,7 +338,7 @@ const HomePage = () => {
                           <p className="text-xs text-gray-400 font-bold">{p.quantity} قطعة مباعة</p>
                         </div>
                       </div>
-                      <div className="font-black text-indigo-600">{p.revenue} ج</div>
+                      <div className="font-black text-indigo-600">{Number(p.revenue || 0).toFixed(2)} ج.م</div>
                     </div>
                   ))}
                   {data.topProducts.length === 0 && (
@@ -361,7 +361,7 @@ const HomePage = () => {
                         <div className="w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center font-bold text-xs">{i+1}</div>
                         <span className="font-bold text-gray-800">{p.fullName}</span>
                       </div>
-                      <span className="font-black text-red-600">{Math.abs(p.currentDebt)} ج</span>
+                      <span className="font-black text-red-600">{Math.abs(Number(p.currentDebt || 0)).toFixed(2)} ج.م</span>
                     </li>
                   ))}
                   {data.topDebtors.length === 0 && (
