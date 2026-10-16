@@ -25,6 +25,15 @@ const formatDate = (dateString) => {
   return `${day}/${month}/${year}`;
 };
 
+const formatDateISO = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDateTime = (dateString) => {
   if (!dateString) return '';
   const d = new Date(dateString);
@@ -114,33 +123,54 @@ const ReportsPage = () => {
     const now = new Date();
     let s = new Date();
     let e = new Date();
+    let targetType = reportType;
 
     if (p === 'TODAY') {
       s = new Date();
       e = new Date();
       setSingleDate(s);
+      if (reportType === 'MONTHLY_FINANCIAL') {
+        targetType = 'DAILY_FINANCIAL';
+        setReportType('DAILY_FINANCIAL');
+      }
     } else if (p === 'YESTERDAY') {
       s = new Date();
       s.setDate(s.getDate() - 1);
       e = new Date(s);
       setSingleDate(s);
+      if (reportType === 'MONTHLY_FINANCIAL') {
+        targetType = 'DAILY_FINANCIAL';
+        setReportType('DAILY_FINANCIAL');
+      }
     } else if (p === 'WEEK') {
       s = new Date();
       s.setDate(s.getDate() - 7);
       e = new Date();
+      if (reportType === 'MONTHLY_FINANCIAL') {
+        targetType = 'DAILY_FINANCIAL';
+        setReportType('DAILY_FINANCIAL');
+      }
     } else if (p === 'THIS_MONTH') {
       s = new Date(now.getFullYear(), now.getMonth(), 1);
       e = new Date();
+      if (reportType === 'DAILY_FINANCIAL') {
+        targetType = 'MONTHLY_FINANCIAL';
+        setReportType('MONTHLY_FINANCIAL');
+      }
     } else if (p === 'LAST_MONTH') {
       s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       e = new Date(now.getFullYear(), now.getMonth(), 0);
+      if (reportType === 'DAILY_FINANCIAL') {
+        targetType = 'MONTHLY_FINANCIAL';
+        setReportType('MONTHLY_FINANCIAL');
+      }
     }
 
     setStartDate(s);
     setEndDate(e);
 
     // Auto-generate when switching preset for instant 1-click experience!
-    generateReportForDates(reportType, s, e);
+    generateReportForDates(targetType, s, e);
   };
 
   const handleSingleDateChange = (date) => {
@@ -153,8 +183,8 @@ const ReportsPage = () => {
   const generateReportForDates = async (typeToFetch, sDate, eDate) => {
     setIsGenerating(true);
     try {
-      const sStr = sDate.toISOString().split('T')[0];
-      const eStr = eDate.toISOString().split('T')[0];
+      const sStr = formatDateISO(sDate);
+      const eStr = formatDateISO(eDate);
       const res = await client.get(`/reports/detailed?type=${typeToFetch}&startDate=${sStr}&endDate=${eStr}`);
       setDetailedData(res.data.data);
     } catch (err) {
@@ -172,25 +202,28 @@ const ReportsPage = () => {
   const handleReportTypeChange = (newType) => {
     setReportType(newType);
     if (newType === 'DAILY_FINANCIAL') {
-      // Auto set to single day (today)
-      setPreset('TODAY');
-      const today = new Date();
-      setSingleDate(today);
-      setStartDate(today);
-      setEndDate(today);
-      generateReportForDates(newType, today, today);
+      if (preset === 'THIS_MONTH' || preset === 'LAST_MONTH') {
+        setPreset('TODAY');
+        const today = new Date();
+        setSingleDate(today);
+        setStartDate(today);
+        setEndDate(today);
+        generateReportForDates(newType, today, today);
+        return;
+      }
     } else if (newType === 'MONTHLY_FINANCIAL') {
-      // Auto set to this month
-      setPreset('THIS_MONTH');
-      const now = new Date();
-      const s = new Date(now.getFullYear(), now.getMonth(), 1);
-      const e = new Date();
-      setStartDate(s);
-      setEndDate(e);
-      generateReportForDates(newType, s, e);
-    } else {
-      generateReportForDates(newType, startDate, endDate);
+      if (preset === 'TODAY' || preset === 'YESTERDAY') {
+        setPreset('THIS_MONTH');
+        const now = new Date();
+        const s = new Date(now.getFullYear(), now.getMonth(), 1);
+        const e = new Date();
+        setStartDate(s);
+        setEndDate(e);
+        generateReportForDates(newType, s, e);
+        return;
+      }
     }
+    generateReportForDates(newType, startDate, endDate);
   };
 
   const handlePrint = () => {
@@ -204,7 +237,11 @@ const ReportsPage = () => {
   );
 
   const { metrics, chartData, topProducts } = data;
-  const isSingleDayMode = reportType === 'DAILY_FINANCIAL' || preset === 'TODAY' || preset === 'YESTERDAY';
+  const isSingleDayMode = (
+    preset === 'TODAY' || 
+    preset === 'YESTERDAY' || 
+    (startDate && endDate && formatDate(startDate) === formatDate(endDate))
+  );
 
   return (
     <div className="space-y-6">
@@ -430,7 +467,7 @@ const ReportsPage = () => {
                   className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm bg-white"
                 >
                   <optgroup label="🌟 التقارير الإجمالية الشاملة">
-                    <option value="DAILY_FINANCIAL">التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)</option>
+                    <option value="DAILY_FINANCIAL">{isSingleDayMode ? 'التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)' : 'التقرير المالي الشامل للفترة (ملخص الإيرادات والمصروفات)'}</option>
                     <option value="MONTHLY_FINANCIAL">التقرير المالي الشهري الشامل (تقفيلة الشهر)</option>
                   </optgroup>
                   <optgroup label="📊 حركة المبيعات والمخزن">
@@ -468,7 +505,10 @@ const ReportsPage = () => {
                     <label className="block text-xs font-bold text-gray-700 mb-1.5">من تاريخ:</label>
                     <DatePicker 
                       selected={startDate}
-                      onChange={(date) => setStartDate(date)}
+                      onChange={(date) => {
+                        setStartDate(date);
+                        setPreset('CUSTOM');
+                      }}
                       dateFormat="dd/MM/yyyy"
                       locale="ar-EG"
                       className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm text-center"
@@ -479,7 +519,10 @@ const ReportsPage = () => {
                     <label className="block text-xs font-bold text-gray-700 mb-1.5">إلى تاريخ:</label>
                     <DatePicker 
                       selected={endDate}
-                      onChange={(date) => setEndDate(date)}
+                      onChange={(date) => {
+                        setEndDate(date);
+                        setPreset('CUSTOM');
+                      }}
                       dateFormat="dd/MM/yyyy"
                       locale="ar-EG"
                       className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm text-center"
@@ -549,13 +592,21 @@ const ReportsPage = () => {
                   </div>
                 </div>
 
-                <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">
-                  {reportType === 'DAILY_FINANCIAL' && 'التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)'}
-                  {reportType === 'MONTHLY_FINANCIAL' && 'التقرير المالي الشهري الشامل (تقفيلة الحسابات والأرباح)'}
-                  {reportType === 'SALES' && 'تقرير المبيعات وحركة الأصناف والربحية'}
-                  {reportType === 'SHIFTS' && 'تقرير الورديات اليومية وتقفيل الصندوق'}
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 tracking-tight">
+                  {reportType === 'DAILY_FINANCIAL' && (
+                    isSingleDayMode 
+                      ? 'التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)'
+                      : 'التقرير المالي الشامل للفترة (ملخص الإيرادات والمصروفات والورديات)'
+                  )}
+                  {reportType === 'MONTHLY_FINANCIAL' && (
+                    preset === 'LAST_MONTH'
+                      ? 'التقرير المالي للشهر السابق (تقفيلة الحسابات والأرباح)'
+                      : 'التقرير المالي الشهري الشامل (تقفيلة الحسابات والأرباح)'
+                  )}
+                  {reportType === 'SALES' && (isSingleDayMode ? 'تقرير المبيعات والربحية لليوم' : 'تقرير المبيعات وحركة الأصناف والربحية للفترة')}
+                  {reportType === 'SHIFTS' && (isSingleDayMode ? 'تقرير ورديات اليوم وتقفيل الصندوق' : 'تقرير تدقيق الورديات التاريخي للفترة')}
                   {reportType === 'PURCHASES' && 'تقرير المشتريات وفواتير الموردين'}
-                  {reportType === 'EXPENSES' && 'تقرير المصروفات والمنصرفات النقدية'}
+                  {reportType === 'EXPENSES' && (isSingleDayMode ? 'تقرير المصروفات والمنصرفات لليوم' : 'تقرير المصروفات والمنصرفات النقدية للفترة')}
                   {reportType === 'SUPPLIERS' && 'تقرير كشف مديونيات وحسابات الموردين'}
                   {reportType === 'PATIENTS' && 'تقرير أرصدة وحسابات المرضى (النشطين فقط)'}
                   {reportType === 'INVENTORY' && 'تقرير تقييم المخزون الحالي'}
@@ -598,7 +649,7 @@ const ReportsPage = () => {
                     </div>
 
                     <div className="p-4 bg-emerald-50 rounded-2xl border-2 border-emerald-300 text-center">
-                      <div className="text-xs font-black text-emerald-800 mb-1">صافي ربح اليوم الفعلي ✨</div>
+                      <div className="text-xs font-black text-emerald-800 mb-1">{isSingleDayMode ? 'صافي ربح اليوم الفعلي ✨' : 'صافي ربح الفترة الفعلي ✨'}</div>
                       <div className="text-2xl font-black text-emerald-700">{(detailedData.summary.netProfit || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-emerald-600 mt-1 font-bold">مجمل الربح - المصروفات التشغيلية</div>
                     </div>
@@ -607,7 +658,7 @@ const ReportsPage = () => {
                   {/* Section A: Shifts & Cash Box Drawer */}
                   <div className="space-y-3">
                     <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
-                      <span>1. حركة الورديات وتقفيل الصندوق لليوم</span>
+                      <span>1. حركة الورديات وتقفيل الصندوق {isSingleDayMode ? 'لليوم' : 'خلال الفترة'}</span>
                     </h3>
                     <div className="overflow-x-auto rounded-xl border border-gray-200">
                       <table className="w-full text-right text-xs">
@@ -650,7 +701,7 @@ const ReportsPage = () => {
                           ))}
                           {(!detailedData.shifts || detailedData.shifts.length === 0) && (
                             <tr>
-                              <td colSpan="11" className="p-6 text-center text-gray-400">لا توجد ورديات مسجلة في هذا اليوم</td>
+                              <td colSpan="11" className="p-6 text-center text-gray-400">لا توجد ورديات مسجلة في {isSingleDayMode ? 'هذا اليوم' : 'هذه الفترة'}</td>
                             </tr>
                           )}
                         </tbody>
@@ -661,7 +712,7 @@ const ReportsPage = () => {
                   {/* Section B: Sold Products Breakdown */}
                   <div className="space-y-3">
                     <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
-                      <span>2. حركة مبيعات الأصناف لليوم ({detailedData.products?.length || 0} صنف)</span>
+                      <span>2. حركة مبيعات الأصناف {isSingleDayMode ? 'لليوم' : 'خلال الفترة'} ({detailedData.products?.length || 0} صنف)</span>
                     </h3>
                     <div className="overflow-x-auto rounded-xl border border-gray-200">
                       <table className="w-full text-right text-xs">
@@ -686,7 +737,7 @@ const ReportsPage = () => {
                           ))}
                           {(!detailedData.products || detailedData.products.length === 0) && (
                             <tr>
-                              <td colSpan="5" className="p-6 text-center text-gray-400">لا توجد مبيعات أصناف في هذا اليوم</td>
+                              <td colSpan="5" className="p-6 text-center text-gray-400">لا توجد مبيعات أصناف في {isSingleDayMode ? 'هذا اليوم' : 'هذه الفترة'}</td>
                             </tr>
                           )}
                         </tbody>
@@ -698,7 +749,7 @@ const ReportsPage = () => {
                   {detailedData.expenses && detailedData.expenses.length > 0 && (
                     <div className="space-y-3">
                       <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-amber-600 pr-3">
-                        <span>3. بيان منصرفات ومسحوبات اليوم</span>
+                        <span>3. بيان منصرفات ومسحوبات {isSingleDayMode ? 'اليوم' : 'الفترة'}</span>
                       </h3>
                       <div className="overflow-x-auto rounded-xl border border-gray-200">
                         <table className="w-full text-right text-xs">
