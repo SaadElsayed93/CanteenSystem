@@ -101,11 +101,41 @@ const ReportsPage = () => {
   const [showLowStockModal, setShowLowStockModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Filter states for Expenses and Purchases
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('ALL');
+  const [selectedExpenseCategory, setSelectedExpenseCategory] = useState('ALL');
+  const [selectedSupplier, setSelectedSupplier] = useState('ALL');
+  const [selectedPurchaseSupplier, setSelectedPurchaseSupplier] = useState('ALL');
+
+  // Metadata lists
+  const [paymentMethodsList, setPaymentMethodsList] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [suppliersList, setSuppliersList] = useState([]);
+
+  // Modal for inspecting any invoice
+  const [inspectingInvoice, setInspectingInvoice] = useState(null);
+
   useEffect(() => {
     fetchDashboard();
+    fetchFilterOptions();
     // Auto-generate today's report on load!
     generateReportForDates('DAILY_FINANCIAL', new Date(), new Date());
   }, []);
+
+  const fetchFilterOptions = async () => {
+    try {
+      const [balRes, catRes, supRes] = await Promise.all([
+        client.get('/treasury/balances'),
+        client.get('/treasury/expenses/categories'),
+        client.get('/purchases/suppliers')
+      ]);
+      setPaymentMethodsList(balRes.data?.data || []);
+      setCategoriesList(catRes.data?.data || []);
+      setSuppliersList(supRes.data?.data || []);
+    } catch (e) {
+      console.error('Error fetching filter options:', e);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -180,13 +210,28 @@ const ReportsPage = () => {
     generateReportForDates(reportType, date, date);
   };
 
-  const generateReportForDates = async (typeToFetch, sDate, eDate) => {
+  const generateReportForDates = async (typeToFetch, sDate, eDate, extraParams = {}) => {
     setIsGenerating(true);
     setDetailedData(null); // Clear previous report data immediately to avoid schema collisions
     try {
       const sStr = formatDateISO(sDate);
       const eStr = formatDateISO(eDate);
-      const res = await client.get(`/reports/detailed?type=${typeToFetch}&startDate=${sStr}&endDate=${eStr}`);
+      let url = `/reports/detailed?type=${typeToFetch}&startDate=${sStr}&endDate=${eStr}`;
+
+      const pm = extraParams.paymentMethodId !== undefined ? extraParams.paymentMethodId : selectedPaymentMethod;
+      const cat = extraParams.categoryId !== undefined ? extraParams.categoryId : selectedExpenseCategory;
+      const sup = extraParams.supplierId !== undefined ? extraParams.supplierId : selectedSupplier;
+      const purchSup = extraParams.purchaseSupplierId !== undefined ? extraParams.purchaseSupplierId : selectedPurchaseSupplier;
+
+      if (typeToFetch === 'EXPENSES') {
+        if (pm && pm !== 'ALL') url += `&paymentMethodId=${pm}`;
+        if (cat && cat !== 'ALL') url += `&categoryId=${cat}`;
+        if (sup && sup !== 'ALL') url += `&supplierId=${sup}`;
+      } else if (typeToFetch === 'PURCHASES') {
+        if (purchSup && purchSup !== 'ALL') url += `&supplierId=${purchSup}`;
+      }
+
+      const res = await client.get(url);
       setDetailedData(res.data.data);
     } catch (err) {
       console.error(err);
@@ -244,6 +289,9 @@ const ReportsPage = () => {
     preset === 'YESTERDAY' || 
     (startDate && endDate && formatDate(startDate) === formatDate(endDate))
   );
+
+  const selectedCatObj = categoriesList.find(c => String(c.id) === String(selectedExpenseCategory));
+  const isSupplierCategorySelected = selectedCatObj && selectedCatObj.name.includes('مورد');
 
   return (
     <div className="space-y-6">
@@ -555,6 +603,114 @@ const ReportsPage = () => {
                 </div>
               )}
             </div>
+
+            {/* Custom Sub-Filters for EXPENSES Report */}
+            {reportType === 'EXPENSES' && (
+              <div className="bg-amber-50/70 border-2 border-amber-200 rounded-2xl p-4 mt-2 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-amber-900 font-black text-xs border-b border-amber-200/80 pb-2">
+                  <Filter size={16} className="text-amber-700" />
+                  <span>تخصيص فلترة المصروفات والمنصرفات النقدية (من - إلى):</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* 1. من (قناة الصرف) */}
+                  <div>
+                    <label className="block text-xs font-black text-amber-950 mb-1.5 flex items-center gap-1.5">
+                      <Wallet size={14} className="text-amber-700" />
+                      <span>من (قناة الصرف / المصدر):</span>
+                    </label>
+                    <select 
+                      value={selectedPaymentMethod}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedPaymentMethod(val);
+                        generateReportForDates(reportType, startDate, endDate, { paymentMethodId: val });
+                      }}
+                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                    >
+                      <option value="ALL">الكل (جميع القنوات والخزائن)</option>
+                      {paymentMethodsList.map(pm => (
+                        <option key={pm.id} value={pm.id}>{pm.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 2. إلى (نوع وبند المصروف) */}
+                  <div>
+                    <label className="block text-xs font-black text-amber-950 mb-1.5 flex items-center gap-1.5">
+                      <Layers size={14} className="text-amber-700" />
+                      <span>إلى (نوع وبند المصروف):</span>
+                    </label>
+                    <select 
+                      value={selectedExpenseCategory}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedExpenseCategory(val);
+                        generateReportForDates(reportType, startDate, endDate, { categoryId: val });
+                      }}
+                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                    >
+                      <option value="ALL">الكل (كافة بنود المصروفات)</option>
+                      {categoriesList.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. المورد (يظهر إذا كان المختار سداد لمورد أو إذا ارتبط بمورد) */}
+                  {isSupplierCategorySelected && (
+                    <div className="animate-in fade-in duration-200">
+                      <label className="block text-xs font-black text-indigo-950 mb-1.5 flex items-center gap-1.5">
+                        <Truck size={14} className="text-indigo-700" />
+                        <span>تحديد المورد:</span>
+                      </label>
+                      <select 
+                        value={selectedSupplier}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedSupplier(val);
+                          generateReportForDates(reportType, startDate, endDate, { supplierId: val });
+                        }}
+                        className="w-full border-2 border-indigo-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                      >
+                        <option value="ALL">الكل (جميع الموردين)</option>
+                        {suppliersList.map(sup => (
+                          <option key={sup.id} value={sup.id}>{sup.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Custom Sub-Filters for PURCHASES Report */}
+            {reportType === 'PURCHASES' && (
+              <div className="bg-indigo-50/70 border-2 border-indigo-200 rounded-2xl p-4 mt-2 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-indigo-900 font-black text-xs border-b border-indigo-200/80 pb-2">
+                  <Truck size={16} className="text-indigo-700" />
+                  <span>فلترة فواتير المشتريات حسب المورد:</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-indigo-950 mb-1.5">تحديد المورد:</label>
+                    <select 
+                      value={selectedPurchaseSupplier}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedPurchaseSupplier(val);
+                        generateReportForDates(reportType, startDate, endDate, { purchaseSupplierId: val });
+                      }}
+                      className="w-full border-2 border-indigo-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                    >
+                      <option value="ALL">الكل (جميع الموردين)</option>
+                      {suppliersList.map(sup => (
+                        <option key={sup.id} value={sup.id}>{sup.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {!isSingleDayMode && (
               <div className="flex justify-end gap-3 pt-2">
@@ -1173,42 +1329,74 @@ const ReportsPage = () => {
                 <div className="space-y-6">
                   {/* Summary Cards */}
                   {detailedData.summary && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {Object.entries(detailedData.summary).map(([key, val]) => (
-                        <div key={key} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center">
-                          <p className="text-gray-500 font-bold mb-1 text-xs">
-                            {key === 'totalSales' && 'إجمالي المبيعات'}
-                            {key === 'totalCost' && 'تكلفة المبيعات'}
-                            {key === 'totalProfit' && 'صافي الربح التقريبي'}
-                            {key === 'cashSales' && 'المبيعات النقدية'}
-                            {key === 'creditSales' && 'مبيعات على حساب المرضى'}
-                            {key === 'invoiceCount' && 'عدد الفواتير'}
-                            {key === 'productCount' && 'عدد الأصناف المباعة'}
-                            {key === 'totalPurchases' && 'إجمالي قيمة المشتريات'}
-                            {key === 'totalPaid' && 'المدفوع للموردين'}
-                            {key === 'totalRemaining' && 'المتبقي للموردين'}
-                            {key === 'purchaseCount' && 'عدد فواتير الشراء'}
-                            {key === 'totalExpenses' && 'إجمالي المصروفات'}
-                            {key === 'expenseCount' && 'عدد المصروفات'}
-                            {key === 'totalValue' && 'القيمة الإجمالية للمخزون'}
-                            {key === 'lowStockCount' && 'عدد الأصناف الناقصة'}
-                            {key === 'totalNeededCost' && 'التكلفة التقديرية لإعادة الطلب'}
-                            {key === 'totalItems' && 'إجمالي كمية القطع'}
-                            {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
-                            {key === 'totalDebts' && 'إجمالي ديون المرضى (لنا)'}
-                            {key === 'totalDeposits' && 'إجمالي أموال المرضى (أمانات لهم)'}
-                            {key === 'netDifference' && 'صافي الفارق المالي'}
-                            {key === 'totalPatients' && 'إجمالي عدد المرضى النشطين'}
-                            {key === 'activePatients' && 'عدد المرضى النشطين'}
-                          </p>
-                          <p className="text-xl font-black text-indigo-700">
-                            {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients'].includes(key)
-                              ? `${Number(val || 0).toFixed(2)} ج.م` 
-                              : val}
-                          </p>
+                    <>
+                      {reportType === 'EXPENSES' ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                          <div className="bg-red-50 p-4 rounded-2xl border-2 border-red-200 text-center shadow-sm">
+                            <p className="text-red-700 font-bold mb-1 text-xs">إجمالي المصروفات</p>
+                            <p className="text-2xl font-black text-red-600">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-gray-500 font-bold mt-1">{detailedData.summary.expenseCount || 0} عملية صرف</p>
+                          </div>
+                          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
+                            <p className="text-amber-800 font-bold mb-1 text-xs">حساب مستشفى</p>
+                            <p className="text-xl font-black text-amber-900">{Number(detailedData.summary.hospitalExpenses || 0).toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-amber-700 font-bold mt-1">صرفيات ومسحوبات المستشفى</p>
+                          </div>
+                          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-center shadow-sm">
+                            <p className="text-blue-800 font-bold mb-1 text-xs">سداد موردين</p>
+                            <p className="text-xl font-black text-blue-900">{Number(detailedData.summary.supplierPayments || 0).toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-blue-700 font-bold mt-1">سداد مديونيات وفواتير</p>
+                          </div>
+                          <div className="bg-purple-50 p-4 rounded-2xl border border-purple-200 text-center shadow-sm">
+                            <p className="text-purple-800 font-bold mb-1 text-xs">نثريات</p>
+                            <p className="text-xl font-black text-purple-900">{Number(detailedData.summary.canteenExpenses || 0).toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-purple-700 font-bold mt-1">مصروفات تشغيل ومستلزمات</p>
+                          </div>
+                          <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-200 text-center shadow-sm col-span-2 sm:col-span-1">
+                            <p className="text-indigo-800 font-bold mb-1 text-xs">رد أمانات وتصفية</p>
+                            <p className="text-xl font-black text-indigo-900">{Number(detailedData.summary.patientRefunds || 0).toFixed(2)} ج.م</p>
+                            <p className="text-[11px] text-indigo-700 font-bold mt-1">ودائع مستردة للمرضى</p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {Object.entries(detailedData.summary).map(([key, val]) => (
+                            <div key={key} className="bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center">
+                              <p className="text-gray-500 font-bold mb-1 text-xs">
+                                {key === 'totalSales' && 'إجمالي المبيعات'}
+                                {key === 'totalCost' && 'تكلفة المبيعات'}
+                                {key === 'totalProfit' && 'صافي الربح التقريبي'}
+                                {key === 'cashSales' && 'المبيعات النقدية'}
+                                {key === 'creditSales' && 'مبيعات على حساب المرضى'}
+                                {key === 'invoiceCount' && 'عدد الفواتير'}
+                                {key === 'productCount' && 'عدد الأصناف المباعة'}
+                                {key === 'totalPurchases' && 'إجمالي قيمة المشتريات'}
+                                {key === 'totalPaid' && 'المدفوع للموردين'}
+                                {key === 'totalRemaining' && 'المتبقي للموردين'}
+                                {key === 'purchaseCount' && 'عدد فواتير الشراء'}
+                                {key === 'totalExpenses' && 'إجمالي المصروفات'}
+                                {key === 'expenseCount' && 'عدد المصروفات'}
+                                {key === 'totalValue' && 'القيمة الإجمالية للمخزون'}
+                                {key === 'lowStockCount' && 'عدد الأصناف الناقصة'}
+                                {key === 'totalNeededCost' && 'التكلفة التقديرية لإعادة الطلب'}
+                                {key === 'totalItems' && 'إجمالي كمية القطع'}
+                                {key === 'uniqueProducts' && 'عدد الأصناف المسجلة'}
+                                {key === 'totalDebts' && 'إجمالي ديون المرضى (لنا)'}
+                                {key === 'totalDeposits' && 'إجمالي أموال المرضى (أمانات لهم)'}
+                                {key === 'netDifference' && 'صافي الفارق المالي'}
+                                {key === 'totalPatients' && 'إجمالي عدد المرضى النشطين'}
+                                {key === 'activePatients' && 'عدد المرضى النشطين'}
+                              </p>
+                              <p className="text-xl font-black text-indigo-700">
+                                {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients'].includes(key)
+                                  ? `${Number(val || 0).toFixed(2)} ج.م` 
+                                  : val}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* Standard Table */}
@@ -1228,20 +1416,23 @@ const ReportsPage = () => {
                           {reportType === 'PURCHASES' && (
                             <>
                               <th className="p-3">رقم الفاتورة</th>
-                              <th className="p-3">التاريخ</th>
+                              <th className="p-3">التاريخ والوقت</th>
                               <th className="p-3">المورد</th>
-                              <th className="p-3 w-1/3">الأصناف</th>
+                              <th className="p-3 w-1/4">الأصناف</th>
                               <th className="p-3">الإجمالي</th>
                               <th className="p-3">المدفوع</th>
                               <th className="p-3">المتبقي</th>
+                              <th className="p-3">الحالة</th>
+                              <th className="p-3">معاينة</th>
                             </>
                           )}
                           {reportType === 'EXPENSES' && (
                             <>
-                              <th className="p-3">التاريخ</th>
-                              <th className="p-3">التصنيف</th>
-                              <th className="p-3 w-1/2">البيان</th>
-                              <th className="p-3">وسيلة الدفع</th>
+                              <th className="p-3">التاريخ والوقت</th>
+                              <th className="p-3">نوع المصروف (إلى)</th>
+                              <th className="p-3 w-1/3">البيان والتفاصيل</th>
+                              <th className="p-3">من (القناة المالية)</th>
+                              <th className="p-3">المسؤول</th>
                               <th className="p-3">المبلغ</th>
                             </>
                           )}
@@ -1281,22 +1472,57 @@ const ReportsPage = () => {
                             )}
                             {reportType === 'PURCHASES' && (
                               <>
-                                <td className="p-3 font-mono">{row.id}</td>
+                                <td className="p-3 font-mono font-black text-indigo-700">{row.id}</td>
                                 <td className="p-3 font-mono" dir="ltr">{formatDateTime(row.date)}</td>
                                 <td className="p-3 font-black text-gray-900">{row.supplierName || 'غير محدد'}</td>
-                                <td className="p-3 text-gray-500 font-normal">{row.itemsSummary || '-'}</td>
-                                <td className="p-3 text-indigo-700">{Number(row.total || 0).toFixed(2)} ج</td>
-                                <td className="p-3 text-emerald-700">{Number(row.paid || 0).toFixed(2)} ج</td>
-                                <td className="p-3 text-red-600">{Number(row.remaining || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-gray-600 font-bold text-xs">{row.itemsSummary || '-'}</td>
+                                <td className="p-3 text-indigo-900 font-black">{Number(row.total || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-emerald-700 font-black">{Number(row.paid || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-red-600 font-black">{Number(row.remaining || 0).toFixed(2)} ج</td>
+                                <td className="p-3">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                    row.status === 'خالصة' ? 'bg-emerald-100 text-emerald-800' : row.status === 'مدفوعة جزئياً' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {row.status}
+                                  </span>
+                                </td>
+                                <td className="p-3">
+                                  <button 
+                                    type="button"
+                                    onClick={() => setInspectingInvoice(row)}
+                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs border border-indigo-200 transition-all flex items-center gap-1 shadow-sm"
+                                    title="عرض تفاصيل الفاتورة"
+                                  >
+                                    <FileText size={14} />
+                                    <span>عرض</span>
+                                  </button>
+                                </td>
                               </>
                             )}
                             {reportType === 'EXPENSES' && (
                               <>
-                                <td className="p-3 font-mono" dir="ltr">{formatDate(row.date)}</td>
-                                <td className="p-3 text-gray-900">{row.category || 'عام'}</td>
-                                <td className="p-3 text-gray-600 font-normal">{row.description || '-'}</td>
-                                <td className="p-3 text-indigo-700">{row.paymentMethod || 'نقدي (الدرج)'}</td>
-                                <td className="p-3 text-red-600 font-black">{Number(row.amount || 0).toFixed(2)} ج</td>
+                                <td className="p-3 font-mono" dir="ltr">{formatDateTime(row.date)}</td>
+                                <td className="p-3">
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-black inline-flex items-center gap-1 ${
+                                    (row.category || '').includes('مستشفى') 
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                                      : (row.category || '').includes('مورد') 
+                                      ? 'bg-blue-100 text-blue-900 border border-blue-300' 
+                                      : (row.category || '').includes('أمانات') 
+                                      ? 'bg-indigo-100 text-indigo-900 border border-indigo-300' 
+                                      : 'bg-purple-100 text-purple-900 border border-purple-300'
+                                  }`}>
+                                    {row.category || 'عام'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-gray-800 font-bold">{row.description || '-'}</td>
+                                <td className="p-3">
+                                  <span className="font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg">
+                                    {row.paymentMethod || 'نقدي (الدرج)'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-gray-700 font-bold">{row.user || 'النظام'}</td>
+                                <td className="p-3 text-red-600 font-black text-sm">{Number(row.amount || 0).toFixed(2)} ج.م</td>
                               </>
                             )}
                             {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
@@ -1399,6 +1625,130 @@ const ReportsPage = () => {
               >
                 إغلاق
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Invoice Inspection Modal */}
+      {inspectingInvoice && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-2xl flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-800">
+                    تفاصيل فاتورة شراء: <span className="font-mono text-indigo-600">{inspectingInvoice.id}</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 font-bold mt-0.5" dir="ltr">
+                    {formatDateTime(inspectingInvoice.date)}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setInspectingInvoice(null)}
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Supplier & Status Info Banner */}
+            <div className="my-4 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs">
+              <div>
+                <span className="text-gray-400 block font-bold mb-1">المورد:</span>
+                <span className="font-black text-gray-900 text-sm">{inspectingInvoice.supplierName}</span>
+                {inspectingInvoice.supplierPhone && (
+                  <span className="block text-gray-500 font-mono text-[11px]" dir="ltr">{inspectingInvoice.supplierPhone}</span>
+                )}
+              </div>
+              <div>
+                <span className="text-gray-400 block font-bold mb-1">إجمالي الفاتورة:</span>
+                <span className="font-black text-indigo-700 text-sm">{Number(inspectingInvoice.total || 0).toFixed(2)} ج.م</span>
+              </div>
+              <div>
+                <span className="text-gray-400 block font-bold mb-1">المدفوع:</span>
+                <span className="font-black text-emerald-700 text-sm">{Number(inspectingInvoice.paid || 0).toFixed(2)} ج.م</span>
+              </div>
+              <div>
+                <span className="text-gray-400 block font-bold mb-1">المتبقي / آجل:</span>
+                <span className={`font-black text-sm ${Number(inspectingInvoice.remaining || 0) > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {Number(inspectingInvoice.remaining || 0).toFixed(2)} ج.م
+                </span>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="flex-1 overflow-y-auto border border-gray-100 rounded-2xl mb-4">
+              <table className="w-full text-right text-sm">
+                <thead className="bg-gray-50 text-gray-600 font-black text-xs sticky top-0 border-b border-gray-100">
+                  <tr>
+                    <th className="p-3">#</th>
+                    <th className="p-3">الصنف</th>
+                    <th className="p-3 text-center">الكمية</th>
+                    <th className="p-3 text-center">سعر الشراء</th>
+                    <th className="p-3 text-left">الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {inspectingInvoice.items && inspectingInvoice.items.length > 0 ? (
+                    inspectingInvoice.items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-gray-50">
+                        <td className="p-3 text-gray-400 font-mono text-xs">{idx + 1}</td>
+                        <td className="p-3 font-black text-gray-800">{item.productName}</td>
+                        <td className="p-3 text-center font-bold text-indigo-600">{item.quantity}</td>
+                        <td className="p-3 text-center font-mono">{Number(item.unitPrice || 0).toFixed(2)} ج</td>
+                        <td className="p-3 text-left font-black text-gray-900 font-mono">{Number(item.subtotal || 0).toFixed(2)} ج</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">
+                        لا توجد تفاصيل للأصناف
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {inspectingInvoice.notes && (
+              <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                <span className="font-black">ملاحظات الفاتورة: </span>
+                {inspectingInvoice.notes}
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+              <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                inspectingInvoice.status === 'خالصة' 
+                  ? 'bg-emerald-100 text-emerald-800' 
+                  : inspectingInvoice.status === 'مدفوعة جزئياً' 
+                  ? 'bg-amber-100 text-amber-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                حالة السداد: {inspectingInvoice.status}
+              </span>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => window.print()}
+                  className="bg-gray-800 hover:bg-black text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Printer size={15} />
+                  <span>طباعة</span>
+                </button>
+                <button 
+                  onClick={() => setInspectingInvoice(null)}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-5 py-2 rounded-xl text-xs transition-colors"
+                >
+                  إغلاق
+                </button>
+              </div>
             </div>
           </div>
         </div>

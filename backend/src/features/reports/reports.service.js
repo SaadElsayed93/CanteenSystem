@@ -153,7 +153,7 @@ const getTopProducts = async () => {
     }));
 };
 
-const getDetailedReport = async (type, startDateStr, endDateStr) => {
+const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) => {
   // Parse dates and set boundaries (start of day to end of day)
   const startDate = startDateStr ? new Date(startDateStr) : new Date();
   startDate.setHours(0, 0, 0, 0);
@@ -684,8 +684,13 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
 
   // ================= 6. PURCHASES REPORT =================
   if (type === 'PURCHASES') {
+    const where = { createdAt: { gte: startDate, lte: endDate } };
+    if (options.supplierId && options.supplierId !== 'ALL' && options.supplierId !== '') {
+      where.supplierId = Number(options.supplierId);
+    }
+
     const purchases = await prisma.supplierPurchase.findMany({
-      where: { createdAt: { gte: startDate, lte: endDate } },
+      where,
       include: {
         supplier: true,
         items: { include: { product: true } }
@@ -697,17 +702,28 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     let totalPaid = 0;
 
     const data = purchases.map(pur => {
-      totalPurchases += Number(pur.totalAmount);
-      totalPaid += Number(pur.paidAmount);
+      const tot = Number(pur.totalAmount);
+      const paid = Number(pur.paidAmount);
+      totalPurchases += tot;
+      totalPaid += paid;
       
       return {
-        id: pur.referenceNo,
+        id: pur.referenceNo || `#${pur.id}`,
+        purchaseId: pur.id,
         date: pur.createdAt,
+        supplierId: pur.supplierId,
         supplierName: pur.supplier?.name || 'غير محدد',
-        total: Number(pur.totalAmount),
-        paid: Number(pur.paidAmount),
-        remaining: Number(pur.totalAmount) - Number(pur.paidAmount),
+        supplierPhone: pur.supplier?.phone || '-',
+        total: tot,
+        paid: paid,
+        remaining: tot - paid,
         status: pur.status === 'PAID' ? 'خالصة' : pur.status === 'PARTIAL' ? 'مدفوعة جزئياً' : 'غير مدفوعة',
+        items: pur.items.map(i => ({
+          productName: i.product?.name || i.productName || 'صنف',
+          quantity: Number(i.quantity),
+          unitPrice: Number(i.unitPrice),
+          subtotal: Number(i.subtotal)
+        })),
         itemsSummary: pur.items.map(i => `${i.quantity}x ${i.product?.name || 'صنف'}`).join('، ')
       };
     });
@@ -715,9 +731,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     return {
       reportType: 'PURCHASES',
       summary: {
-        totalPurchases,
-        totalPaid,
-        totalRemaining: totalPurchases - totalPaid,
+        totalPurchases: Number(totalPurchases.toFixed(2)),
+        totalPaid: Number(totalPaid.toFixed(2)),
+        totalRemaining: Number((totalPurchases - totalPaid).toFixed(2)),
         purchaseCount: purchases.length
       },
       data
@@ -726,29 +742,74 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
 
   // ================= 7. EXPENSES REPORT =================
   if (type === 'EXPENSES') {
+    const where = { createdAt: { gte: startDate, lte: endDate } };
+
+    // Filter by Payment Method (من: الدرج / فودافون كاش / الخزينة الرئيسية)
+    if (options.paymentMethodId && options.paymentMethodId !== 'ALL' && options.paymentMethodId !== '') {
+      where.paymentMethodId = Number(options.paymentMethodId);
+    }
+
+    // Filter by Category (إلى: نوع المصروف)
+    if (options.categoryId && options.categoryId !== 'ALL' && options.categoryId !== '') {
+      where.categoryId = Number(options.categoryId);
+    }
+
+    // Filter by Supplier (إذا تم اختيار مورد محدد لسداد الحساب)
+    if (options.supplierId && options.supplierId !== 'ALL' && options.supplierId !== '') {
+      const sup = await prisma.supplier.findUnique({ where: { id: Number(options.supplierId) } });
+      if (sup) {
+        where.description = { contains: sup.name };
+      }
+    }
+
     const expenses = await prisma.expense.findMany({
-      where: { createdAt: { gte: startDate, lte: endDate } },
-      include: { category: true, paymentMethod: true },
+      where,
+      include: { 
+        category: true, 
+        paymentMethod: true,
+        user: { select: { fullName: true } }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
     let totalExpenses = 0;
+    let hospitalExpenses = 0;
+    let supplierPayments = 0;
+    let canteenExpenses = 0;
+    let patientRefunds = 0;
 
     const data = expenses.map(exp => {
-      totalExpenses += Number(exp.amount);
+      const amt = Number(exp.amount);
+      totalExpenses += amt;
+      const cat = exp.category?.name || 'مصروفات متنوعة';
+      if (cat.includes('مستشفى')) hospitalExpenses += amt;
+      else if (cat.includes('مورد')) supplierPayments += amt;
+      else if (cat.includes('أمانات') || cat.includes('مريض')) patientRefunds += amt;
+      else canteenExpenses += amt;
+
       return {
         id: exp.id,
         date: exp.createdAt,
-        category: exp.category?.name || 'عام',
-        amount: Number(exp.amount),
-        description: exp.description || 'بدون وصف',
-        paymentMethod: exp.paymentMethod?.name || 'نقدي (الدرج)'
+        category: cat,
+        categoryId: exp.categoryId,
+        amount: amt,
+        description: exp.description || 'بدون تفاصيل',
+        paymentMethod: exp.paymentMethod?.name || 'نقدي (الدرج)',
+        paymentMethodId: exp.paymentMethodId,
+        user: exp.user?.fullName || 'النظام'
       };
     });
 
     return {
       reportType: 'EXPENSES',
-      summary: { totalExpenses, expenseCount: expenses.length },
+      summary: { 
+        totalExpenses: Number(totalExpenses.toFixed(2)),
+        hospitalExpenses: Number(hospitalExpenses.toFixed(2)),
+        supplierPayments: Number(supplierPayments.toFixed(2)),
+        canteenExpenses: Number(canteenExpenses.toFixed(2)),
+        patientRefunds: Number(patientRefunds.toFixed(2)),
+        expenseCount: expenses.length 
+      },
       data
     };
   }

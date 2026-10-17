@@ -23,7 +23,7 @@ const getDetailedReport = async (req, res, next) => {
     const { type, startDate, endDate } = req.query;
     if (!type) throw new Error('يرجى تحديد نوع التقرير');
     
-    const reportData = await reportsService.getDetailedReport(type, startDate, endDate);
+    const reportData = await reportsService.getDetailedReport(type, startDate, endDate, req.query);
     
     res.json({ success: true, data: reportData });
   } catch (error) {
