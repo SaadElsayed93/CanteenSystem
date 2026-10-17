@@ -291,6 +291,8 @@ const ReportsPage = () => {
   );
 
   const selectedCatObj = categoriesList.find(c => String(c.id) === String(selectedExpenseCategory));
+  const selectedPaymentMethodObj = paymentMethodsList.find(pm => String(pm.id) === String(selectedPaymentMethod));
+  const selectedSupplierObj = suppliersList.find(s => String(s.id) === String(selectedSupplier));
   const isSupplierCategorySelected = selectedCatObj && selectedCatObj.name.includes('مورد');
 
   return (
@@ -623,7 +625,11 @@ const ReportsPage = () => {
                       onChange={(e) => {
                         const val = e.target.value;
                         setSelectedPaymentMethod(val);
-                        generateReportForDates(reportType, startDate, endDate, { paymentMethodId: val });
+                        generateReportForDates(reportType, startDate, endDate, { 
+                          paymentMethodId: val,
+                          categoryId: selectedExpenseCategory,
+                          supplierId: selectedSupplier
+                        });
                       }}
                       className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
                     >
@@ -645,7 +651,14 @@ const ReportsPage = () => {
                       onChange={(e) => {
                         const val = e.target.value;
                         setSelectedExpenseCategory(val);
-                        generateReportForDates(reportType, startDate, endDate, { categoryId: val });
+                        const isSup = categoriesList.find(c => String(c.id) === String(val))?.name?.includes('مورد');
+                        const supVal = isSup ? selectedSupplier : 'ALL';
+                        if (!isSup) setSelectedSupplier('ALL');
+                        generateReportForDates(reportType, startDate, endDate, { 
+                          categoryId: val,
+                          paymentMethodId: selectedPaymentMethod,
+                          supplierId: supVal
+                        });
                       }}
                       className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
                     >
@@ -668,7 +681,11 @@ const ReportsPage = () => {
                         onChange={(e) => {
                           const val = e.target.value;
                           setSelectedSupplier(val);
-                          generateReportForDates(reportType, startDate, endDate, { supplierId: val });
+                          generateReportForDates(reportType, startDate, endDate, { 
+                            supplierId: val,
+                            paymentMethodId: selectedPaymentMethod,
+                            categoryId: selectedExpenseCategory
+                          });
                         }}
                         className="w-full border-2 border-indigo-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
                       >
@@ -1331,32 +1348,99 @@ const ReportsPage = () => {
                   {detailedData.summary && (
                     <>
                       {reportType === 'EXPENSES' ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                          <div className="bg-red-50 p-4 rounded-2xl border-2 border-red-200 text-center shadow-sm">
-                            <p className="text-red-700 font-bold mb-1 text-xs">إجمالي المصروفات</p>
-                            <p className="text-2xl font-black text-red-600">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</p>
-                            <p className="text-[11px] text-gray-500 font-bold mt-1">{detailedData.summary.expenseCount || 0} عملية صرف</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {/* 1. Main Filtered Total Card */}
+                          <div className="bg-red-50 p-5 rounded-2xl border-2 border-red-200 text-center shadow-sm">
+                            <p className="text-red-700 font-bold mb-1 text-xs">
+                              {selectedExpenseCategory !== 'ALL' && selectedCatObj 
+                                ? `إجمالي منصرف (${selectedCatObj.name})`
+                                : selectedPaymentMethod !== 'ALL' && selectedPaymentMethodObj
+                                ? `إجمالي منصرف من (${selectedPaymentMethodObj.name})`
+                                : 'إجمالي المصروفات المنصرفة'}
+                            </p>
+                            <p className="text-2xl font-black text-red-600">
+                              {Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م
+                            </p>
+                            <p className="text-[11px] text-gray-500 font-bold mt-1">
+                              {detailedData.summary.expenseCount || 0} عملية صرف مسجلة
+                            </p>
                           </div>
-                          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-center shadow-sm">
-                            <p className="text-amber-800 font-bold mb-1 text-xs">حساب مستشفى</p>
-                            <p className="text-xl font-black text-amber-900">{Number(detailedData.summary.hospitalExpenses || 0).toFixed(2)} ج.م</p>
-                            <p className="text-[11px] text-amber-700 font-bold mt-1">صرفيات ومسحوبات المستشفى</p>
-                          </div>
-                          <div className="bg-blue-50 p-4 rounded-2xl border border-blue-200 text-center shadow-sm">
-                            <p className="text-blue-800 font-bold mb-1 text-xs">سداد موردين</p>
-                            <p className="text-xl font-black text-blue-900">{Number(detailedData.summary.supplierPayments || 0).toFixed(2)} ج.م</p>
-                            <p className="text-[11px] text-blue-700 font-bold mt-1">سداد مديونيات وفواتير</p>
-                          </div>
-                          <div className="bg-purple-50 p-4 rounded-2xl border border-purple-200 text-center shadow-sm">
-                            <p className="text-purple-800 font-bold mb-1 text-xs">نثريات</p>
-                            <p className="text-xl font-black text-purple-900">{Number(detailedData.summary.canteenExpenses || 0).toFixed(2)} ج.م</p>
-                            <p className="text-[11px] text-purple-700 font-bold mt-1">مصروفات تشغيل ومستلزمات</p>
-                          </div>
-                          <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-200 text-center shadow-sm col-span-2 sm:col-span-1">
-                            <p className="text-indigo-800 font-bold mb-1 text-xs">رد أمانات وتصفية</p>
-                            <p className="text-xl font-black text-indigo-900">{Number(detailedData.summary.patientRefunds || 0).toFixed(2)} ج.م</p>
-                            <p className="text-[11px] text-indigo-700 font-bold mt-1">ودائع مستردة للمرضى</p>
-                          </div>
+
+                          {/* 2. When a specific category is selected -> Show Breakdown by Payment Channel */}
+                          {selectedExpenseCategory !== 'ALL' ? (
+                            <>
+                              {detailedData.summary.activePaymentMethods && detailedData.summary.activePaymentMethods.map((pm, idx) => (
+                                <div key={idx} className="bg-emerald-50 p-5 rounded-2xl border-2 border-emerald-200 text-center shadow-sm">
+                                  <p className="text-emerald-800 font-bold mb-1 text-xs">صُرف من ({pm.name})</p>
+                                  <p className="text-xl font-black text-emerald-900">{pm.amount.toFixed(2)} ج.م</p>
+                                  <p className="text-[11px] text-emerald-700 font-bold mt-1">
+                                    نسبة {pm.percentage}% من إجمالي البند
+                                  </p>
+                                </div>
+                              ))}
+                              {(!detailedData.summary.activePaymentMethods || detailedData.summary.activePaymentMethods.length === 0) && (
+                                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-200 text-center shadow-sm">
+                                  <p className="text-gray-500 font-bold mb-1 text-xs">حالة البند</p>
+                                  <p className="text-base font-black text-gray-700">لا توجد مسحوبات</p>
+                                  <p className="text-[11px] text-gray-400 font-bold mt-1">0.00 ج.م خلال هذه الفترة</p>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            /* 3. When 'ALL' or a specific payment method is selected -> Show only active categories with amount > 0 */
+                            <>
+                              {detailedData.summary.activeCategories && detailedData.summary.activeCategories.map((cat, idx) => {
+                                const isHospital = cat.name.includes('مستشفى');
+                                const isSupplier = cat.name.includes('مورد');
+                                const isPatient = cat.name.includes('أمانات') || cat.name.includes('مريض');
+                                
+                                const cardDesc = isHospital 
+                                  ? 'صرفيات ومسحوبات المستشفى' 
+                                  : isSupplier 
+                                  ? 'سداد مديونيات وفواتير' 
+                                  : isPatient 
+                                  ? 'ودائع مستردة وتصفية' 
+                                  : 'نثريات ومصروفات تشغيل';
+
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    className={`p-5 rounded-2xl border-2 text-center shadow-sm ${
+                                      isHospital ? 'bg-amber-50 border-amber-200' :
+                                      isSupplier ? 'bg-blue-50 border-blue-200' :
+                                      isPatient ? 'bg-indigo-50 border-indigo-200' :
+                                      'bg-purple-50 border-purple-200'
+                                    }`}
+                                  >
+                                    <p className={`font-bold mb-1 text-xs ${
+                                      isHospital ? 'text-amber-800' :
+                                      isSupplier ? 'text-blue-800' :
+                                      isPatient ? 'text-indigo-800' :
+                                      'text-purple-800'
+                                    }`}>
+                                      {cat.name}
+                                    </p>
+                                    <p className={`text-xl font-black ${
+                                      isHospital ? 'text-amber-900' :
+                                      isSupplier ? 'text-blue-900' :
+                                      isPatient ? 'text-indigo-900' :
+                                      'text-purple-900'
+                                    }`}>
+                                      {cat.amount.toFixed(2)} ج.م
+                                    </p>
+                                    <p className={`text-[11px] font-bold mt-1 ${
+                                      isHospital ? 'text-amber-700' :
+                                      isSupplier ? 'text-blue-700' :
+                                      isPatient ? 'text-indigo-700' :
+                                      'text-purple-700'
+                                    }`}>
+                                      {cardDesc} ({cat.percentage}%)
+                                    </p>
+                                  </div>
+                                );
+                              })}
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

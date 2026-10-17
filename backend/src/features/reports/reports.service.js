@@ -575,8 +575,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
 
     const data = suppliers.map(s => {
       const purchTotal = s.purchases.reduce((sum, p) => sum + Number(p.totalAmount), 0);
-      const paidTotal = s.purchases.reduce((sum, p) => sum + Number(p.paidAmount), 0) +
-                        s.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const paidFromPayments = s.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+      const paidFromPurchases = s.purchases.reduce((sum, p) => sum + Number(p.paidAmount), 0);
+      const paidTotal = Math.max(paidFromPayments, paidFromPurchases);
       const debt = Math.max(0, purchTotal - paidTotal);
 
       totalDebt += debt;
@@ -772,6 +773,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       orderBy: { createdAt: 'desc' }
     });
 
+    const categoryBreakdown = {};
+    const paymentMethodBreakdown = {};
+
     let totalExpenses = 0;
     let hospitalExpenses = 0;
     let supplierPayments = 0;
@@ -782,6 +786,11 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       const amt = Number(exp.amount);
       totalExpenses += amt;
       const cat = exp.category?.name || 'مصروفات متنوعة';
+      const pm = exp.paymentMethod?.name || 'نقدي (الدرج)';
+
+      categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + amt;
+      paymentMethodBreakdown[pm] = (paymentMethodBreakdown[pm] || 0) + amt;
+
       if (cat.includes('مستشفى')) hospitalExpenses += amt;
       else if (cat.includes('مورد')) supplierPayments += amt;
       else if (cat.includes('أمانات') || cat.includes('مريض')) patientRefunds += amt;
@@ -794,11 +803,27 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         categoryId: exp.categoryId,
         amount: amt,
         description: exp.description || 'بدون تفاصيل',
-        paymentMethod: exp.paymentMethod?.name || 'نقدي (الدرج)',
+        paymentMethod: pm,
         paymentMethodId: exp.paymentMethodId,
         user: exp.user?.fullName || 'النظام'
       };
     });
+
+    const activeCategories = Object.entries(categoryBreakdown)
+      .filter(([_, amount]) => amount > 0)
+      .map(([name, amount]) => ({
+        name,
+        amount: Number(amount.toFixed(2)),
+        percentage: totalExpenses > 0 ? Number(((amount / totalExpenses) * 100).toFixed(1)) : 0
+      }));
+
+    const activePaymentMethods = Object.entries(paymentMethodBreakdown)
+      .filter(([_, amount]) => amount > 0)
+      .map(([name, amount]) => ({
+        name,
+        amount: Number(amount.toFixed(2)),
+        percentage: totalExpenses > 0 ? Number(((amount / totalExpenses) * 100).toFixed(1)) : 0
+      }));
 
     return {
       reportType: 'EXPENSES',
@@ -808,7 +833,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         supplierPayments: Number(supplierPayments.toFixed(2)),
         canteenExpenses: Number(canteenExpenses.toFixed(2)),
         patientRefunds: Number(patientRefunds.toFixed(2)),
-        expenseCount: expenses.length 
+        expenseCount: expenses.length,
+        activeCategories,
+        activePaymentMethods
       },
       data
     };

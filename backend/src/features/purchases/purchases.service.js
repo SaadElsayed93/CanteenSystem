@@ -27,8 +27,10 @@ const getAllSuppliers = async () => {
 
   return suppliers.map(s => {
     const totalPurchases = s.purchases.reduce((acc, p) => acc + Number(p.totalAmount), 0);
-    const totalPaid = s.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
-    const currentDebt = totalPurchases - totalPaid;
+    const paidFromPayments = s.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const paidFromPurchases = s.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
+    const totalPaid = Math.max(paidFromPayments, paidFromPurchases);
+    const currentDebt = Math.max(0, totalPurchases - totalPaid);
 
     return {
       id: s.id,
@@ -130,9 +132,14 @@ const getSupplierStatement = async (supplierId) => {
     };
   });
 
+  // Re-sort descending so newest transaction is on top (من الحديث للقديم - الحديث فوق)
+  entries.reverse();
+
   const totalPurchases = supplier.purchases.reduce((acc, p) => acc + Number(p.totalAmount), 0);
-  const totalPaid = supplier.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
-  const currentDebt = totalPurchases - totalPaid;
+  const paidFromPayments = supplier.payments.reduce((acc, p) => acc + Number(p.amount), 0);
+  const paidFromPurchases = supplier.purchases.reduce((acc, p) => acc + Number(p.paidAmount), 0);
+  const totalPaid = Math.max(paidFromPayments, paidFromPurchases);
+  const currentDebt = Math.max(0, totalPurchases - totalPaid);
 
   return {
     supplier: {
