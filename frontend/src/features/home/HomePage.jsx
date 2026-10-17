@@ -46,7 +46,7 @@ const HomePage = () => {
               )}
               {shiftStats.openedAt && (
                 <span className="text-emerald-200 text-xs font-mono">
-                  بدأت: {new Date(shiftStats.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                  بدأت: {new Date(shiftStats.openedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })} - {new Date(shiftStats.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
             </div>

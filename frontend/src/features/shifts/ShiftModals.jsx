@@ -189,9 +189,11 @@ export const ShiftModals = () => {
                   <span className="text-gray-900 font-black">{currentShift?.openedBy || 'الكاشير'}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">وقت بدء اليومية:</span>
-                  <span className="text-gray-900 font-mono">
-                    {currentShift?.openedAt ? new Date(currentShift.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                  <span className="text-gray-500">وقت وتاريخ بدء اليومية:</span>
+                  <span className="text-gray-900 font-bold">
+                    {currentShift?.openedAt 
+                      ? `${new Date(currentShift.openedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })} - ${new Date(currentShift.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}` 
+                      : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-200">
