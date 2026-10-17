@@ -160,11 +160,11 @@ const getHomeDashboardData = async (userId, userRole) => {
     });
   });
 
-  // Operational expenses only (exclude supplier payments already in COGS and patient deposit returns)
+  // Operational expenses only (exclude supplier payments already in COGS, patient deposit returns, and hospital account withdrawals)
   const monthOperatingExpenses = await prisma.expense.aggregate({
     where: { 
       createdAt: { gte: startOfMonth },
-      category: { name: { notIn: ['سداد لمورد', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى'] } }
+      category: { name: { notIn: ['سداد لمورد', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى', 'حساب مستشفى'] } }
     },
     _sum: { amount: true }
   });

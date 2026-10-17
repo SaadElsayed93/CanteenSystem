@@ -210,7 +210,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       });
     });
 
-    const grossProfit = totalSales - costOfGoodsSold;
+    const grossProfit = Number((totalSales - costOfGoodsSold).toFixed(2));
 
     // B. Daily Expenses
     const expenses = await prisma.expense.findMany({
@@ -222,6 +222,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     let totalExpenses = 0;
     let supplierPayments = 0;
     let patientRefunds = 0;
+    let hospitalExpenses = 0;
     let operationalExpenses = 0;
 
     const expensesList = expenses.map(exp => {
@@ -230,6 +231,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       const catName = exp.category?.name || '';
       if (catName.includes('مورد')) supplierPayments += amt;
       else if (catName.includes('أمانات') || catName.includes('مريض')) patientRefunds += amt;
+      else if (catName.includes('مستشفى')) hospitalExpenses += amt;
       else operationalExpenses += amt;
 
       return {
@@ -243,7 +245,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       };
     });
 
-    const netProfit = grossProfit - operationalExpenses;
+    const netProfit = Number((grossProfit - operationalExpenses).toFixed(2));
 
     // C. Patient Transactions
     const patientTxs = await prisma.patientTransaction.findMany({
@@ -316,6 +318,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         operationalExpenses,
         supplierPayments,
         patientRefunds,
+        hospitalExpenses,
         netProfit,
         patientDeposits,
         patientWithdrawals,
@@ -372,7 +375,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       });
     });
 
-    const grossProfit = totalSales - costOfGoodsSold;
+    const grossProfit = Number((totalSales - costOfGoodsSold).toFixed(2));
 
     // B. Month Expenses
     const expenses = await prisma.expense.findMany({
@@ -383,6 +386,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     const categoryMap = {};
     let totalExpenses = 0;
     let supplierPayments = 0;
+    let patientRefunds = 0;
+    let hospitalExpenses = 0;
     let operationalExpenses = 0;
 
     expenses.forEach(exp => {
@@ -390,6 +395,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       totalExpenses += amt;
       const cat = exp.category?.name || 'مصروفات متنوعة';
       if (cat.includes('مورد')) supplierPayments += amt;
+      else if (cat.includes('أمانات') || cat.includes('مريض')) patientRefunds += amt;
+      else if (cat.includes('مستشفى')) hospitalExpenses += amt;
       else operationalExpenses += amt;
 
       if (!categoryMap[cat]) categoryMap[cat] = { category: cat, total: 0, count: 0 };
@@ -397,7 +404,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       categoryMap[cat].count += 1;
     });
 
-    const netProfit = grossProfit - operationalExpenses;
+    const netProfit = Number((grossProfit - operationalExpenses).toFixed(2));
 
     // C. Month Purchases
     const purchases = await prisma.supplierPurchase.findMany({
@@ -479,6 +486,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         totalExpenses,
         operationalExpenses,
         supplierPayments,
+        patientRefunds,
+        hospitalExpenses,
         netProfit,
         totalPurchases,
         totalPaidPurchases,

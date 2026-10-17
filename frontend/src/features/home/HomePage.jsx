@@ -278,7 +278,7 @@ const HomePage = () => {
                     isProfit ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
                   }`}><TrendingUp size={24} /></div>
                   <div>
-                    <p className="text-gray-500 font-bold text-xs">صافي ربح الشهر</p>
+                    <p className="text-gray-500 font-bold text-xs">صافي ربح الكانتين (الشهر)</p>
                     <h3 className={`text-xl font-black ${
                       isProfit ? 'text-emerald-600' : 'text-red-600'
                     }`}>{profitVal.toFixed(2)} ج.م</h3>

@@ -652,12 +652,22 @@ const ReportsPage = () => {
                     </div>
 
                     <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
-                      <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات المنصرفة</div>
+                      <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات والمنصرفات</div>
                       <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold flex flex-wrap items-center justify-center gap-1.5">
-                        <span>تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
-                        <span>|</span>
-                        <span>سداد مورد: {Number(detailedData.summary.supplierPayments || 0).toFixed(2)}</span>
+                        <span>نثريات تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
+                        {Number(detailedData.summary.hospitalExpenses || 0) > 0 && (
+                          <>
+                            <span>|</span>
+                            <span className="text-amber-800 font-bold">حساب مستشفى: {Number(detailedData.summary.hospitalExpenses).toFixed(2)}</span>
+                          </>
+                        )}
+                        {Number(detailedData.summary.supplierPayments || 0) > 0 && (
+                          <>
+                            <span>|</span>
+                            <span>سداد مورد: {Number(detailedData.summary.supplierPayments).toFixed(2)}</span>
+                          </>
+                        )}
                         {Number(detailedData.summary.patientRefunds || 0) > 0 && (
                           <>
                             <span>|</span>
@@ -681,7 +691,7 @@ const ReportsPage = () => {
                           <div className={`text-xs font-black mb-1 ${
                             isProfit ? 'text-emerald-800' : 'text-rose-800'
                           }`}>
-                            {isSingleDayMode ? 'صافي ربح اليوم الفعلي ✨' : 'صافي ربح الفترة الفعلي ✨'}
+                            {isSingleDayMode ? 'صافي ربح الكانتين اليوم ✨' : 'صافي ربح الكانتين للفترة ✨'}
                           </div>
                           <div className={`text-2xl font-black ${
                             isProfit ? 'text-emerald-700' : 'text-rose-600'
@@ -691,7 +701,10 @@ const ReportsPage = () => {
                           <div className={`text-[11px] mt-1 font-bold ${
                             isProfit ? 'text-emerald-600' : 'text-rose-500'
                           }`}>
-                            مجمل الربح ({gross.toFixed(2)}) - تشغيل ({ops.toFixed(2)})
+                            {ops > 0 
+                              ? `مجمل الربح (${gross.toFixed(2)}) - نثريات تشغيل (${ops.toFixed(2)})` 
+                              : `مجمل أرباح مبيعات الكانتين (المبيعات - تكلفة الشراء)`
+                            }
                           </div>
                         </div>
                       );
@@ -847,7 +860,21 @@ const ReportsPage = () => {
                     <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات الشهرية</div>
                       <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-gray-500 mt-1 font-bold">تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)} ج.م</div>
+                      <div className="text-[11px] text-gray-500 mt-1 font-bold flex flex-wrap items-center justify-center gap-1.5">
+                        <span>نثريات تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
+                        {Number(detailedData.summary.hospitalExpenses || 0) > 0 && (
+                          <>
+                            <span>|</span>
+                            <span className="text-amber-800 font-bold">حساب مستشفى: {Number(detailedData.summary.hospitalExpenses).toFixed(2)}</span>
+                          </>
+                        )}
+                        {Number(detailedData.summary.supplierPayments || 0) > 0 && (
+                          <>
+                            <span>|</span>
+                            <span>سداد موردين: {Number(detailedData.summary.supplierPayments).toFixed(2)}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {(() => {
@@ -862,7 +889,7 @@ const ReportsPage = () => {
                           <div className={`text-xs font-black mb-1 ${
                             isProfit ? 'text-emerald-800' : 'text-rose-800'
                           }`}>
-                            صافي أرباح تقفيلة الشهر ✨
+                            صافي أرباح الكانتين للشهر ✨
                           </div>
                           <div className={`text-2xl font-black ${
                             isProfit ? 'text-emerald-700' : 'text-rose-600'
@@ -872,7 +899,7 @@ const ReportsPage = () => {
                           <div className={`text-[11px] mt-1 font-bold ${
                             isProfit ? 'text-emerald-600' : 'text-rose-500'
                           }`}>
-                            {isProfit ? 'الأرباح الفعلية المحققة للشهر' : 'صافي عجز / خسائر الشهر'}
+                            {isProfit ? 'الأرباح الفعلية المحققة للكانتين' : 'صافي عجز / خسائر الكانتين'}
                           </div>
                         </div>
                       );
