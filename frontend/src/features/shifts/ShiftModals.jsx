@@ -167,10 +167,17 @@ export const ShiftModals = () => {
                   <Lock size={26} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black">
-                    تقفيل اليومية والوردية {currentShift?.shiftNumber ? `(#${currentShift.shiftNumber})` : ''}
+                  <h3 className="text-xl font-black flex items-center gap-2">
+                    <span>تقفيل اليومية والوردية {currentShift?.shiftNumber ? `(#${currentShift.shiftNumber})` : ''}</span>
                   </h3>
-                  <p className="text-rose-100 text-xs font-bold mt-0.5">تسوية النقدية بالدرج وتوريد الفائض للخزينة الرئيسية</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap text-xs">
+                    <span className="text-rose-100 font-bold">تسوية النقدية وتوريد الدرج</span>
+                    {currentShift?.openedAt && (
+                      <span className="bg-white/20 text-white font-mono px-2 py-0.5 rounded-lg border border-white/30 text-[11px]">
+                        بدأت: {new Date(currentShift.openedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })} - {new Date(currentShift.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
               <button 
@@ -188,9 +195,9 @@ export const ShiftModals = () => {
                   <span className="text-gray-500">مسؤول الوردية:</span>
                   <span className="text-gray-900 font-black">{currentShift?.openedBy || 'الكاشير'}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-gray-200">
-                  <span className="text-gray-500">وقت وتاريخ بدء اليومية:</span>
-                  <span className="text-gray-900 font-bold">
+                <div className="flex justify-between py-1.5 border-b border-gray-200 bg-rose-50/70 px-2 rounded-lg">
+                  <span className="text-rose-900 font-black">تاريخ ووقت بدء اليومية:</span>
+                  <span className="text-rose-950 font-black">
                     {currentShift?.openedAt 
                       ? `${new Date(currentShift.openedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })} - ${new Date(currentShift.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}` 
                       : '-'}
@@ -345,6 +352,14 @@ export const ShiftModals = () => {
                   <span className="text-gray-500">المسؤول / الكاشير:</span>
                   <span className="text-gray-900 font-black">{closedReceipt.settledBy || closedReceipt.closedBy}</span>
                 </div>
+                {closedReceipt.openedAt && (
+                  <div className="flex justify-between py-1 border-b border-gray-200">
+                    <span className="text-gray-500">تاريخ ووقت بدء الوردية:</span>
+                    <span className="text-gray-900 font-bold">
+                      {`${new Date(closedReceipt.openedAt).toLocaleDateString('ar-EG', { year: 'numeric', month: '2-digit', day: '2-digit' })} - ${new Date(closedReceipt.openedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1 border-b border-gray-200">
                   <span className="text-gray-500">رصيد الدرج بالنظام:</span>
                   <span className="text-gray-900">{Number(closedReceipt.systemDrawerBalance || closedReceipt.expectedCash).toFixed(2)} ج.م</span>
