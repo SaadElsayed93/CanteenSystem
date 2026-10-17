@@ -654,14 +654,24 @@ const ReportsPage = () => {
                     <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 text-center">
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات المنصرفة</div>
                       <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
-                      <div className="text-[11px] text-gray-500 mt-1 font-bold">
-                        تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)} | سداد مورد: {Number(detailedData.summary.supplierPayments || 0).toFixed(2)}
+                      <div className="text-[11px] text-gray-500 mt-1 font-bold flex flex-wrap items-center justify-center gap-1.5">
+                        <span>تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
+                        <span>|</span>
+                        <span>سداد مورد: {Number(detailedData.summary.supplierPayments || 0).toFixed(2)}</span>
+                        {Number(detailedData.summary.patientRefunds || 0) > 0 && (
+                          <>
+                            <span>|</span>
+                            <span className="text-indigo-700 font-black">رد أمانات: {Number(detailedData.summary.patientRefunds).toFixed(2)}</span>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     {(() => {
                       const profitVal = Number(detailedData.summary.netProfit || 0);
                       const isProfit = profitVal >= 0;
+                      const gross = Number(detailedData.summary.grossProfit ?? (Number(detailedData.summary.totalSales || 0) - Number(detailedData.summary.costOfGoodsSold || 0)));
+                      const ops = Number(detailedData.summary.operationalExpenses || 0);
                       return (
                         <div className={`p-4 rounded-2xl border-2 text-center transition-colors ${
                           isProfit 
@@ -681,7 +691,7 @@ const ReportsPage = () => {
                           <div className={`text-[11px] mt-1 font-bold ${
                             isProfit ? 'text-emerald-600' : 'text-rose-500'
                           }`}>
-                            {isProfit ? 'مجمل الربح - المصروفات التشغيلية (أرباح)' : 'مجمل الربح - المصروفات التشغيلية (عجز / خسارة)'}
+                            مجمل الربح ({gross.toFixed(2)}) - تشغيل ({ops.toFixed(2)})
                           </div>
                         </div>
                       );
