@@ -655,7 +655,7 @@ const ReportsPage = () => {
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات والمنصرفات</div>
                       <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold flex flex-wrap items-center justify-center gap-1.5">
-                        <span>نثريات تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
+                        <span>نثريات: {Number(detailedData.summary.canteenExpenses ?? detailedData.summary.operationalExpenses ?? 0).toFixed(2)}</span>
                         {Number(detailedData.summary.hospitalExpenses || 0) > 0 && (
                           <>
                             <span>|</span>
@@ -680,8 +680,6 @@ const ReportsPage = () => {
                     {(() => {
                       const profitVal = Number(detailedData.summary.netProfit || 0);
                       const isProfit = profitVal >= 0;
-                      const gross = Number(detailedData.summary.grossProfit ?? (Number(detailedData.summary.totalSales || 0) - Number(detailedData.summary.costOfGoodsSold || 0)));
-                      const ops = Number(detailedData.summary.operationalExpenses || 0);
                       return (
                         <div className={`p-4 rounded-2xl border-2 text-center transition-colors ${
                           isProfit 
@@ -701,9 +699,9 @@ const ReportsPage = () => {
                           <div className={`text-[11px] mt-1 font-bold ${
                             isProfit ? 'text-emerald-600' : 'text-rose-500'
                           }`}>
-                            {ops > 0 
-                              ? `مجمل الربح (${gross.toFixed(2)}) - نثريات تشغيل (${ops.toFixed(2)})` 
-                              : `مجمل أرباح مبيعات الكانتين (المبيعات - تكلفة الشراء)`
+                            {isProfit 
+                              ? 'مجمل أرباح مبيعات الكانتين (المبيعات - تكلفة الشراء)' 
+                              : 'عجز في أرباح المبيعات'
                             }
                           </div>
                         </div>
@@ -861,7 +859,7 @@ const ReportsPage = () => {
                       <div className="text-xs font-bold text-amber-700 mb-1">إجمالي المصروفات الشهرية</div>
                       <div className="text-2xl font-black text-amber-900">{Number(detailedData.summary.totalExpenses || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold flex flex-wrap items-center justify-center gap-1.5">
-                        <span>نثريات تشغيل: {Number(detailedData.summary.operationalExpenses || 0).toFixed(2)}</span>
+                        <span>نثريات: {Number(detailedData.summary.canteenExpenses ?? detailedData.summary.operationalExpenses ?? 0).toFixed(2)}</span>
                         {Number(detailedData.summary.hospitalExpenses || 0) > 0 && (
                           <>
                             <span>|</span>

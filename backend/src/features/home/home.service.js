@@ -160,16 +160,8 @@ const getHomeDashboardData = async (userId, userRole) => {
     });
   });
 
-  // Operational expenses only (exclude supplier payments already in COGS, patient deposit returns, and hospital account withdrawals)
-  const monthOperatingExpenses = await prisma.expense.aggregate({
-    where: { 
-      createdAt: { gte: startOfMonth },
-      category: { name: { notIn: ['سداد لمورد', 'رد أمانات وتصفية مرضى', 'مسحوبات مرضى', 'حساب مستشفى'] } }
-    },
-    _sum: { amount: true }
-  });
-
-  const netProfit = monthRevenue - monthCost - Number(monthOperatingExpenses._sum.amount || 0);
+  // Monthly Net Profit: Canteen Trading Profit (Revenue - Cost of Goods Sold)
+  const netProfit = Number((monthRevenue - monthCost).toFixed(2));
 
   // Total Treasury Balance across all active channels
   const activeMethods = await prisma.paymentMethod.findMany({ where: { isActive: true } });

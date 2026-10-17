@@ -223,7 +223,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     let supplierPayments = 0;
     let patientRefunds = 0;
     let hospitalExpenses = 0;
-    let operationalExpenses = 0;
+    let canteenExpenses = 0;
 
     const expensesList = expenses.map(exp => {
       const amt = Number(exp.amount);
@@ -232,7 +232,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       if (catName.includes('مورد')) supplierPayments += amt;
       else if (catName.includes('أمانات') || catName.includes('مريض')) patientRefunds += amt;
       else if (catName.includes('مستشفى')) hospitalExpenses += amt;
-      else operationalExpenses += amt;
+      else canteenExpenses += amt;
 
       return {
         id: exp.id,
@@ -245,7 +245,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       };
     });
 
-    const netProfit = Number((grossProfit - operationalExpenses).toFixed(2));
+    // Net Profit is purely trading profit from canteen sales (Sales - COGS); expenses do not deduct from trading profit
+    const netProfit = grossProfit;
 
     // C. Patient Transactions
     const patientTxs = await prisma.patientTransaction.findMany({
@@ -315,7 +316,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         costOfGoodsSold,
         grossProfit,
         totalExpenses,
-        operationalExpenses,
+        canteenExpenses,
+        operationalExpenses: canteenExpenses,
         supplierPayments,
         patientRefunds,
         hospitalExpenses,
@@ -388,7 +390,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
     let supplierPayments = 0;
     let patientRefunds = 0;
     let hospitalExpenses = 0;
-    let operationalExpenses = 0;
+    let canteenExpenses = 0;
 
     expenses.forEach(exp => {
       const amt = Number(exp.amount);
@@ -397,14 +399,15 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
       if (cat.includes('مورد')) supplierPayments += amt;
       else if (cat.includes('أمانات') || cat.includes('مريض')) patientRefunds += amt;
       else if (cat.includes('مستشفى')) hospitalExpenses += amt;
-      else operationalExpenses += amt;
+      else canteenExpenses += amt;
 
       if (!categoryMap[cat]) categoryMap[cat] = { category: cat, total: 0, count: 0 };
       categoryMap[cat].total += amt;
       categoryMap[cat].count += 1;
     });
 
-    const netProfit = Number((grossProfit - operationalExpenses).toFixed(2));
+    // Net Profit is purely trading profit from canteen sales (Sales - COGS); expenses do not deduct from trading profit
+    const netProfit = grossProfit;
 
     // C. Month Purchases
     const purchases = await prisma.supplierPurchase.findMany({
@@ -484,7 +487,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr) => {
         costOfGoodsSold,
         grossProfit,
         totalExpenses,
-        operationalExpenses,
+        canteenExpenses,
+        operationalExpenses: canteenExpenses,
         supplierPayments,
         patientRefunds,
         hospitalExpenses,
