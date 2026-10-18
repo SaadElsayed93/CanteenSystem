@@ -71,15 +71,15 @@ const keyTranslationMap = {
   amount: 'المبلغ',
   description: 'البيان / الوصف',
   notes: 'ملاحظات',
-  categoryId: 'كود التصنيف',
-  paymentMethodId: 'طريقة الدفع',
-  paymentMethod: 'طريقة الدفع',
+  categoryId: 'تصنيف المصروف',
+  paymentMethodId: 'طريقة الدفع / القناة',
+  paymentMethod: 'طريقة الدفع / القناة',
   fromMethodId: 'من قناة',
   toMethodId: 'إلى قناة',
   transferAmount: 'مبلغ التحويل',
   
   // Purchases & Suppliers
-  supplierId: 'كود المورد',
+  supplierId: 'المورد',
   supplierName: 'اسم المورد',
   referenceNo: 'الرقم المرجعي',
   paidAmount: 'المبلغ المدفوع',
@@ -97,7 +97,7 @@ const keyTranslationMap = {
   remainingCash: 'المتبقي بالدرج لبداية اليومية',
   
   // Patients
-  patientId: 'كود المريض',
+  patientId: 'المريض',
   fullName: 'الاسم بالكامل',
   fileNumber: 'رقم الملف',
   internalNumber: 'الرقم الداخلي / الغرفة',
@@ -109,7 +109,7 @@ const keyTranslationMap = {
   
   // Users & System
   username: 'اسم المستخدم',
-  roleId: 'كود الدور',
+  roleId: 'الصلاحية / الدور',
   isActive: 'حالة التفعيل',
   status: 'الحالة'
 };
@@ -274,6 +274,8 @@ const HistoryPage = () => {
                 arValue = value ? 'نعم (نشط)' : 'لا (معطل)';
               } else if (valueTranslationMap[value]) {
                 arValue = valueTranslationMap[value];
+              } else if (typeof value === 'number' && (key.toLowerCase().includes('amount') || key.toLowerCase().includes('price') || key.toLowerCase().includes('balance') || key.toLowerCase().includes('cash'))) {
+                arValue = `${value} ج.م`;
               }
 
               return (
@@ -282,7 +284,24 @@ const HistoryPage = () => {
                     {arKey}
                   </td>
                   <td className="p-3.5 text-gray-900 font-bold">
-                    {typeof value === 'object' && value !== null ? (
+                    {Array.isArray(value) ? (
+                      <div className="space-y-1.5 text-xs">
+                        {value.map((it, idx) => (
+                          <div key={idx} className="bg-gray-50 p-2 rounded-lg border border-gray-200">
+                            {typeof it === 'object' && it !== null ? (
+                              Object.entries(it).map(([subK, subV]) => (
+                                <span key={subK} className="ml-3">
+                                  <span className="text-gray-500 font-normal">{keyTranslationMap[subK] || subK}: </span>
+                                  <span className="font-bold text-gray-800">{String(subV)}</span>
+                                </span>
+                              ))
+                            ) : (
+                              <span>{String(it)}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : typeof value === 'object' && value !== null ? (
                       <pre className="text-xs bg-gray-100 p-2.5 rounded-xl font-mono text-left overflow-x-auto m-0" dir="ltr">
                         {JSON.stringify(value, null, 2)}
                       </pre>

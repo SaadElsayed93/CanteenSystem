@@ -30,7 +30,6 @@ router.post(
   '/expenses',
   disallowRoles(['أدمن', 'مدير'], 'تسجيل المصروفات النقدية مخصص لموظف المبيعات/الكاشير فقط'),
   checkPermission('CREATE_EXPENSE'),
-  logAudit('CREATE', 'EXPENSE'),
   treasuryController.addExpense
 );
 

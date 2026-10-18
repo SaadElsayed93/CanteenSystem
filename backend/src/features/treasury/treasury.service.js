@@ -129,23 +129,21 @@ const createExpense = async (data, userId) => {
     });
 
     // 6. Audit Log
-    if (supplier) {
-      await tx.auditLog.create({
-        data: {
-          action: 'PAY',
-          entityType: 'SUPPLIER',
-          entityId: supplier.id,
-          newValues: JSON.stringify({
-            'المورد': supplier.name,
-            'المبلغ المسدد': `${expAmount} ج.م`,
-            'القناة المالية': method.name,
-            'مصدر السداد': 'سحب مصروفات',
-            'البيان': description || '-'
-          }),
-          userId
-        }
-      });
-    }
+    await tx.auditLog.create({
+      data: {
+        action: supplier ? 'PAY' : 'CREATE',
+        entityType: supplier ? 'SUPPLIER' : 'EXPENSE',
+        entityId: supplier ? supplier.id : expense.id,
+        newValues: JSON.stringify({
+          'تصنيف المصروف': category.name,
+          'المبلغ': `${expAmount.toFixed(2)} ج.م`,
+          'القناة المالية': method.name,
+          'البيان / الوصف': expenseDescription,
+          ...(supplier ? { 'المورد': supplier.name, 'مصدر السداد': 'سحب مصروفات' } : {})
+        }),
+        userId
+      }
+    });
 
     return expense;
   });
