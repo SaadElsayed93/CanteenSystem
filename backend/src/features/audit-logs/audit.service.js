@@ -54,21 +54,74 @@ const enrichValues = (jsonStr, lookups) => {
   }
 };
 
-exports.getAuditLogs = async (page = 1, limit = 50) => {
+exports.getAuditLogs = async (paramsOrPage = 1, maybeLimit = 50) => {
+  let page = 1;
+  let limit = 50;
+  let entityType = null;
+  let action = null;
+  let search = null;
+  let sort = 'desc';
+
+  if (typeof paramsOrPage === 'object' && paramsOrPage !== null) {
+    page = parseInt(paramsOrPage.page) || 1;
+    limit = parseInt(paramsOrPage.limit) || 50;
+    entityType = paramsOrPage.entityType ? String(paramsOrPage.entityType).trim() : null;
+    action = paramsOrPage.action ? String(paramsOrPage.action).trim() : null;
+    search = paramsOrPage.search ? String(paramsOrPage.search).trim() : null;
+    sort = paramsOrPage.sort === 'asc' ? 'asc' : 'desc';
+  } else {
+    page = parseInt(paramsOrPage) || 1;
+    limit = parseInt(maybeLimit) || 50;
+  }
+
   const skip = (page - 1) * limit;
+
+  // Build Prisma where clause
+  const where = {};
+
+  if (entityType) {
+    where.entityType = entityType;
+  }
+
+  if (action) {
+    where.action = action;
+  }
+
+  if (search) {
+    const orConditions = [
+      { user: { fullName: { contains: search } } },
+      { user: { username: { contains: search } } },
+      { newValues: { contains: search } },
+      { oldValues: { contains: search } },
+      { entityType: { contains: search } },
+      { action: { contains: search } }
+    ];
+
+    const numSearch = Number(search);
+    if (!isNaN(numSearch) && Number.isInteger(numSearch)) {
+      orConditions.push({ entityId: numSearch });
+    }
+
+    where.OR = orConditions;
+  }
+
+  const orderBy = sort === 'asc'
+    ? [{ createdAt: 'asc' }, { id: 'asc' }]
+    : [{ createdAt: 'desc' }, { id: 'desc' }];
   
   const [logs, total, pms, cats, sups, roles, prods] = await Promise.all([
     prisma.auditLog.findMany({
+      where,
       include: {
         user: {
           select: { fullName: true, username: true }
         }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take: limit
     }),
-    prisma.auditLog.count(),
+    prisma.auditLog.count({ where }),
     prisma.paymentMethod.findMany({ select: { id: true, name: true } }),
     prisma.expenseCategory.findMany({ select: { id: true, name: true } }),
     prisma.supplier.findMany({ select: { id: true, name: true } }),

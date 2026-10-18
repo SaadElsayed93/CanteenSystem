@@ -2,44 +2,39 @@ import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { 
   Search, Filter, X, ChevronRight, ChevronLeft, 
-  Clock, ShieldAlert, FileText, CheckCircle2, User, Eye
+  Clock, ShieldAlert, FileText, CheckCircle2, User, Eye,
+  ArrowUpDown, RotateCcw, SlidersHorizontal
 } from 'lucide-react';
 
 const actionMap = {
-  'CREATE': { label: 'إضافة جديدة', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  'UPDATE': { label: 'تعديل بيانات', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-  'DELETE': { label: 'حذف', color: 'bg-red-100 text-red-800 border-red-200' },
-  'LOGIN': { label: 'تسجيل دخول', color: 'bg-gray-100 text-gray-800 border-gray-200' },
-  'ADJUST': { label: 'تسوية مخزون', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-  'ADJUST_INVENTORY': { label: 'تسوية مخزون', color: 'bg-purple-100 text-purple-800 border-purple-200' },
   'SALE': { label: 'فاتورة بيع (POS)', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  'TRANSACT': { label: 'حركة رصيد مريض', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  'RETURN': { label: 'مرتجع مبيعات', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  'UPDATE_STATUS': { label: 'تحديث حالة / تصفية', color: 'bg-teal-100 text-teal-800 border-teal-200' },
-  'OPEN_SHIFT': { label: 'فتح وردية يومية', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  'CLOSE_SHIFT': { label: 'إغلاق وردية ويومية', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  'PAY': { label: 'سداد دفعة لمورد', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-  'TRANSFER': { label: 'تحويل بين الخزائن', color: 'bg-sky-100 text-sky-800 border-sky-200' },
-  'DAILY_SETTLEMENT': { label: 'تسوية وتقفيل يومية', color: 'bg-violet-100 text-violet-800 border-violet-200' },
   'PURCHASE': { label: 'فاتورة مشتريات', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-  'DISCHARGE': { label: 'تصفية مريض وأرشيف', color: 'bg-teal-100 text-teal-800 border-teal-200' }
+  'PAY': { label: 'سداد دفعة لمورد', color: 'bg-amber-100 text-amber-800 border-amber-200' },
+  'CREATE': { label: 'إضافة جديدة', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  'TRANSFER': { label: 'تحويل سيولة بين الخزائن', color: 'bg-sky-100 text-sky-800 border-sky-200' },
+  'DAILY_SETTLEMENT': { label: 'تسوية وتقفيل يومية', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+  'OPEN_SHIFT': { label: 'فتح وردية يومية', color: 'bg-teal-100 text-teal-800 border-teal-200' },
+  'CLOSE_SHIFT': { label: 'إغلاق وردية ويومية', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  'TRANSACT': { label: 'حركة رصيد مريض', color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
+  'UPDATE': { label: 'تعديل بيانات', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+  'UPDATE_STATUS': { label: 'تحديث حالة / تصفية', color: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200' },
+  'RETURN': { label: 'مرتجع مبيعات', color: 'bg-rose-100 text-rose-800 border-rose-200' },
+  'ADJUST_INVENTORY': { label: 'تسوية وجرد مخزون', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  'DELETE': { label: 'حذف', color: 'bg-red-100 text-red-800 border-red-200' }
 };
 
 const entityMap = {
-  'PRODUCT': 'الأصناف والمخزون',
   'INVOICE': 'فواتير المبيعات (POS)',
-  'USER': 'المستخدمين والصلاحيات',
-  'SUPPLIER': 'الموردين وحساباتهم',
-  'PURCHASE': 'فواتير المشتريات',
-  'PATIENT': 'ملفات المرضى والأرشيف',
-  'SYSTEM': 'إعدادات النظام',
   'EXPENSE': 'المصروفات النقدية',
-  'TREASURY': 'الخزائن والتحويلات',
-  'CATEGORY': 'التصنيفات والأقسام',
-  'SUPPLIER_PAYMENT': 'سداد ديون الموردين',
+  'PURCHASE': 'فواتير المشتريات',
+  'SUPPLIER': 'الموردين وحساباتهم',
+  'PRODUCT': 'الأصناف والمخزون',
+  'PATIENT': 'ملفات المرضى والأرشيف',
   'PATIENT_TX': 'أمانات ومعاملات المرضى',
+  'SHIFT': 'الورديات ونظام اليومية',
+  'TREASURY': 'الخزائن والتحويلات',
   'RETURN': 'مرتجعات المبيعات',
-  'SHIFT': 'الورديات ونظام اليومية'
+  'USER': 'المستخدمين والصلاحيات'
 };
 
 const keyTranslationMap = {
@@ -106,6 +101,7 @@ const keyTranslationMap = {
   initialBalance: 'الرصيد الافتتاحي',
   currentDebt: 'الرصيد الحالي',
   source: 'المصدر',
+  address: 'العنوان',
   
   // Users & System
   username: 'اسم المستخدم',
@@ -194,32 +190,87 @@ const HistoryPage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [entityFilter, setEntityFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [limit, setLimit] = useState(50);
   
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceType, setInvoiceType] = useState(null);
   const [genericDetails, setGenericDetails] = useState(null);
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch when page, debounced search, or filters change
   useEffect(() => {
     fetchLogs();
-  }, [page]);
+  }, [page, debouncedSearch, actionFilter, entityFilter, sortOrder, limit]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await client.get(`/audit-logs?page=${page}&limit=50`);
-      setLogs(res.data.data);
+      const params = {
+        page,
+        limit,
+        sort: sortOrder
+      };
+      if (debouncedSearch && debouncedSearch.trim()) params.search = debouncedSearch.trim();
+      if (actionFilter) params.action = actionFilter;
+      if (entityFilter) params.entityType = entityFilter;
+
+      const res = await client.get('/audit-logs', { params });
+      setLogs(res.data.data || []);
       setTotalPages(res.data.pagination?.totalPages || 1);
+      setTotalCount(res.data.pagination?.total || 0);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleActionChange = (e) => {
+    setActionFilter(e.target.value);
+    setPage(1);
+  };
+
+  const handleEntityChange = (e) => {
+    setEntityFilter(e.target.value);
+    setPage(1);
+  };
+
+  const handleSortChange = (e) => {
+    setSortOrder(e.target.value);
+    setPage(1);
+  };
+
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setDebouncedSearch('');
+    setActionFilter('');
+    setEntityFilter('');
+    setSortOrder('desc');
+    setPage(1);
+  };
+
+  const hasActiveFilters = Boolean(search || debouncedSearch || actionFilter || entityFilter || sortOrder !== 'desc');
 
   const handleRowClick = async (log) => {
     if (log.entityType === 'INVOICE' && log.entityId) {
@@ -242,21 +293,6 @@ const HistoryPage = () => {
       setGenericDetails(log);
     }
   };
-
-  const filteredLogs = logs.filter(log => {
-    const userMatches = 
-      (log.user?.fullName?.toLowerCase() || '').includes(search.toLowerCase()) ||
-      (log.user?.username?.toLowerCase() || '').includes(search.toLowerCase());
-    const detailsMatch = formatDetails(log.newValues, true).toLowerCase().includes(search.toLowerCase());
-    const actionLabel = actionMap[log.action]?.label?.toLowerCase() || '';
-    const entityLabel = entityMap[log.entityType]?.toLowerCase() || '';
-
-    const matchesSearch = userMatches || detailsMatch || actionLabel.includes(search.toLowerCase()) || entityLabel.includes(search.toLowerCase());
-    const matchesAction = !actionFilter || log.action === actionFilter;
-    const matchesEntity = !entityFilter || log.entityType === entityFilter;
-
-    return matchesSearch && matchesAction && matchesEntity;
-  });
 
   const renderDetailsTable = (valuesStr) => {
     if (!valuesStr) return <div className="p-4 text-gray-400 font-bold text-center">لا توجد بيانات</div>;
@@ -320,41 +356,77 @@ const HistoryPage = () => {
     }
   };
 
-  if (loading && logs.length === 0) {
-    return <div className="p-8 text-center text-gray-500 font-bold">جاري تحميل سجل الحركات...</div>;
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header & Search */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-            <Clock className="text-indigo-600" size={26} />
-            <span>سجل حركات النظام والرقابة (Audit Log)</span>
-          </h2>
-          <p className="text-gray-500 mt-1 font-bold text-sm">مراقبة وتوثيق كافة العمليات النقدية والمخزنية والإدارية بالعربية</p>
+    <div className="space-y-5">
+      {/* Header & Controls Toolbar */}
+      <div className="bg-white p-5 rounded-2xl shadow-sm border-2 border-gray-200 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+          <div>
+            <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+              <Clock className="text-indigo-600" size={26} />
+              <span>سجل حركات النظام والرقابة (Audit Log)</span>
+            </h2>
+            <p className="text-gray-500 mt-1 font-bold text-sm">مراقبة وتوثيق كافة العمليات النقدية والمخزنية والإدارية بالعربية بدقة وفورية</p>
+          </div>
+
+          {/* Quick Refresh and Count Indicator */}
+          <div className="flex items-center gap-3">
+            <span className="bg-indigo-50 text-indigo-700 px-3.5 py-1.5 rounded-xl font-black text-xs border border-indigo-200">
+              إجمالي الحركات: {totalCount.toLocaleString('ar-EG')}
+            </span>
+            <button
+              onClick={fetchLogs}
+              title="تحديث البيانات"
+              disabled={loading}
+              className="p-2.5 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50"
+            >
+              <RotateCcw size={16} className={loading ? 'animate-spin text-indigo-600' : ''} />
+            </button>
+          </div>
         </div>
         
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+        {/* Controls Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-gray-100">
           {/* Search Input */}
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
             <input 
               type="text" 
-              placeholder="بحث في السجل والمستخدمين..." 
-              className="w-full border-2 border-gray-200 rounded-xl py-2.5 pr-10 pl-4 outline-none focus:border-indigo-600 bg-gray-50 font-bold text-sm"
+              placeholder="بحث في السجل والتفاصيل..." 
+              className="w-full border-2 border-gray-200 rounded-xl py-2 pr-9 pl-8 outline-none focus:border-indigo-600 bg-gray-50 font-bold text-xs"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
 
-          {/* Action Filter */}
-          <div className="relative">
+          {/* Entity Filter (الأقسام) */}
+          <div>
             <select 
-              className="border-2 border-gray-200 rounded-xl py-2.5 px-4 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-sm cursor-pointer"
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
+              value={entityFilter}
+              onChange={handleEntityChange}
+            >
+              <option value="">كل الأقسام والسجلات</option>
+              {Object.entries(entityMap).map(([key, val]) => (
+                <option key={key} value={key}>{val}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Action Filter (أنواع الحركات) */}
+          <div>
+            <select 
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
               value={actionFilter}
-              onChange={e => setActionFilter(e.target.value)}
+              onChange={handleActionChange}
             >
               <option value="">كل أنواع الحركات</option>
               {Object.entries(actionMap).map(([key, val]) => (
@@ -363,24 +435,97 @@ const HistoryPage = () => {
             </select>
           </div>
 
-          {/* Entity Filter */}
-          <div className="relative">
+          {/* Sort Order Selector */}
+          <div>
             <select 
-              className="border-2 border-gray-200 rounded-xl py-2.5 px-4 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-sm cursor-pointer"
-              value={entityFilter}
-              onChange={e => setEntityFilter(e.target.value)}
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
+              value={sortOrder}
+              onChange={handleSortChange}
             >
-              <option value="">كل الأقسام</option>
-              {Object.entries(entityMap).map(([key, val]) => (
-                <option key={key} value={key}>{val}</option>
-              ))}
+              <option value="desc">الترتيب: الأحدث أولاً (تنازلي) ⬇</option>
+              <option value="asc">الترتيب: الأقدم أولاً (تصاعدي) ⬆</option>
             </select>
           </div>
+
+          {/* Limit / Page Size & Reset Filter */}
+          <div className="flex gap-2">
+            <select 
+              className="border-2 border-gray-200 rounded-xl py-2 px-2.5 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer flex-1"
+              value={limit}
+              onChange={handleLimitChange}
+            >
+              <option value={25}>25 بالصفحة</option>
+              <option value={50}>50 بالصفحة</option>
+              <option value={100}>100 بالصفحة</option>
+            </select>
+
+            {hasActiveFilters && (
+              <button 
+                onClick={handleResetFilters}
+                title="مسح كافة الفلاتر والبحث"
+                className="px-3 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors whitespace-nowrap"
+              >
+                <X size={14} /> مسح
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Active Filter Pills Indicator */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 text-xs">
+            <span className="font-bold text-gray-400">الفلاتر المطبقة:</span>
+            {entityFilter && (
+              <span className="bg-indigo-50 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                القسم: {entityMap[entityFilter]}
+                <button onClick={() => { setEntityFilter(''); setPage(1); }} className="hover:text-red-600">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {actionFilter && (
+              <span className="bg-indigo-50 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                الحركة: {actionMap[actionFilter]?.label}
+                <button onClick={() => { setActionFilter(''); setPage(1); }} className="hover:text-red-600">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {debouncedSearch && (
+              <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                بحث: "{debouncedSearch}"
+                <button onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }} className="hover:text-red-600">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {sortOrder === 'asc' && (
+              <span className="bg-gray-100 text-gray-800 border border-gray-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                الترتيب: الأقدم أولاً
+                <button onClick={() => { setSortOrder('desc'); setPage(1); }} className="hover:text-red-600">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            <button 
+              onClick={handleResetFilters} 
+              className="text-gray-400 hover:text-rose-600 font-bold underline mr-2"
+            >
+              مسح الكل
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden flex flex-col relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 font-black text-indigo-700 text-sm gap-2">
+            <RotateCcw size={18} className="animate-spin" />
+            <span>جاري تحديث السجل...</span>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
             <thead className="bg-gray-50 text-gray-700">
@@ -393,7 +538,7 @@ const HistoryPage = () => {
               </tr>
             </thead>
             <tbody className="text-gray-600">
-              {filteredLogs.map(log => {
+              {logs.map(log => {
                 const actionInfo = actionMap[log.action] || { 
                   label: log.action, 
                   color: 'bg-gray-100 text-gray-800 border-gray-200' 
@@ -437,10 +582,10 @@ const HistoryPage = () => {
                   </tr>
                 );
               })}
-              {filteredLogs.length === 0 && (
+              {!loading && logs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="p-12 text-center text-gray-400 font-bold text-base">
-                    لا توجد حركات مسجلة مطابقة لخيارات البحث
+                    لا توجد حركات مسجلة مطابقة لخيارات البحث أو الفلترة المحددة
                   </td>
                 </tr>
               )}
@@ -449,27 +594,31 @@ const HistoryPage = () => {
         </div>
         
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="bg-gray-50 p-4 border-t border-gray-200 flex justify-center items-center gap-4">
+        <div className="bg-gray-50 p-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <div className="text-xs font-bold text-gray-500">
+            عرض {logs.length} حركة من إجمالي {totalCount.toLocaleString('ar-EG')} حركة مسجلة
+          </div>
+
+          <div className="flex items-center gap-3">
             <button 
-              disabled={page === 1} 
-              onClick={() => setPage(p => p - 1)}
-              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors"
+              disabled={page <= 1 || loading} 
+              onClick={() => setPage(p => Math.max(p - 1, 1))}
+              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
             >
               <ChevronRight size={18} /> السابق
             </button>
-            <span className="font-black text-gray-700 text-sm">
-              صفحة {page} من {totalPages}
+            <span className="font-black text-gray-700 text-sm px-2">
+              صفحة {page} من {Math.max(totalPages, 1)}
             </span>
             <button 
-              disabled={page === totalPages} 
+              disabled={page >= totalPages || loading} 
               onClick={() => setPage(p => p + 1)}
-              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors"
+              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
             >
               التالي <ChevronLeft size={18} />
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Invoice Modal */}
