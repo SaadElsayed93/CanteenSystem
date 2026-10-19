@@ -643,6 +643,20 @@ const BackupPage = () => {
             </tbody>
           </table>
         </div>
+
+        <div className="bg-gray-50/80 p-3.5 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-gray-500 gap-2">
+          <div className="flex items-center gap-1.5">
+            <FolderOpen size={15} className="text-emerald-600 flex-shrink-0" />
+            <span>المسار الأصلي لمجلد النسخ الاحتياطية على الجهاز:</span>
+            <span className="font-mono text-gray-800 font-black bg-white px-2 py-0.5 rounded border border-gray-200" dir="ltr">D:\كانتين\CanteenSystem\backend\backups</span>
+          </div>
+          <button 
+            onClick={handleOpenFolder}
+            className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 font-black transition-colors"
+          >
+            فتح المجلد في ويندوز 📂
+          </button>
+        </div>
       </div>
 
       {/* Confirmation Modal for Restore */}

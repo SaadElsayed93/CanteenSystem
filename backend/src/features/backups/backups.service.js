@@ -471,20 +471,27 @@ exports.initAutoBackupEngine = () => {
   }, 30 * 60 * 1000); // Check every 30 mins
 };
 
-/**
- * Open target file or directory in Windows File Explorer
- */
 exports.openInExplorer = (targetPath) => {
-  const { spawn } = require('child_process');
+  const { exec } = require('child_process');
   if (!targetPath || !fs.existsSync(targetPath)) {
     throw new Error('المسار المحدد غير موجود على الجهاز');
   }
   const resolved = path.resolve(targetPath);
   const isFile = fs.statSync(resolved).isFile();
 
-  const args = isFile ? [`/select,${resolved}`] : [resolved];
-  const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore' });
-  child.unref();
+  // Escape single quotes for PowerShell
+  const escaped = resolved.replace(/'/g, "''");
+  const psCmd = isFile
+    ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
+    : `powershell -NoProfile -Command "Invoke-Item -LiteralPath '${escaped}'"`;
+
+  exec(psCmd, (err) => {
+    if (err) {
+      console.warn('[OpenInExplorer Warning]:', err.message);
+      // Fallback
+      exec(`start "" "${resolved}"`, () => {});
+    }
+  });
 
   return {
     success: true,
