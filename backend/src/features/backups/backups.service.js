@@ -470,3 +470,44 @@ exports.initAutoBackupEngine = () => {
     }
   }, 30 * 60 * 1000); // Check every 30 mins
 };
+
+/**
+ * Open target file or directory in Windows File Explorer
+ */
+exports.openInExplorer = (targetPath) => {
+  const { spawn } = require('child_process');
+  if (!targetPath || !fs.existsSync(targetPath)) {
+    throw new Error('المسار المحدد غير موجود على الجهاز');
+  }
+  const resolved = path.resolve(targetPath);
+  const isFile = fs.statSync(resolved).isFile();
+
+  const args = isFile ? [`/select,${resolved}`] : [resolved];
+  const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore' });
+  child.unref();
+
+  return {
+    success: true,
+    path: resolved,
+    folder: isFile ? path.dirname(resolved) : resolved,
+    isFile
+  };
+};
+
+exports.openBackupFolder = () => {
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+  return exports.openInExplorer(BACKUP_DIR);
+};
+
+exports.openBackupFileLocation = async (backupId) => {
+  const backup = await prisma.backup.findUnique({ where: { id: Number(backupId) } });
+  if (!backup) {
+    throw new Error('النسخة الاحتياطية غير موجودة بالنظام');
+  }
+  if (!fs.existsSync(backup.filepath)) {
+    throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
+  }
+  return exports.openInExplorer(backup.filepath);
+};

@@ -118,8 +118,68 @@ const BackupPage = () => {
     }
   };
 
-  const handleDownload = (backup) => {
-    window.open(`/api/backups/${backup.id}/download`, '_blank');
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const handleDownload = async (backup) => {
+    setDownloadingId(backup.id);
+    const toastId = toast.loading(`جاري تحضير وتنزيل النسخة: ${backup.filename}...`);
+    try {
+      const response = await client.get(`/backups/${backup.id}/download`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([response.data], { type: 'application/octet-stream' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', backup.filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success('تم تنزيل النسخة الاحتياطية بنجاح 📥', { id: toastId });
+    } catch (err) {
+      console.error('Download error:', err);
+      // Fallback: direct window open with auth token in query param
+      try {
+        const token = localStorage.getItem('token');
+        window.open(`/api/backups/${backup.id}/download?token=${token}`, '_blank');
+        toast.success('تم بدء التنزيل المباشر 📥', { id: toastId });
+      } catch (e) {
+        toast.error('تعذر تنزيل ملف النسخة الاحتياطية', { id: toastId });
+      }
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleOpenFolder = async () => {
+    try {
+      const res = await client.post('/backups/open-folder');
+      if (res.data?.success) {
+        toast.success('تم فتح مجلد النسخ الاحتياطية في ويندوز 📂');
+        if (res.data.path && navigator.clipboard) {
+          navigator.clipboard.writeText(res.data.path).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'تعذر فتح المجلد');
+    }
+  };
+
+  const handleOpenFileLocation = async (backup) => {
+    try {
+      const res = await client.post(`/backups/${backup.id}/open-location`);
+      if (res.data?.success) {
+        toast.success(`تم فتح مكان الملف في ويندوز وتحديده 📂\n${res.data.path || backup.filename}`);
+        if (res.data.path && navigator.clipboard) {
+          navigator.clipboard.writeText(res.data.path).catch(() => {});
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'تعذر فتح مكان الملف');
+    }
   };
 
   const handleDelete = async (backup) => {
@@ -221,14 +281,25 @@ const BackupPage = () => {
           </div>
         </div>
 
-        <button 
-          onClick={fetchBackups} 
-          disabled={loading}
-          className="z-10 flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm"
-        >
-          <RotateCcw size={15} className={loading ? 'animate-spin' : ''} />
-          <span>تحديث السجل</span>
-        </button>
+        <div className="z-10 flex flex-wrap items-center gap-2.5">
+          <button 
+            onClick={handleOpenFolder}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg"
+            title="فتح مجلد النسخ الاحتياطية في مستعرض ملفات ويندوز"
+          >
+            <FolderOpen size={16} />
+            <span>فتح مجلد النسخ في الجهاز</span>
+          </button>
+
+          <button 
+            onClick={fetchBackups} 
+            disabled={loading}
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm"
+          >
+            <RotateCcw size={15} className={loading ? 'animate-spin' : ''} />
+            <span>تحديث السجل</span>
+          </button>
+        </div>
       </div>
 
       {/* Top 4 Stats Cards */}
@@ -512,13 +583,27 @@ const BackupPage = () => {
 
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
+                        {/* Open File Location in Windows Explorer */}
+                        <button
+                          onClick={() => handleOpenFileLocation(backup)}
+                          title="فتح وتحديد مكان ملف النسخة في ويندوز"
+                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl transition-colors shadow-sm"
+                        >
+                          <FolderOpen size={15} />
+                        </button>
+
                         {/* Download Button */}
                         <button
                           onClick={() => handleDownload(backup)}
+                          disabled={downloadingId === backup.id}
                           title="تنزيل النسخة إلى جهازك أو فلاشة"
-                          className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition-colors shadow-sm"
+                          className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition-colors shadow-sm disabled:opacity-50"
                         >
-                          <Download size={15} />
+                          {downloadingId === backup.id ? (
+                            <RotateCcw size={15} className="animate-spin text-indigo-600" />
+                          ) : (
+                            <Download size={15} />
+                          )}
                         </button>
 
                         {/* Restore Button */}

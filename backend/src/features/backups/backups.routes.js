@@ -22,6 +22,8 @@ router.get('/:id/download', backupsController.downloadBackup);
 router.delete('/:id', backupsController.deleteBackup);
 router.post('/:id/restore', backupsController.restoreBackup);
 router.post('/upload-restore', upload.single('file'), backupsController.uploadAndRestoreBackup);
+router.post('/open-folder', backupsController.openBackupFolder);
+router.post('/:id/open-location', backupsController.openBackupFileLocation);
 
 // External path settings
 router.get('/settings/external-path', backupsController.getExternalPath);

@@ -87,3 +87,22 @@ exports.setExternalPath = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.openBackupFolder = async (req, res, next) => {
+  try {
+    const result = backupsService.openBackupFolder();
+    res.json({ success: true, ...result, message: 'تم فتح مجلد النسخ الاحتياطية في ويندوز' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.openBackupFileLocation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await backupsService.openBackupFileLocation(id);
+    res.json({ success: true, ...result, message: 'تم فتح مكان الملف وتحديده في ويندوز' });
+  } catch (err) {
+    next(err);
+  }
+};
