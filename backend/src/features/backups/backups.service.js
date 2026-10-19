@@ -5,13 +5,17 @@ const prisma = new PrismaClient();
 
 function sanitizePath(rawPath) {
   if (!rawPath) return rawPath;
-  let resolved = path.resolve(rawPath);
-  if (resolved.includes('?') || !fs.existsSync(resolved)) {
-    const fixed = resolved.replace(/[?]+/g, 'كانتين');
-    if (fs.existsSync(fixed)) {
-      return fixed;
+  try {
+    if (fs.existsSync(rawPath)) {
+      return fs.realpathSync.native ? fs.realpathSync.native(rawPath) : fs.realpathSync(rawPath);
     }
-  }
+  } catch (e) {}
+  let resolved = path.resolve(rawPath);
+  try {
+    if (fs.existsSync(resolved)) {
+      return fs.realpathSync.native ? fs.realpathSync.native(resolved) : fs.realpathSync(resolved);
+    }
+  } catch (e) {}
   return resolved;
 }
 
@@ -198,6 +202,7 @@ exports.listBackups = async () => {
       totalSizeBytes,
       totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
       lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,
+      backupDir: BACKUP_DIR,
       externalPath: extSetting ? extSetting.value : null
     }
   };
