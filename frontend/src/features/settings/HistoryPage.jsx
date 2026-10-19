@@ -20,6 +20,7 @@ const actionMap = {
   'UPDATE_STATUS': { label: 'تحديث حالة / تصفية', color: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200' },
   'RETURN': { label: 'مرتجع مبيعات', color: 'bg-rose-100 text-rose-800 border-rose-200' },
   'ADJUST_INVENTORY': { label: 'تسوية وجرد مخزون', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  'RESTORE': { label: 'استعادة نسخة احتياطية', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   'DELETE': { label: 'حذف', color: 'bg-red-100 text-red-800 border-red-200' }
 };
 
@@ -33,6 +34,7 @@ const entityMap = {
   'PATIENT_TX': 'أمانات ومعاملات المرضى',
   'SHIFT': 'الورديات ونظام اليومية',
   'TREASURY': 'الخزائن والتحويلات',
+  'BACKUP': 'النسخ الاحتياطي والأمان',
   'RETURN': 'مرتجعات المبيعات',
   'USER': 'المستخدمين والصلاحيات'
 };

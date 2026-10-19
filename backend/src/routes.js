@@ -13,6 +13,7 @@ const auditRoutes = require('./features/audit-logs/audit.routes');
 const reportsRoutes = require('./features/reports/reports.routes');
 const homeRoutes = require('./features/home/home.routes');
 const shiftsRoutes = require('./features/shifts/shifts.routes');
+const backupsRoutes = require('./features/backups/backups.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', usersRoutes);
@@ -26,6 +27,7 @@ router.use('/audit-logs', auditRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/home', authMiddleware, homeRoutes);
 router.use('/shifts', shiftsRoutes);
+router.use('/backups', backupsRoutes);
 
 module.exports = router;
 

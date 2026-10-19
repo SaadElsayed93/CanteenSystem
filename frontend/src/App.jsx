@@ -8,6 +8,7 @@ import LoginPage from './features/auth/LoginPage';
 import ProtectedRoute from './features/auth/ProtectedRoute';
 import UserManagement from './features/settings/UserManagement';
 import HistoryPage from './features/settings/HistoryPage';
+import BackupPage from './features/settings/BackupPage';
 import ProductsPage from './features/products/ProductsPage';
 import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
@@ -21,8 +22,8 @@ import HomePage from './features/home/HomePage';
 import { 
   Home, ShoppingCart, RotateCcw, Package, 
   Users, Wallet, Truck, Settings, LogOut, Menu,
-  Store, FileText
-, BarChart2} from 'lucide-react';
+  Store, FileText, BarChart2, ShieldCheck
+} from 'lucide-react';
 
 function MainLayout({ children }) {
   const { user, logout, hasPermission, isAdmin } = useAuth();
@@ -49,7 +50,8 @@ function MainLayout({ children }) {
     ] : []),
     ...(hasPermission('MANAGE_USERS') ? [
       { to: "/settings/users", icon: <Settings size={20} />, label: "إدارة المستخدمين" },
-      { to: "/settings/history", icon: <FileText size={20} />, label: "سجل الحركات (History)" }
+      { to: "/settings/history", icon: <FileText size={20} />, label: "سجل الحركات (History)" },
+      { to: "/settings/backup", icon: <ShieldCheck size={20} />, label: "النسخ الاحتياطي والأمان" }
     ] : [])
   ];
 
@@ -231,6 +233,14 @@ function App() {
             <ProtectedRoute requiredPermission="MANAGE_USERS">
               <MainLayout>
                 <UserManagement />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/settings/backup" element={
+            <ProtectedRoute requiredPermission="MANAGE_USERS">
+              <MainLayout>
+                <BackupPage />
               </MainLayout>
             </ProtectedRoute>
           } />

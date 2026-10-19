@@ -1,0 +1,472 @@
+const fs = require('fs');
+const path = require('path');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+const BACKUP_DIR = path.resolve(__dirname, '../../../backups');
+const DB_FILE = path.resolve(__dirname, '../../../prisma/dev.db');
+const DB_WAL = path.resolve(__dirname, '../../../prisma/dev.db-wal');
+const DB_SHM = path.resolve(__dirname, '../../../prisma/dev.db-shm');
+
+// Ensure backups directory exists
+if (!fs.existsSync(BACKUP_DIR)) {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+}
+
+/**
+ * Validate that a file is a valid SQLite 3 database file
+ */
+const validateSqliteFile = (filePath) => {
+  if (!fs.existsSync(filePath)) return false;
+  try {
+    const stats = fs.statSync(filePath);
+    if (stats.size < 100) return false;
+    const buffer = Buffer.alloc(16);
+    const fd = fs.openSync(filePath, 'r');
+    fs.readSync(fd, buffer, 0, 16, 0);
+    fs.closeSync(fd);
+    return buffer.toString().startsWith('SQLite format 3');
+  } catch (err) {
+    return false;
+  }
+};
+
+/**
+ * Clean up older auto backups keeping the most recent N backups
+ */
+const autoPruneOldBackups = async (keepCount = 60) => {
+  try {
+    const autoBackups = await prisma.backup.findMany({
+      where: { type: { in: ['AUTO', 'STARTUP'] } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (autoBackups.length > keepCount) {
+      const toDelete = autoBackups.slice(keepCount);
+      for (const b of toDelete) {
+        if (fs.existsSync(b.filepath)) {
+          try { fs.unlinkSync(b.filepath); } catch (e) {}
+        }
+        await prisma.backup.delete({ where: { id: b.id } }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('[Backup Prune Warning]:', err.message);
+  }
+};
+
+/**
+ * Create a consistent live backup of SQLite database
+ */
+exports.createBackup = async ({ type = 'MANUAL', userId = 1, notes = '' } = {}) => {
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
+
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  const filename = `canteen_backup_${dateStr}_${type}.db`;
+  const targetPath = path.join(BACKUP_DIR, filename);
+  const normalizedTarget = targetPath.replace(/\\/g, '/');
+
+  try {
+    // 1. Flush SQLite WAL to ensure consistency
+    try {
+      await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(FULL)');
+    } catch (e) {
+      // Ignore if not in WAL mode
+    }
+
+    // 2. Perform safe, non-blocking atomic backup using VACUUM INTO
+    await prisma.$executeRawUnsafe(`VACUUM INTO '${normalizedTarget}'`);
+
+    const stats = fs.statSync(targetPath);
+    const sizeBytes = stats.size;
+
+    // 3. Check for external USB backup path configuration
+    try {
+      const extSetting = await prisma.setting.findUnique({ where: { key: 'BACKUP_EXTERNAL_PATH' } });
+      if (extSetting && extSetting.value && fs.existsSync(extSetting.value.trim())) {
+        const extDir = extSetting.value.trim();
+        const extFilePath = path.join(extDir, filename);
+        fs.copyFileSync(targetPath, extFilePath);
+      }
+    } catch (e) {
+      console.warn('[External Backup Copy Warning]:', e.message);
+    }
+
+    // 4. Save record in database
+    const record = await prisma.backup.create({
+      data: {
+        filename,
+        filepath: targetPath,
+        type,
+        sizeBytes: BigInt(sizeBytes),
+        createdBy: Number(userId) || 1
+      },
+      include: {
+        user: {
+          select: { fullName: true, username: true }
+        }
+      }
+    });
+
+    // 5. Log in Audit Log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          action: 'CREATE',
+          entityType: 'BACKUP',
+          entityId: record.id,
+          newValues: JSON.stringify({
+            'اسم ملف النسخة': filename,
+            'النوع': type === 'AUTO' ? 'تلقائي مجدول' : type === 'SHIFT_CLOSE' ? 'تقفيل يومية' : type === 'STARTUP' ? 'وقائي عند التشغيل' : 'يدوي بطلب المدير',
+            'حجم النسخة': `${(sizeBytes / (1024 * 1024)).toFixed(2)} ميجابايت`,
+            'ملاحظات': notes || 'تم أخذ النسخة بنجاح'
+          }),
+          userId: Number(userId) || 1
+        }
+      });
+    } catch (e) {}
+
+    // Auto-prune old auto backups in background
+    autoPruneOldBackups().catch(() => {});
+
+    return {
+      ...record,
+      sizeBytes: Number(record.sizeBytes),
+      sizeFormatted: `${(sizeBytes / (1024 * 1024)).toFixed(2)} MB`
+    };
+  } catch (err) {
+    console.error('[Backup Creation Error]:', err);
+    throw new Error(`فشل إنشاء النسخة الاحتياطية: ${err.message}`);
+  }
+};
+
+/**
+ * List all backups with file status and statistics
+ */
+exports.listBackups = async () => {
+  const [backups, extSetting] = await Promise.all([
+    prisma.backup.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: { fullName: true, username: true }
+        }
+      }
+    }),
+    prisma.setting.findUnique({ where: { key: 'BACKUP_EXTERNAL_PATH' } })
+  ]);
+
+  let totalSizeBytes = 0;
+  const enriched = backups.map(b => {
+    const size = Number(b.sizeBytes);
+    totalSizeBytes += size;
+    const exists = fs.existsSync(b.filepath);
+    return {
+      id: b.id,
+      filename: b.filename,
+      filepath: b.filepath,
+      type: b.type,
+      sizeBytes: size,
+      sizeFormatted: `${(size / (1024 * 1024)).toFixed(2)} MB`,
+      fileExists: exists,
+      createdAt: b.createdAt,
+      user: b.user
+    };
+  });
+
+  return {
+    backups: enriched,
+    stats: {
+      totalCount: enriched.length,
+      totalSizeBytes,
+      totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
+      lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,
+      externalPath: extSetting ? extSetting.value : null
+    }
+  };
+};
+
+/**
+ * Get physical file path for download
+ */
+exports.getBackupFilePath = async (id) => {
+  const backup = await prisma.backup.findUnique({ where: { id: Number(id) } });
+  if (!backup) {
+    throw new Error('النسخة الاحتياطية المطلوبة غير مسجلة بالنظام');
+  }
+  if (!fs.existsSync(backup.filepath)) {
+    throw new Error('ملف النسخة الاحتياطية غير موجود على القرص الصلب');
+  }
+  return {
+    filepath: backup.filepath,
+    filename: backup.filename
+  };
+};
+
+/**
+ * Delete a backup (both database record and physical file)
+ */
+exports.deleteBackup = async (id, userId = 1) => {
+  const backup = await prisma.backup.findUnique({ where: { id: Number(id) } });
+  if (!backup) {
+    throw new Error('النسخة الاحتياطية غير موجودة');
+  }
+
+  // Delete physical file
+  if (fs.existsSync(backup.filepath)) {
+    try {
+      fs.unlinkSync(backup.filepath);
+    } catch (e) {
+      console.warn('Could not unlink physical backup file:', e.message);
+    }
+  }
+
+  // Delete DB record
+  await prisma.backup.delete({ where: { id: Number(id) } });
+
+  // Log in audit log
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action: 'DELETE',
+        entityType: 'BACKUP',
+        entityId: Number(id),
+        newValues: JSON.stringify({
+          'الملف المحذوف': backup.filename,
+          'نوع النسخة': backup.type
+        }),
+        userId: Number(userId) || 1
+      }
+    });
+  } catch (e) {}
+
+  return { success: true, message: 'تم حذف النسخة الاحتياطية بنجاح' };
+};
+
+/**
+ * Restore database from an existing backup with Zero-Risk Safety Net
+ */
+exports.restoreBackup = async ({ backupId, uploadedFilePath, userId = 1 }) => {
+  let sourceFilePath = null;
+  let sourceFilename = 'نسخة احتياطية';
+
+  if (backupId) {
+    const backup = await prisma.backup.findUnique({ where: { id: Number(backupId) } });
+    if (!backup) {
+      throw new Error('النسخة المحددة للاسترجاع غير موجودة بالنظام');
+    }
+    sourceFilePath = backup.filepath;
+    sourceFilename = backup.filename;
+  } else if (uploadedFilePath) {
+    sourceFilePath = uploadedFilePath;
+    sourceFilename = path.basename(uploadedFilePath);
+  }
+
+  if (!sourceFilePath || !fs.existsSync(sourceFilePath)) {
+    throw new Error('ملف النسخة الاحتياطية غير موجود أو تعذر الوصول إليه');
+  }
+
+  // 1. Validate SQLite header
+  if (!validateSqliteFile(sourceFilePath)) {
+    throw new Error('الملف المحدد ليس ملف قاعدة بيانات كانتين (SQLite) صالح أو معطوب');
+  }
+
+  // 2. SAFETY NET: Take an emergency pre-restore snapshot of CURRENT database first!
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const safetyName = `SAFETY_NET_PRE_RESTORE_${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.db`;
+  const safetyPath = path.join(BACKUP_DIR, safetyName);
+
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      try {
+        await prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(FULL)');
+      } catch (e) {}
+      await prisma.$executeRawUnsafe(`VACUUM INTO '${safetyPath.replace(/\\/g, '/')}'`);
+      
+      const stats = fs.statSync(safetyPath);
+      await prisma.backup.create({
+        data: {
+          filename: safetyName,
+          filepath: safetyPath,
+          type: 'SAFETY_PRE_RESTORE',
+          sizeBytes: BigInt(stats.size),
+          createdBy: Number(userId) || 1
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('[Safety Net Backup Warning]: Could not take pre-restore safety backup:', err);
+  }
+
+  // 3. Disconnect Prisma client completely
+  await prisma.$disconnect();
+
+  // 4. Overwrite dev.db with the backup file
+  fs.copyFileSync(sourceFilePath, DB_FILE);
+
+  // 5. Remove existing WAL and SHM files to prevent corruption
+  if (fs.existsSync(DB_WAL)) {
+    try { fs.unlinkSync(DB_WAL); } catch (e) {}
+  }
+  if (fs.existsSync(DB_SHM)) {
+    try { fs.unlinkSync(DB_SHM); } catch (e) {}
+  }
+
+  // 6. Reconnect Prisma client
+  await prisma.$connect();
+
+  // 7. Verify integrity of restored database
+  const integrityRes = await prisma.$queryRawUnsafe('PRAGMA integrity_check');
+  const isOk = Array.isArray(integrityRes) && integrityRes[0] && (integrityRes[0].integrity_check === 'ok' || Object.values(integrityRes[0])[0] === 'ok');
+
+  if (!isOk) {
+    console.error('[Restore Integrity Error]: Restored DB failed integrity check:', integrityRes);
+  }
+
+  // 8. Log in Audit Log
+  try {
+    await prisma.auditLog.create({
+      data: {
+        action: 'RESTORE',
+        entityType: 'BACKUP',
+        entityId: Number(backupId) || null,
+        newValues: JSON.stringify({
+          'النسخة المسترجعة': sourceFilename,
+          'نسخة الأمان السابقة': safetyName,
+          'حالة الفحص': isOk ? 'سليمة ومطابقة 100%' : 'تحذير سلامة',
+          'التوقيت': new Date().toLocaleString('ar-EG')
+        }),
+        userId: Number(userId) || 1
+      }
+    });
+  } catch (e) {}
+
+  return {
+    success: true,
+    message: 'تم استرجاع قاعدة البيانات بنجاح تام وتشغيل النظام عليها',
+    safetyBackupFilename: safetyName,
+    restoredFrom: sourceFilename,
+    integrityCheck: isOk ? 'ok' : 'warning'
+  };
+};
+
+/**
+ * Handle uploaded backup file from browser
+ */
+exports.handleUploadedBackup = async (file, userId = 1) => {
+  if (!file || !file.path) {
+    throw new Error('لم يتم استلام أي ملف');
+  }
+
+  const uploadedPath = file.path;
+
+  // Validate file
+  if (!validateSqliteFile(uploadedPath)) {
+    try { fs.unlinkSync(uploadedPath); } catch (e) {}
+    throw new Error('الملف المرفوع ليس ملف قاعدة بيانات كانتين (SQLite) صالح أو تالف');
+  }
+
+  // Rename and move to backups folder
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  const newFilename = `canteen_uploaded_${dateStr}_${file.originalname || 'backup.db'}`;
+  const finalPath = path.join(BACKUP_DIR, newFilename);
+
+  fs.copyFileSync(uploadedPath, finalPath);
+  try { fs.unlinkSync(uploadedPath); } catch (e) {}
+
+  const stats = fs.statSync(finalPath);
+
+  // Register in backups table
+  const record = await prisma.backup.create({
+    data: {
+      filename: newFilename,
+      filepath: finalPath,
+      type: 'MANUAL',
+      sizeBytes: BigInt(stats.size),
+      createdBy: Number(userId) || 1
+    }
+  });
+
+  return {
+    id: record.id,
+    filename: newFilename,
+    filepath: finalPath,
+    sizeBytes: stats.size,
+    sizeFormatted: `${(stats.size / (1024 * 1024)).toFixed(2)} MB`
+  };
+};
+
+/**
+ * Settings: get and set external USB backup path
+ */
+exports.getExternalPath = async () => {
+  const setting = await prisma.setting.findUnique({ where: { key: 'BACKUP_EXTERNAL_PATH' } });
+  return setting ? setting.value : '';
+};
+
+exports.setExternalPath = async (externalPath) => {
+  const cleanPath = (externalPath || '').trim();
+  if (cleanPath && !fs.existsSync(cleanPath)) {
+    try {
+      fs.mkdirSync(cleanPath, { recursive: true });
+    } catch (err) {
+      throw new Error(`المسار المحدد غير متاح أو لا توجد صلاحيات كتابة عليه: ${err.message}`);
+    }
+  }
+
+  await prisma.setting.upsert({
+    where: { key: 'BACKUP_EXTERNAL_PATH' },
+    update: { value: cleanPath, description: 'مسار النسخ الاحتياطي الإضافي على الفلاشة أو القرص الخارجي' },
+    create: { key: 'BACKUP_EXTERNAL_PATH', value: cleanPath, description: 'مسار النسخ الاحتياطي الإضافي على الفلاشة أو القرص الخارجي' }
+  });
+
+  return { success: true, externalPath: cleanPath };
+};
+
+/**
+ * Startup and daily scheduled backups engine
+ */
+exports.initAutoBackupEngine = () => {
+  // 1. Run protective startup backup after 10 seconds of server boot
+  setTimeout(async () => {
+    try {
+      console.log('[Auto Backup Engine] Initializing startup protective backup...');
+      await exports.createBackup({ type: 'STARTUP', userId: 1, notes: 'نسخة وقائية عند إقلاع السيرفر' });
+      console.log('[Auto Backup Engine] Startup protective backup created successfully.');
+    } catch (err) {
+      console.warn('[Auto Backup Engine Startup Warning]:', err.message);
+    }
+  }, 10000);
+
+  // 2. Check every 30 minutes if it's 03:00 AM and no backup was taken today
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      // Target 03:00 AM window (between 03:00 and 03:30)
+      if (now.getHours() === 3 && now.getMinutes() < 30) {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const todaysBackup = await prisma.backup.findFirst({
+          where: {
+            type: 'AUTO',
+            createdAt: { gte: startOfDay }
+          }
+        });
+
+        if (!todaysBackup) {
+          console.log('[Auto Backup Engine] Running daily scheduled 03:00 AM backup...');
+          await exports.createBackup({ type: 'AUTO', userId: 1, notes: 'نسخة يومية مجدولة تلقائية' });
+          console.log('[Auto Backup Engine] Daily scheduled backup completed.');
+        }
+      }
+    } catch (err) {
+      console.warn('[Auto Backup Engine Scheduled Warning]:', err.message);
+    }
+  }, 30 * 60 * 1000); // Check every 30 mins
+};

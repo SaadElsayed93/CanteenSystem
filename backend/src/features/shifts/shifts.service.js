@@ -346,6 +346,18 @@ const closeShift = async (data, userId) => {
       }
     };
   });
+
+  // Automatically trigger clean backup for closed shift
+  try {
+    const backupsService = require('../backups/backups.service');
+    backupsService.createBackup({
+      type: 'SHIFT_CLOSE',
+      userId,
+      notes: `نسخة تلقائية ختامية لإغلاق اليومية #${result.shift?.shiftNumber || ''}`
+    }).catch(e => console.warn('[Shift Close Backup Warning]:', e.message));
+  } catch (e) {}
+
+  return result;
 };
 
 /**

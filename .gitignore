@@ -16,6 +16,10 @@ build/
 backend/prisma/*.db
 backend/prisma/*.db-journal
 
+# Backups
+backend/backups/*.db
+backend/backups/*.sqlite
+
 # IDEs and Editors
 .idea/
 .vscode/
