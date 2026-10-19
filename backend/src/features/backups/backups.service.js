@@ -472,26 +472,31 @@ exports.initAutoBackupEngine = () => {
 };
 
 exports.openInExplorer = (targetPath) => {
-  const { exec } = require('child_process');
+  const { spawn } = require('child_process');
   if (!targetPath || !fs.existsSync(targetPath)) {
     throw new Error('المسار المحدد غير موجود على الجهاز');
   }
   const resolved = path.resolve(targetPath);
   const isFile = fs.statSync(resolved).isFile();
 
-  // Escape single quotes for PowerShell
-  const escaped = resolved.replace(/'/g, "''");
-  const psCmd = isFile
-    ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
-    : `powershell -NoProfile -Command "Invoke-Item -LiteralPath '${escaped}'"`;
+  // Use Base64 UTF-16LE EncodedCommand so Arabic paths (like 'كانتين') are 100% preserved
+  const escaped = resolved.replace(/"/g, '""');
+  const psScript = isFile
+    ? `Start-Process explorer.exe -ArgumentList '/select,"${escaped}"'`
+    : `Start-Process explorer.exe -ArgumentList '"${escaped}"'`;
 
-  exec(psCmd, (err) => {
-    if (err) {
-      console.warn('[OpenInExplorer Warning]:', err.message);
-      // Fallback
-      exec(`start "" "${resolved}"`, () => {});
-    }
-  });
+  const buf = Buffer.from(psScript, 'utf16le');
+  const b64 = buf.toString('base64');
+
+  try {
+    const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Normal', '-EncodedCommand', b64], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    child.unref();
+  } catch (err) {
+    console.warn('[OpenInExplorer Spawn Error]:', err.message);
+  }
 
   return {
     success: true,
