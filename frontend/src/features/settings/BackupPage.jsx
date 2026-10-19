@@ -156,10 +156,7 @@ const BackupPage = () => {
     try {
       const res = await client.post('/backups/open-folder');
       if (res.data?.success) {
-        toast.success('تم إرسال أمر فتح المجلد لويندوز 📂\n(يمكنك أيضاً الضغط على اختصار Canteen_Backups على سطح المكتب)');
-        if (res.data.path && navigator.clipboard) {
-          navigator.clipboard.writeText(res.data.path).catch(() => {});
-        }
+        toast.success('تم فتح مجلد النسخ الاحتياطية في ويندوز 📂');
       }
     } catch (err) {
       console.error(err);
@@ -171,10 +168,7 @@ const BackupPage = () => {
     try {
       const res = await client.post(`/backups/${backup.id}/open-location`);
       if (res.data?.success) {
-        toast.success(`تم فتح مكان الملف وتحديده في ويندوز 📂\n${backup.filename}`);
-        if (res.data.path && navigator.clipboard) {
-          navigator.clipboard.writeText(res.data.path).catch(() => {});
-        }
+        toast.success(`تم فتح مكان النسخة وتحديدها في ويندوز 📂\n${backup.filename}`);
       }
     } catch (err) {
       console.error(err);
@@ -645,15 +639,10 @@ const BackupPage = () => {
         </div>
 
         <div className="bg-gray-50/80 p-3.5 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-gray-500 gap-2">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-            <div className="flex items-center gap-1.5">
-              <FolderOpen size={15} className="text-emerald-600 flex-shrink-0" />
-              <span>المسار الأصلي لمجلد النسخ:</span>
-              <span className="font-mono text-gray-800 font-black bg-white px-2 py-0.5 rounded border border-gray-200" dir="ltr">D:\كانتين\CanteenSystem\backend\backups</span>
-            </div>
-            <span className="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 mr-2">
-              💡 تم وضع اختصار مباشر (Canteen_Backups) على سطح مكتب جهازك
-            </span>
+          <div className="flex items-center gap-1.5">
+            <FolderOpen size={15} className="text-emerald-600 flex-shrink-0" />
+            <span>المسار الأصلي لمجلد النسخ الاحتياطية على الجهاز:</span>
+            <span className="font-mono text-gray-800 font-black bg-white px-2 py-0.5 rounded border border-gray-200" dir="ltr">D:\كانتين\CanteenSystem\backend\backups</span>
           </div>
           <button 
             onClick={handleOpenFolder}

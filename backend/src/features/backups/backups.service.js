@@ -3,10 +3,22 @@ const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const BACKUP_DIR = path.resolve(__dirname, '../../../backups');
-const DB_FILE = path.resolve(__dirname, '../../../prisma/dev.db');
-const DB_WAL = path.resolve(__dirname, '../../../prisma/dev.db-wal');
-const DB_SHM = path.resolve(__dirname, '../../../prisma/dev.db-shm');
+function sanitizePath(rawPath) {
+  if (!rawPath) return rawPath;
+  let resolved = path.resolve(rawPath);
+  if (resolved.includes('?') || !fs.existsSync(resolved)) {
+    const fixed = resolved.replace(/[?]+/g, 'كانتين');
+    if (fs.existsSync(fixed)) {
+      return fixed;
+    }
+  }
+  return resolved;
+}
+
+const BACKUP_DIR = sanitizePath(path.resolve(__dirname, '../../../backups'));
+const DB_FILE = sanitizePath(path.resolve(__dirname, '../../../prisma/dev.db'));
+const DB_WAL = sanitizePath(path.resolve(__dirname, '../../../prisma/dev.db-wal'));
+const DB_SHM = sanitizePath(path.resolve(__dirname, '../../../prisma/dev.db-shm'));
 
 // Ensure backups directory exists
 if (!fs.existsSync(BACKUP_DIR)) {
@@ -164,11 +176,12 @@ exports.listBackups = async () => {
   const enriched = backups.map(b => {
     const size = Number(b.sizeBytes);
     totalSizeBytes += size;
-    const exists = fs.existsSync(b.filepath);
+    const safePath = sanitizePath(b.filepath);
+    const exists = fs.existsSync(safePath);
     return {
       id: b.id,
       filename: b.filename,
-      filepath: b.filepath,
+      filepath: safePath,
       type: b.type,
       sizeBytes: size,
       sizeFormatted: `${(size / (1024 * 1024)).toFixed(2)} MB`,
@@ -198,11 +211,12 @@ exports.getBackupFilePath = async (id) => {
   if (!backup) {
     throw new Error('النسخة الاحتياطية المطلوبة غير مسجلة بالنظام');
   }
-  if (!fs.existsSync(backup.filepath)) {
+  const safePath = sanitizePath(backup.filepath);
+  if (!fs.existsSync(safePath)) {
     throw new Error('ملف النسخة الاحتياطية غير موجود على القرص الصلب');
   }
   return {
-    filepath: backup.filepath,
+    filepath: safePath,
     filename: backup.filename
   };
 };
@@ -473,23 +487,16 @@ exports.initAutoBackupEngine = () => {
 
 exports.openInExplorer = (targetPath) => {
   const { spawn } = require('child_process');
-  if (!targetPath || !fs.existsSync(targetPath)) {
+  const safeTarget = sanitizePath(targetPath);
+  if (!safeTarget || !fs.existsSync(safeTarget)) {
     throw new Error('المسار المحدد غير موجود على الجهاز');
   }
-  const resolved = path.resolve(targetPath);
+  const resolved = path.resolve(safeTarget);
   const isFile = fs.statSync(resolved).isFile();
 
-  // Use Base64 UTF-16LE EncodedCommand so Arabic paths (like 'كانتين') are 100% preserved
-  const escaped = resolved.replace(/"/g, '""');
-  const psScript = isFile
-    ? `Start-Process explorer.exe -ArgumentList '/select,"${escaped}"'`
-    : `Start-Process explorer.exe -ArgumentList '"${escaped}"'`;
-
-  const buf = Buffer.from(psScript, 'utf16le');
-  const b64 = buf.toString('base64');
-
   try {
-    const child = spawn('powershell.exe', ['-NoProfile', '-WindowStyle', 'Normal', '-EncodedCommand', b64], {
+    const args = isFile ? [`/select,${resolved}`] : [resolved];
+    const child = spawn('explorer.exe', args, {
       detached: true,
       stdio: 'ignore'
     });
@@ -518,8 +525,9 @@ exports.openBackupFileLocation = async (backupId) => {
   if (!backup) {
     throw new Error('النسخة الاحتياطية غير موجودة بالنظام');
   }
-  if (!fs.existsSync(backup.filepath)) {
+  const safePath = sanitizePath(backup.filepath);
+  if (!fs.existsSync(safePath)) {
     throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
   }
-  return exports.openInExplorer(backup.filepath);
+  return exports.openInExplorer(safePath);
 };
