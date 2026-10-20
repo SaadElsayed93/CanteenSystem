@@ -16,8 +16,14 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // Read directly from form elements in case browser autofill populated DOM directly
+    const form = e.currentTarget;
+    const finalUsername = form.username?.value || username;
+    const finalPassword = form.password?.value || password;
+
     try {
-      await login(username, password);
+      await login(finalUsername, finalPassword);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'حدث خطأ في الاتصال بالخادم');
@@ -42,11 +48,14 @@ const LoginPage = () => {
         
         {error && <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 text-sm font-bold">{error}</div>}
         
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} method="post" autoComplete="on" className="space-y-5">
           <div>
-            <label className="block text-gray-700 mb-1.5 font-bold text-sm">اسم المستخدم</label>
+            <label htmlFor="username" className="block text-gray-700 mb-1.5 font-bold text-sm">اسم المستخدم</label>
             <input 
+              id="username"
+              name="username"
               type="text" 
+              autoComplete="username"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" 
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -55,9 +64,12 @@ const LoginPage = () => {
             />
           </div>
           <div>
-            <label className="block text-gray-700 mb-1.5 font-bold text-sm">كلمة المرور</label>
+            <label htmlFor="password" className="block text-gray-700 mb-1.5 font-bold text-sm">كلمة المرور</label>
             <input 
+              id="password"
+              name="password"
               type="password" 
+              autoComplete="current-password"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -79,4 +91,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
