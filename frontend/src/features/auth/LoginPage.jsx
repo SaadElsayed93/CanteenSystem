@@ -1,33 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { useNavigate } from 'react-router-dom';
-
-import { Store } from 'lucide-react';
+import { Store, Eye, EyeOff } from 'lucide-react';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
+
+  const usernameRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Read directly from form elements in case browser autofill populated DOM directly
     const form = e.currentTarget;
-    const finalUsername = form.username?.value || username;
-    const finalPassword = form.password?.value || password;
+    const finalUsername = (form.username?.value || usernameRef.current?.value || username || '').trim();
+    const finalPassword = form.password?.value || passwordRef.current?.value || password || '';
+
+    if (!finalUsername || !finalPassword) {
+      setError('يرجى إدخال اسم المستخدم وكلمة المرور');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       await login(finalUsername, finalPassword);
-      navigate('/');
+
+      // 1. Explicitly prompt Chrome/Edge Password Manager via Credential Management API
+      if (typeof window !== 'undefined' && window.PasswordCredential && navigator.credentials) {
+        try {
+          const cred = new window.PasswordCredential(form);
+          await navigator.credentials.store(cred);
+        } catch (e1) {
+          try {
+            const cred = new window.PasswordCredential({
+              id: finalUsername,
+              password: finalPassword,
+              name: finalUsername
+            });
+            await navigator.credentials.store(cred);
+          } catch (e2) {
+            console.debug('Credential store fallback error:', e2);
+          }
+        }
+      }
+
+      // 2. Perform top-level document navigation to reliably trigger the browser's "Save Password?" dialog
+      window.location.href = '/';
     } catch (err) {
-      setError(err.response?.data?.message || 'حدث خطأ في الاتصال بالخادم');
-    } finally {
+      setError(err.response?.data?.message || 'حدث خطأ في الاتصال بالخادم أو بيانات الدخول غير صحيحة');
       setIsLoading(false);
     }
   };
@@ -48,16 +74,17 @@ const LoginPage = () => {
         
         {error && <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 text-sm font-bold">{error}</div>}
         
-        <form onSubmit={handleSubmit} method="post" autoComplete="on" className="space-y-5">
+        <form onSubmit={handleSubmit} action="/api/auth/login" method="post" autoComplete="on" className="space-y-5">
           <div>
             <label htmlFor="username" className="block text-gray-700 mb-1.5 font-bold text-sm">اسم المستخدم</label>
             <input 
+              ref={usernameRef}
               id="username"
               name="username"
               type="text" 
               autoComplete="username"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" 
-              value={username}
+              defaultValue={username}
               onChange={(e) => setUsername(e.target.value)}
               required
               placeholder="أدخل اسم المستخدم"
@@ -65,17 +92,29 @@ const LoginPage = () => {
           </div>
           <div>
             <label htmlFor="password" className="block text-gray-700 mb-1.5 font-bold text-sm">كلمة المرور</label>
-            <input 
-              id="password"
-              name="password"
-              type="password" 
-              autoComplete="current-password"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input 
+                ref={passwordRef}
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pl-12"
+                defaultValue={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <button 
             type="submit" 
