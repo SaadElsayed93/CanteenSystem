@@ -1,4 +1,4 @@
-﻿import toast from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -116,7 +116,7 @@ const ReturnsPage = () => {
           quantity: i.returnQty
         }))
       });
-      toast.error('تم تنفيذ المرتجع بنجاح');
+      toast.success('تم تنفيذ المرتجع بنجاح');
       setInvoice(null);
       setInvoiceNumber('');
       setReason('');
