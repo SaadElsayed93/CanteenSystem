@@ -1,7 +1,22 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined' && window.location) {
+    const protocol = window.location.protocol || 'http:';
+    const hostname = window.location.hostname || 'localhost';
+    // If accessed directly on port 8000 (single-port unified setup)
+    if (window.location.port === '8000') {
+      return '/api';
+    }
+    // If accessed via dev server or another port, target port 8000 on the same machine
+    return `${protocol}//${hostname}:8000/api`;
+  }
+  return 'http://localhost:8000/api';
+};
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://192.168.1.32:8000/api',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
