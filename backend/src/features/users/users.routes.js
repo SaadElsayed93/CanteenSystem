@@ -10,6 +10,8 @@ router.use(authMiddleware);
 router.get('/roles', usersController.getRoles);
 router.get('/', checkPermission('MANAGE_USERS'), usersController.getAllUsers);
 router.post('/', checkPermission('MANAGE_USERS'), logAudit('CREATE', 'USER'), usersController.createUser);
+router.put('/:id', checkPermission('MANAGE_USERS'), usersController.updateUser);
+router.patch('/:id/password', checkPermission('MANAGE_USERS'), usersController.resetPassword);
 router.patch('/:id/status', checkPermission('MANAGE_USERS'), logAudit('UPDATE_STATUS', 'USER'), usersController.toggleUserStatus);
 
 module.exports = router;

@@ -29,6 +29,27 @@ const toggleUserStatus = async (req, res, next) => {
   }
 };
 
+const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = await usersService.updateUser(Number(id), req.body, req.user?.id);
+    res.json({ success: true, message: 'تم تحديث بيانات المستخدم بنجاح', data: user });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+    const result = await usersService.resetPassword(Number(id), password, req.user?.id);
+    res.json({ success: true, message: 'تم إعادة تعيين كلمة المرور بنجاح', data: result });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const getRoles = async (req, res, next) => {
   try {
     const roles = await usersService.getRoles();
@@ -38,4 +59,4 @@ const getRoles = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllUsers, createUser, toggleUserStatus, getRoles };
+module.exports = { getAllUsers, createUser, updateUser, resetPassword, toggleUserStatus, getRoles };
