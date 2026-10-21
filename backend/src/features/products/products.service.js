@@ -41,8 +41,32 @@ const calculateExpiryInfo = (product) => {
 };
 
 /**
+ * التحقق من صلاحية المستخدم كمدير/أدمن
+ */
+const checkUserIsAdmin = async (userId) => {
+  if (!userId) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    include: { role: true }
+  });
+  if (!user) return false;
+  if (user.username === 'admin') return true;
+
+  let permissions = [];
+  try {
+    permissions = JSON.parse(user.role?.permissions || '[]');
+  } catch (e) {
+    permissions = user.role?.permissions || [];
+  }
+
+  const roleName = user.role?.name || '';
+  return permissions.includes('ALL') || roleName === 'مدير' || roleName === 'أدمن' || roleName === 'ADMIN';
+};
+
+/**
  * حساب تفاصيل الوصفة: التكلفة الإجمالية للحصة الواحدة،
- * وعدد الحصص المتاحة للتحضير والبيع حالياً وفق رصيد المواد الخام بالمخزن
+ * وعدد الحصص المتاحة للتحضير والبيع حالياً وفق رصيد المواد الخام بالمخزن.
+ * في السندوتشات: يتم حساب الحصص المتاحة فورياً بناءً على رصيد المادة الأساسية فقط.
  */
 const calculateRecipeStats = (product) => {
   if (!product.ingredients || product.ingredients.length === 0) {
@@ -56,6 +80,11 @@ const calculateRecipeStats = (product) => {
   let totalCost = 0;
   let maxPortions = Infinity;
 
+  const isSandwich = product.activityType === 'SANDWICH';
+  const baseIng = isSandwich
+    ? ((product.ingredients || []).find(i => i.notes?.includes('الأساسي')) || product.ingredients[0])
+    : null;
+
   const ingredientsWithStats = product.ingredients.map(ing => {
     const raw = ing.rawMaterial || {};
     const rawStock = (raw.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
@@ -64,10 +93,13 @@ const calculateRecipeStats = (product) => {
     const itemCost = qtyPerUnit * unitPurchasePrice;
     totalCost += itemCost;
 
+    const isBase = isSandwich ? (ing.id === baseIng?.id || ing.rawMaterialId === baseIng?.rawMaterialId) : true;
+
     let possiblePortions = 0;
     if (qtyPerUnit > 0) {
       possiblePortions = Math.floor(rawStock / qtyPerUnit);
-      if (possiblePortions < maxPortions) {
+      // في السندوتشات: الحصص المتاحة للبيع تعتمد على المادة الأساسية فقط (البرجر/الستربس)
+      if (isBase && possiblePortions < maxPortions) {
         maxPortions = possiblePortions;
       }
     }
@@ -83,6 +115,7 @@ const calculateRecipeStats = (product) => {
       quantityPerUnit: qtyPerUnit,
       itemCost: Number(itemCost.toFixed(4)),
       possiblePortions: qtyPerUnit > 0 ? possiblePortions : 0,
+      isBaseIngredient: isBase,
       notes: ing.notes || null
     };
   });
@@ -99,6 +132,7 @@ const calculateRecipeStats = (product) => {
 };
 
 const formatProductOutput = (p) => {
+  const isRaw = p.productType === 'RAW_MATERIAL';
   const directStock = (p.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
   const expiryInfo = calculateExpiryInfo(p);
   const recipeStats = calculateRecipeStats(p);
@@ -106,12 +140,14 @@ const formatProductOutput = (p) => {
   const isRecipe = p.productType === 'RECIPE';
   const totalStock = isRecipe ? recipeStats.maxAvailablePortions : directStock;
   const effectiveCost = isRecipe ? (Number(p.purchasePrice) > 0 ? Number(p.purchasePrice) : recipeStats.calculatedCost) : Number(p.purchasePrice || 0);
-  const sellingPrice = Number(p.sellingPrice || 0);
-  const profitPerUnit = Number((sellingPrice - effectiveCost).toFixed(2));
-  const profitMargin = sellingPrice > 0 ? Number(((profitPerUnit / sellingPrice) * 100).toFixed(1)) : 0;
+  // المواد الخام ليس لها سعر بيع أو ربح
+  const sellingPrice = isRaw ? 0 : Number(p.sellingPrice || 0);
+  const profitPerUnit = isRaw ? 0 : Number((sellingPrice - effectiveCost).toFixed(2));
+  const profitMargin = (sellingPrice > 0 && !isRaw) ? Number(((profitPerUnit / sellingPrice) * 100).toFixed(1)) : 0;
 
   return {
     ...p,
+    sellingPrice,
     totalStock,
     directStock,
     calculatedCost: recipeStats.calculatedCost,
@@ -203,6 +239,18 @@ const createProduct = async (data, userId) => {
     activityType, productType, recipeYield, recipeNotes, ingredients
   } = data;
   
+  const effectiveProductType = productType || 'SIMPLE';
+  const effectiveActivityType = activityType || 'CANTEEN';
+  const isRaw = effectiveProductType === 'RAW_MATERIAL';
+
+  // تعديلات وإضافات البوفيه والسندوتشات للأدمن فقط
+  if (effectiveActivityType === 'BUFFET' || effectiveActivityType === 'SANDWICH') {
+    const isAdmin = await checkUserIsAdmin(userId);
+    if (!isAdmin) {
+      throw new Error(`عذراً، إضافة أصناف في قسم (${effectiveActivityType === 'BUFFET' ? 'البوفيه' : 'السندوتشات'}) مقتصر على الأدمن/المدير فقط.`);
+    }
+  }
+
   const existingCode = await prisma.product.findUnique({ where: { internalCode } });
   if (existingCode) throw new Error('الكود الداخلي مستخدم مسبقاً');
 
@@ -215,7 +263,7 @@ const createProduct = async (data, userId) => {
   }
 
   const yieldCount = recipeYield ? Number(recipeYield) : 1;
-  const isRecipe = productType === 'RECIPE';
+  const isRecipe = effectiveProductType === 'RECIPE';
 
   // Calculate purchase price from ingredients if recipe and purchasePrice is 0 or omitted
   let finalPurchasePrice = Number(purchasePrice || 0);
@@ -233,12 +281,15 @@ const createProduct = async (data, userId) => {
     finalPurchasePrice = Number(autoCost.toFixed(2));
   }
 
+  // المواد الخام لا يحدد لها سعر بيع للمريض
+  const finalSellingPrice = isRaw ? 0 : Number(sellingPrice || 0);
+
   const product = await prisma.product.create({
     data: {
       name,
       internalCode,
       barcode: barcode || null,
-      sellingPrice: Number(sellingPrice || 0),
+      sellingPrice: finalSellingPrice,
       purchasePrice: finalPurchasePrice,
       unit: unit || 'قطعة',
       packageUnit: packageUnit || null,
@@ -246,14 +297,14 @@ const createProduct = async (data, userId) => {
       conversionFactor: Number(conversionFactor || 1),
       alertThreshold: Number(alertThreshold || 0),
       expiryDate: parsedExpiry,
-      activityType: activityType || 'CANTEEN',
-      productType: productType || 'SIMPLE',
+      activityType: effectiveActivityType,
+      productType: effectiveProductType,
       recipeYield: yieldCount,
       recipeNotes: recipeNotes || null,
       priceHistory: {
         create: {
           oldPrice: 0,
-          newPrice: Number(sellingPrice || 0),
+          newPrice: finalSellingPrice,
           changedBy: userId
         }
       }
@@ -295,17 +346,29 @@ const updateProduct = async (id, data, userId) => {
     alertThreshold, isActive, expiryDate,
     activityType, productType, recipeYield, recipeNotes, ingredients
   } = data;
+
+  // تعديلات أسعار أو مكونات البوفيه والسندوتشات للأدمن فقط
+  const targetActivity = activityType !== undefined ? activityType : product.activityType;
+  if (targetActivity === 'BUFFET' || targetActivity === 'SANDWICH' || product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') {
+    const isAdmin = await checkUserIsAdmin(userId);
+    if (!isAdmin) {
+      throw new Error(`عذراً، تعديل أسعار أو مكونات أصناف قسم (${targetActivity === 'BUFFET' ? 'البوفيه' : 'السندوتشات'}) مقتصر على الأدمن/المدير فقط.`);
+    }
+  }
   
   if (internalCode && internalCode !== product.internalCode) {
     const existingCode = await prisma.product.findUnique({ where: { internalCode } });
     if (existingCode) throw new Error('الكود الداخلي مستخدم مسبقاً');
   }
 
-  const newSellingPrice = sellingPrice !== undefined ? Number(sellingPrice) : Number(product.sellingPrice);
+  const effectiveProductType = productType !== undefined ? productType : product.productType;
+  const isRaw = effectiveProductType === 'RAW_MATERIAL';
+
+  // المواد الخام لا يحدد لها سعر بيع للمريض
+  const newSellingPrice = isRaw ? 0 : (sellingPrice !== undefined ? Number(sellingPrice) : Number(product.sellingPrice));
   const oldSellingPrice = Number(product.sellingPrice);
   
   const yieldCount = recipeYield !== undefined ? Number(recipeYield) : (Number(product.recipeYield) || 1);
-  const effectiveProductType = productType !== undefined ? productType : product.productType;
 
   let updateData = {
     name: name !== undefined ? name : product.name, 

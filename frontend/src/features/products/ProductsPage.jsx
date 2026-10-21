@@ -20,7 +20,7 @@ const ProductsPage = () => {
   // الأقسام الثلاثة الرئيسية + المواد الخام
   const [activityFilter, setActivityFilter] = useState('ALL'); // 'ALL', 'CANTEEN', 'BUFFET', 'SANDWICH', 'RAW_MATERIAL'
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL', 'LOW_STOCK', 'EXPIRING_SOON', 'EXPIRED'
-  const { hasPermission } = useAuth();
+  const { hasPermission, isAdmin } = useAuth();
 
   // Quick Price Edit Modal State
   const [quickPriceModal, setQuickPriceModal] = useState(null);
@@ -157,6 +157,9 @@ const ProductsPage = () => {
   };
 
   const handleOpenQuickPrice = (product) => {
+    if ((product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') && !isAdmin) {
+      return toast.error('عذراً، تعديل أسعار أصناف البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    }
     setQuickPriceModal(product);
     setNewSellingPrice(String(product.sellingPrice));
   };
@@ -209,6 +212,9 @@ const ProductsPage = () => {
   };
 
   const openEditModal = (product) => {
+    if ((product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') && !isAdmin) {
+      return toast.error('عذراً، تعديل أصناف وأسعار البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    }
     if (product.activityType === 'BUFFET' && product.productType === 'RECIPE') {
       return openHotDrinkModal(product);
     }
@@ -254,16 +260,29 @@ const ProductsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || form.sellingPrice === undefined || form.sellingPrice === '') {
-      return toast.error('يرجى ملء جميع الحقول الإلزامية للصنف');
+    if (!form.name) {
+      return toast.error('يرجى كتابة اسم الصنف');
     }
+    if (form.productType !== 'RAW_MATERIAL' && (form.sellingPrice === undefined || form.sellingPrice === '')) {
+      return toast.error('يرجى تحديد سعر البيع للمريض');
+    }
+
+    if ((form.activityType === 'BUFFET' || form.activityType === 'SANDWICH') && !isAdmin) {
+      return toast.error('عذراً، إضافة وتعديل أصناف البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    }
+
+    const payload = {
+      ...form,
+      sellingPrice: form.productType === 'RAW_MATERIAL' ? 0 : Number(form.sellingPrice || 0)
+    };
+
     setIsSaving(true);
     try {
       if (isEditMode) {
-        await client.put(`/products/${currentId}`, form);
+        await client.put(`/products/${currentId}`, payload);
         toast.success('تم تحديث بيانات الصنف بنجاح ✅');
       } else {
-        await client.post('/products', form);
+        await client.post('/products', payload);
         toast.success('تمت إضافة الصنف الجديد بنجاح ✅');
       }
       setIsModalOpen(false);
@@ -637,25 +656,32 @@ const ProductsPage = () => {
 
                     {/* Selling Price & Unit Profit */}
                     <td className="p-3.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-black text-emerald-600 font-mono text-sm">
-                          {Number(p.sellingPrice || 0).toFixed(2)} ج.م
+                      {isRaw ? (
+                        <span className="text-gray-400 font-bold text-xs bg-gray-50 border border-gray-200 px-2.5 py-1 rounded-lg inline-block">
+                          — مادة خام (تصنيع)
                         </span>
-                        {hasPermission('MANAGE_PRODUCTS') && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenQuickPrice(p)}
-                            className="text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded-lg transition-colors"
-                            title="تعديل سريع لسعر البيع فقط ⚡"
-                          >
-                            <Edit3 size={13} />
-                          </button>
-                        )}
-                      </div>
-                      {!isRaw && (
-                        <div className="text-[11px] text-emerald-700 font-black mt-0.5">
-                          ربح: +{Number(p.profitPerUnit || 0).toFixed(2)} ({p.profitMargin || 0}%)
-                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-black text-emerald-600 font-mono text-sm">
+                              {Number(p.sellingPrice || 0).toFixed(2)} ج.م
+                            </span>
+                            {/* تعديل سعر البيع: للبوفيه والسندوتشات متاح للأدمن فقط */}
+                            {((p.activityType === 'BUFFET' || p.activityType === 'SANDWICH') ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenQuickPrice(p)}
+                                className="text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded-lg transition-colors"
+                                title="تعديل سريع لسعر البيع فقط ⚡"
+                              >
+                                <Edit3 size={13} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-emerald-700 font-black mt-0.5">
+                            ربح: +{Number(p.profitPerUnit || 0).toFixed(2)} ({p.profitMargin || 0}%)
+                          </div>
+                        </>
                       )}
                     </td>
                     
@@ -730,7 +756,7 @@ const ProductsPage = () => {
                             الوصفة
                           </button>
                         )}
-                        {hasPermission('MANAGE_PRODUCTS') && (
+                        {((p.activityType === 'BUFFET' || p.activityType === 'SANDWICH') ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
                           <button 
                             onClick={() => openEditModal(p)} 
                             className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
@@ -943,35 +969,57 @@ const ProductsPage = () => {
 
               {/* Purchase & Selling Price */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 text-xs font-bold text-gray-700">
-                    {form.productType === 'RECIPE' ? 'تكلفة المكونات (ج.م) [يحسب آلياً]:' : 'سعر الشراء (ج.م):'}
-                  </label>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    min="0"
-                    placeholder="0.00"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
-                    value={form.purchasePrice}
-                    onChange={e => setForm({ ...form, purchasePrice: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 text-xs font-bold text-gray-700">
-                    {form.productType === 'RAW_MATERIAL' ? 'سعر الوحدة المقدر (ج.م):' : 'سعر البيع للمريض (ج.م) *:'}
-                  </label>
-                  <input 
-                    required={form.productType !== 'RAW_MATERIAL'}
-                    type="number" 
-                    step="0.01" 
-                    min="0"
-                    placeholder="0.00"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-emerald-600 text-base"
-                    value={form.sellingPrice}
-                    onChange={e => setForm({ ...form, sellingPrice: e.target.value })}
-                  />
-                </div>
+                {form.productType === 'RAW_MATERIAL' ? (
+                  <div className="col-span-2 space-y-2">
+                    <label className="block mb-1 text-xs font-bold text-gray-700">سعر شراء الوحدة من المورد (ج.م) *:</label>
+                    <input 
+                      required
+                      type="number" 
+                      step="0.01" 
+                      min="0"
+                      placeholder="0.00"
+                      className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
+                      value={form.purchasePrice}
+                      onChange={e => setForm({ ...form, purchasePrice: e.target.value })}
+                    />
+                    <div className="text-[11px] text-gray-500 font-bold bg-slate-50 p-2.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+                      <Package size={14} className="text-slate-600 shrink-0" />
+                      <span>📦 مادة خام للتشغيل والتصنيع فقط (لا تباع للمرضى مباشرة - ليس لها سعر بيع).</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block mb-1 text-xs font-bold text-gray-700">
+                        {form.productType === 'RECIPE' ? 'تكلفة المكونات (ج.م) [يحسب آلياً]:' : 'سعر الشراء (ج.م):'}
+                      </label>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        min="0"
+                        placeholder="0.00"
+                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
+                        value={form.purchasePrice}
+                        onChange={e => setForm({ ...form, purchasePrice: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-xs font-bold text-gray-700">
+                        سعر البيع للمريض (ج.م) *:
+                      </label>
+                      <input 
+                        required
+                        type="number" 
+                        step="0.01" 
+                        min="0"
+                        placeholder="0.00"
+                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-emerald-600 text-base"
+                        value={form.sellingPrice}
+                        onChange={e => setForm({ ...form, sellingPrice: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Unit & Alert Threshold */}

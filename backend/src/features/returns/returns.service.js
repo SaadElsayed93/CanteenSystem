@@ -91,8 +91,17 @@ const createReturn = async (data, userId) => {
       });
 
       if (product && product.productType === 'RECIPE') {
-        // إعادة المواد الخام المكونة للوصفة إلى المخزن
-        for (const ing of product.ingredients) {
+        // في السندوتشات: المادة الأساسية فقط هي التي خصمت عند البيع وهي فقط التي تعاد للمخزن
+        const isSandwich = product.activityType === 'SANDWICH';
+        const baseIng = isSandwich
+          ? ((product.ingredients || []).find(i => i.notes?.includes('الأساسي')) || product.ingredients[0])
+          : null;
+
+        const ingredientsToRestore = isSandwich
+          ? (baseIng ? [baseIng] : [])
+          : (product.ingredients || []);
+
+        for (const ing of ingredientsToRestore) {
           const rawToRestore = Number(item.quantity) * Number(ing.quantityPerUnit);
           if (rawToRestore <= 0) continue;
 

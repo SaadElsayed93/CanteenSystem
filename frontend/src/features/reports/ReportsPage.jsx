@@ -1746,9 +1746,8 @@ const ReportsPage = () => {
                               <th className="p-3">المادة الخام والكود</th>
                               <th className="p-3">سعر التكلفة للوحدة</th>
                               <th className="p-3">الرصيد المتبقي بالمخزن</th>
-                              <th className="p-3">المستهلك بالتحضير</th>
-                              <th className="p-3">المرتجع للمخزن</th>
-                              <th className="p-3">صافي الاستهلاك</th>
+                              <th className="p-3">المستهلك المباشر (بالبيع)</th>
+                              <th className="p-3">الاستهلاك التقديري (للسندوتشات)</th>
                               <th className="p-3">إجمالي قيمة المستهلك</th>
                             </>
                           )}
@@ -1856,7 +1855,14 @@ const ReportsPage = () => {
                             {reportType === 'RAW_MATERIALS' && (
                               <>
                                 <td className="p-3">
-                                  <div className="font-black text-gray-900">{row.name}</div>
+                                  <div className="font-black text-gray-900 flex items-center gap-1.5">
+                                    <span>{row.name}</span>
+                                    {row.isSandwichAuxiliary && (
+                                      <span className="text-[9px] bg-purple-100 text-purple-900 px-1.5 py-0.2 rounded font-black">
+                                        مكمل للسندوتشات
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[10px] text-gray-400 font-mono">{row.code}</div>
                                 </td>
                                 <td className="p-3 font-mono">{Number(row.unitCost || 0).toFixed(2)} ج.م / {row.unit}</td>
@@ -1868,9 +1874,23 @@ const ReportsPage = () => {
                                   </span>
                                 </td>
                                 <td className="p-3 font-mono text-purple-700 font-black">{row.consumedQty} {row.unit}</td>
-                                <td className="p-3 font-mono text-emerald-700 font-black">{row.returnedQty} {row.unit}</td>
-                                <td className="p-3 font-mono text-indigo-900 font-black text-sm">{row.netConsumedQty} {row.unit}</td>
-                                <td className="p-3 font-mono text-red-600 font-black text-sm">{Number(row.totalCostConsumed || 0).toFixed(2)} ج.م</td>
+                                <td className="p-3 font-mono">
+                                  {row.isSandwichAuxiliary ? (
+                                    <div className="space-y-0.5">
+                                      <span className="text-amber-800 font-black bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg text-xs">
+                                        ~ {row.theoreticalSandwichUsage} {row.unit}
+                                      </span>
+                                      <div className="text-[10px] text-gray-400 font-bold">
+                                        محسوب من السندوتشات المباعة
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">— (خصم مباشر)</span>
+                                  )}
+                                </td>
+                                <td className="p-3 font-mono text-red-600 font-black text-sm">
+                                  {Number((row.totalCostConsumed || 0) + (row.theoreticalSandwichCost || 0)).toFixed(2)} ج.م
+                                </td>
                               </>
                             )}
                           </tr>

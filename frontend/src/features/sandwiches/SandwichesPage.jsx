@@ -15,7 +15,7 @@ const SandwichesPage = () => {
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const { hasPermission } = useAuth();
+  const { hasPermission, isAdmin } = useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSandwich, setEditingSandwich] = useState(null);
@@ -72,6 +72,9 @@ const SandwichesPage = () => {
   };
 
   const handleRequestDelete = (sandwich) => {
+    if (!isAdmin) {
+      return toast.error('عذراً، حذف السندوتشات مقتصر على الأدمن فقط');
+    }
     setDeleteTarget(sandwich);
   };
 
@@ -139,6 +142,9 @@ const SandwichesPage = () => {
   };
 
   const openCreateModal = () => {
+    if (!isAdmin) {
+      return toast.error('عذراً، إضافة سندوتش جديد مقتصرة على الأدمن فقط');
+    }
     const autoCode = `SND-${Date.now().toString().slice(-5)}`;
     // Find a good default base material if exists (burger, strips)
     const defaultBase = rawMaterials.find(r => 
@@ -174,6 +180,9 @@ const SandwichesPage = () => {
   };
 
   const openEditModal = (sandwich) => {
+    if (!isAdmin) {
+      return toast.error('عذراً، تعديل السندوتشات والأسعار مقتصر على الأدمن فقط');
+    }
     setEditingSandwich(sandwich);
     const yieldCount = Number(sandwich.recipeYield || 20);
     const ings = sandwich.recipeStats?.ingredientsWithStats || sandwich.ingredients || [];
@@ -285,6 +294,9 @@ const SandwichesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAdmin) {
+      return toast.error('عذراً، إضافة وتعديل السندوتشات مقتصر على الأدمن فقط');
+    }
     if (!form.name || form.name.trim() === '') {
       return toast.error('يرجى تحديد اسم السندوتش');
     }
@@ -377,7 +389,7 @@ const SandwichesPage = () => {
           </div>
         </div>
 
-        {hasPermission('MANAGE_PRODUCTS') && (
+        {isAdmin && (
           <button
             onClick={openCreateModal}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-3 rounded-2xl transition-all shadow-md shadow-emerald-200 flex items-center gap-2"
@@ -541,7 +553,7 @@ const SandwichesPage = () => {
                     <span>المكونات</span>
                   </button>
 
-                  {hasPermission('MANAGE_PRODUCTS') && (
+                  {isAdmin && (
                     <>
                       <button
                         onClick={() => openEditModal(sandwich)}
@@ -569,12 +581,14 @@ const SandwichesPage = () => {
             <div className="col-span-full p-12 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-3xl space-y-2">
               <UtensilsCrossed size={36} className="mx-auto text-gray-300" />
               <p>لا توجد سندوتشات مسجلة مطابقة للبحث حالياً.</p>
-              <button
-                onClick={openCreateModal}
-                className="text-xs text-emerald-600 hover:underline font-black"
-              >
-                + انقر هنا لإضافة أول سندوتش للمطبخ
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={openCreateModal}
+                  className="text-xs text-emerald-600 hover:underline font-black"
+                >
+                  + انقر هنا لإضافة أول سندوتش للمطبخ
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -675,12 +689,17 @@ const SandwichesPage = () => {
 
               {/* Step 2: The Base Ingredient (المكون الأساسي) */}
               <div className="p-4 bg-emerald-50/70 rounded-2xl border-2 border-emerald-200 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="p-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black">خطوة 1</span>
-                  <h4 className="text-sm font-black text-emerald-950">المكون الأساسي وحجم الدفعة المرجعية:</h4>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black">خطوة 1</span>
+                    <h4 className="text-sm font-black text-emerald-950">المكون الأساسي (يُخصم فورياً عند البيع):</h4>
+                  </div>
+                  <span className="text-[10px] font-black bg-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-full">
+                    ⚡ الخصم التلقائي المباشر بالكاشير
+                  </span>
                 </div>
                 <p className="text-xs text-emerald-800 font-bold">
-                  اختر المكون الرئيسي (مثل قطع البرجر أو الستربس) وعدد القطع التي اشتريتها لتحديد عدد السندوتشات المنتجة
+                  اختر المكون الرئيسي (مثل قطع البرجر أو الستربس) — وهو المكون الوحيد الذي يتم خصمه آلياً من المخزن عند كل فاتورة بيع بالسندوتش بالكاشير.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -742,9 +761,14 @@ const SandwichesPage = () => {
                   <div className="flex items-center gap-2">
                     <span className="p-1.5 bg-indigo-600 text-white rounded-lg text-xs font-black">خطوة 2</span>
                     <div>
-                      <h4 className="text-sm font-black text-gray-800">المكونات الإضافية (طماطم، عيش، صوصات...):</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black text-gray-800">الخامات المكملة (عيش، طماطم، صوصات...):</h4>
+                        <span className="text-[10px] font-black bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">
+                          📊 للتكلفة وتقفيلة الشهر
+                        </span>
+                      </div>
                       <p className="text-[11px] text-gray-500 font-bold">
-                        أدخل إجمالي الكمية المشتراة لهذه الدفعة، وسيقوم النظام بقسمتها على ({baseCount} سندوتش)
+                        تسجل بالوصفة لحساب التكلفة والربح بدقة، ولا تخصم تلقائياً عند البيع، بل تدرج بتقفيلة الشهر لحساب الاستهلاك التقديري والتسوية.
                       </p>
                     </div>
                   </div>

@@ -1106,6 +1106,44 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       orderBy: { name: 'asc' }
     });
 
+    // جلب السندوتشات المباعة خلال الفترة لاحتساب الاستهلاك التقديري للخامات المكملة (عيش، خضار، إلخ) لتقفيلة الشهر
+    const sandwichInvoiceItems = await prisma.invoiceItem.findMany({
+      where: {
+        invoice: {
+          createdAt: { gte: startDate, lte: endDate },
+          status: 'COMPLETED'
+        },
+        product: { activityType: 'SANDWICH' }
+      },
+      include: {
+        product: {
+          include: {
+            ingredients: true
+          }
+        }
+      }
+    });
+
+    const theoreticalAuxMap = {};
+    const auxiliaryRecipeNamesMap = {};
+
+    sandwichInvoiceItems.forEach(invItem => {
+      const sandwichQty = Number(invItem.quantity || 0);
+      const ingredients = invItem.product?.ingredients || [];
+      const baseIng = ingredients.find(i => i.notes?.includes('الأساسي')) || ingredients[0];
+
+      ingredients.forEach(ing => {
+        // الخامات المكملة التي لا تخصم تلقائياً عند البيع
+        if (ing.id !== baseIng?.id) {
+          const rawId = ing.rawMaterialId;
+          const usage = sandwichQty * Number(ing.quantityPerUnit || 0);
+          theoreticalAuxMap[rawId] = (theoreticalAuxMap[rawId] || 0) + usage;
+          if (!auxiliaryRecipeNamesMap[rawId]) auxiliaryRecipeNamesMap[rawId] = new Set();
+          auxiliaryRecipeNamesMap[rawId].add(invItem.product.name);
+        }
+      });
+    });
+
     let totalRawValueConsumed = 0;
     const materialsList = rawMaterials.map(rm => {
       const currentStock = rm.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
@@ -1136,6 +1174,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       const totalCostConsumed = Number((netConsumedQty * unitCost).toFixed(2));
       totalRawValueConsumed += totalCostConsumed;
 
+      const theoreticalAuxUsage = Number((theoreticalAuxMap[rm.id] || 0).toFixed(3));
+      const recipeNames = auxiliaryRecipeNamesMap[rm.id] ? Array.from(auxiliaryRecipeNamesMap[rm.id]) : [];
+
       return {
         id: rm.id,
         name: rm.name,
@@ -1148,7 +1189,11 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         netConsumedQty: Number(netConsumedQty.toFixed(3)),
         totalCostConsumed,
         purchasedQty: Number(purchasedQty.toFixed(3)),
-        movementsCount: rm.inventoryMovements.length
+        movementsCount: rm.inventoryMovements.length,
+        isSandwichAuxiliary: theoreticalAuxUsage > 0,
+        theoreticalSandwichUsage: theoreticalAuxUsage,
+        theoreticalSandwichCost: Number((theoreticalAuxUsage * unitCost).toFixed(2)),
+        usedInSandwiches: recipeNames
       };
     });
 

@@ -151,8 +151,17 @@ const createSale = async (data, userId) => {
       });
 
       if (item.productType === 'RECIPE') {
-        // الخصم التلقائي للمواد الخام المكونة للوصفة (FIFO)
-        for (const ing of item.ingredients) {
+        // في السندوتشات: يتم فقط خصم المادة الخام الأساسية عند البيع بالكاشير، وباقي المواد تسجل للتسوية وتقفيلة الشهر
+        const isSandwich = item.activityType === 'SANDWICH';
+        const baseIng = isSandwich
+          ? ((item.ingredients || []).find(i => i.notes?.includes('الأساسي')) || item.ingredients[0])
+          : null;
+
+        const ingredientsToDeduct = isSandwich
+          ? (baseIng ? [baseIng] : [])
+          : (item.ingredients || []);
+
+        for (const ing of ingredientsToDeduct) {
           const rawMatId = ing.rawMaterialId;
           const rawMat = ing.rawMaterial;
           const totalRawToDeduct = Number(item.quantity) * Number(ing.quantityPerUnit);
