@@ -24,7 +24,7 @@ const calculateExpiryInfo = (product) => {
     daysUntilExpiry = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
     if (daysUntilExpiry < 0) {
       expiryStatus = 'EXPIRED';
-    } else if (daysUntilExpiry <= 30) {
+    } else if (daysUntilExpiry <= 5) {
       expiryStatus = 'EXPIRING_SOON';
     } else {
       expiryStatus = 'VALID';

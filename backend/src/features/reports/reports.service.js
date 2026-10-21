@@ -959,7 +959,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
           status = 'EXPIRED';
           expiredCount++;
           totalEstimatedLoss += costValue;
-        } else if (daysLeft <= 30) {
+        } else if (daysLeft <= 5) {
           status = 'EXPIRING_SOON';
           expiringSoonCount++;
         }

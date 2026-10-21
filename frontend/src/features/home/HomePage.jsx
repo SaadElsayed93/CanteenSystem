@@ -10,6 +10,25 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useShift } from '../shifts/ShiftContext';
 
+const formatDaysRemaining = (days) => {
+  const d = Number(days);
+  if (isNaN(d)) return '';
+  if (d <= 0) return 'ينتهي اليوم!';
+  if (d === 1) return 'متبقي يوم واحد';
+  if (d === 2) return 'متبقي يومان';
+  if (d >= 3 && d <= 10) return `متبقي ${d} أيام`;
+  return `متبقي ${d} يوماً`;
+};
+
+const formatDaysExpired = (days) => {
+  const d = Math.abs(Number(days));
+  if (isNaN(d) || d === 0) return 'انتهى اليوم!';
+  if (d === 1) return 'منتهي منذ يوم واحد';
+  if (d === 2) return 'منتهي منذ يومين';
+  if (d >= 3 && d <= 10) return `منتهي منذ ${d} أيام`;
+  return `منتهي منذ ${d} يوماً`;
+};
+
 const HomePage = () => {
   const { user, isAdmin } = useAuth();
   const [data, setData] = useState(null);
@@ -251,7 +270,7 @@ const HomePage = () => {
                       <div key={item.id} className="flex justify-between items-center p-2.5 bg-red-50/70 border border-red-100 rounded-xl">
                         <div>
                           <p className="font-black text-red-800 text-sm">{item.name}</p>
-                          <p className="text-[11px] text-red-600 font-bold">منتهي منذ {Math.abs(item.daysUntilExpiry)} يوم</p>
+                          <p className="text-[11px] text-red-600 font-bold">{formatDaysExpired(item.daysUntilExpiry ?? item.daysLeft)}</p>
                         </div>
                         <span className="bg-red-600 text-white text-[10px] px-2 py-1 rounded-md font-black">
                           تالف / سحب
@@ -262,7 +281,7 @@ const HomePage = () => {
                       <div key={item.id} className="flex justify-between items-center p-2.5 bg-amber-50/70 border border-amber-100 rounded-xl">
                         <div>
                           <p className="font-bold text-amber-900 text-sm">{item.name}</p>
-                          <p className="text-[11px] text-amber-700 font-bold">متبقي {item.daysUntilExpiry} يوم</p>
+                          <p className="text-[11px] text-amber-700 font-bold">{formatDaysRemaining(item.daysUntilExpiry ?? item.daysLeft)}</p>
                         </div>
                         <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-1 rounded-md font-bold">
                           أولوية بيع
@@ -388,7 +407,7 @@ const HomePage = () => {
                     )}
                     {data.adminStats.expiringSoonCount > 0 && (
                       <span className="bg-amber-800/80 px-2.5 py-0.5 rounded-lg font-black">
-                        {data.adminStats.expiringSoonCount} أصناف أوشكت على الانتهاء (خلال 30 يوم)
+                        {data.adminStats.expiringSoonCount} أصناف أوشكت على الانتهاء (خلال 5 أيام)
                       </span>
                     )}
                   </p>

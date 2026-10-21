@@ -451,7 +451,7 @@ const POSPage = () => {
                   )}
                   {p.isExpiringSoon && !p.isExpired && (
                     <div className="absolute -top-2.5 right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
-                      باقي {p.daysUntilExpiry} يوم
+                      {p.daysUntilExpiry <= 0 ? 'ينتهي اليوم!' : p.daysUntilExpiry === 1 ? 'باقي يوم واحد' : p.daysUntilExpiry === 2 ? 'باقي يومان' : (p.daysUntilExpiry >= 3 && p.daysUntilExpiry <= 10) ? `باقي ${p.daysUntilExpiry} أيام` : `باقي ${p.daysUntilExpiry} يوماً`}
                     </div>
                   )}
 

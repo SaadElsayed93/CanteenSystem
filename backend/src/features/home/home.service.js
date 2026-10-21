@@ -44,11 +44,12 @@ const getHomeDashboardData = async (userId, userRole) => {
         name: p.name,
         quantity: totalQty,
         expiryDate: effectiveExpiry,
-        daysLeft
+        daysLeft,
+        daysUntilExpiry: daysLeft
       };
       if (daysLeft < 0) {
         expiredItems.push(itemInfo);
-      } else if (daysLeft <= 30) {
+      } else if (daysLeft <= 5) {
         expiringSoonItems.push(itemInfo);
       }
     }

@@ -207,7 +207,7 @@ const ProductsPage = () => {
               <p className="text-amber-100 text-xs font-bold">
                 يوجد {expiredCount > 0 && <span className="bg-white/20 px-2 py-0.5 rounded font-black text-white">{expiredCount} صنف منتهي الصلاحية</span>}
                 {expiredCount > 0 && expiringSoonCount > 0 && ' و '}
-                {expiringSoonCount > 0 && <span className="bg-white/20 px-2 py-0.5 rounded font-black text-white">{expiringSoonCount} صنف أوشك على الانتهاء خلال 30 يوم</span>}
+                {expiringSoonCount > 0 && <span className="bg-white/20 px-2 py-0.5 rounded font-black text-white">{expiringSoonCount} صنف أوشك على الانتهاء خلال 5 أيام</span>}
               </p>
             </div>
           </div>
@@ -280,7 +280,7 @@ const ProductsPage = () => {
               }`}
             >
               <Clock size={14} />
-              <span>أوشكت الصلاحية (خلال 30 يوم)</span>
+              <span>أوشكت الصلاحية (خلال 5 أيام)</span>
               {expiringSoonCount > 0 && (
                 <span className={`px-2 py-0.5 rounded-full text-[11px] ${filterTab === 'EXPIRING_SOON' ? 'bg-white/25 text-white' : 'bg-orange-200 text-orange-900'}`}>
                   {expiringSoonCount}
