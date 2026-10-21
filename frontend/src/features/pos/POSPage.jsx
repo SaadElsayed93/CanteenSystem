@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { 
   Trash2, Printer, Zap, CheckCircle2, X, ShoppingCart, 
   Search, AlertTriangle, User, CreditCard, RotateCcw,
-  Lock, Unlock
+  Lock, Unlock, Store, Coffee, UtensilsCrossed, ChefHat
 } from 'lucide-react';
 import { useShift } from '../shifts/ShiftContext';
 
@@ -20,6 +20,9 @@ const POSPage = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // الأقسام الثلاثة في نقطة البيع
+  const [divisionTab, setDivisionTab] = useState('ALL'); // 'ALL', 'CANTEEN', 'BUFFET', 'SANDWICH'
   
   // Checkout Form
   const [invoiceType, setInvoiceType] = useState('CASH'); // CASH or CREDIT
@@ -78,8 +81,18 @@ const POSPage = () => {
   };
 
   const filteredProducts = products.filter(p => {
-    if (!search) return p.totalStock > 0;
-    const match = p.name.includes(search) || p.internalCode.includes(search) || (p.barcode && p.barcode.includes(search));
+    // إخفاء المواد الخام من الكتالوج المباشر للبيع
+    if (p.productType === 'RAW_MATERIAL') return false;
+
+    // تصفية حسب القسم
+    if (divisionTab !== 'ALL' && p.activityType !== divisionTab) {
+      return false;
+    }
+
+    if (!search) return true;
+    const match = (p.name && p.name.includes(search)) || 
+                  (p.internalCode && p.internalCode.includes(search)) || 
+                  (p.barcode && p.barcode.includes(search));
     return match;
   });
 
@@ -101,7 +114,6 @@ const POSPage = () => {
         playTone(280, 0.25, 'square');
         toast.error('صنف غير موجود في المخزون');
       } else if (filteredProducts.length === 1) {
-        // If search filtered down to exactly 1 product and user hit Enter
         addToCart(filteredProducts[0]);
         playTone(900, 0.07);
         setSearch('');
@@ -110,6 +122,8 @@ const POSPage = () => {
   };
 
   const addToCart = (product) => {
+    const isRecipe = product.productType === 'RECIPE';
+
     if (product.isExpired) {
       playTone(280, 0.2, 'square');
       toast.error(`⚠️ تحذير: الصنف (${product.name}) منتهي الصلاحية!`, { duration: 3500 });
@@ -119,19 +133,22 @@ const POSPage = () => {
       });
     }
 
+    // تنبيه توفر المواد الخام أو نفاد المخزون
     if (product.totalStock <= 0) {
-      playTone(450, 0.1, 'triangle');
+      playTone(450, 0.12, 'sawtooth');
       toast((t) => (
         <div className="flex items-center gap-2.5">
-          <span className="text-lg">📦</span>
+          <span className="text-lg">⚠️</span>
           <div>
-            <div className="text-xs font-black text-white">تنبيه: {product.name} (رصيد المخزون صفر)</div>
+            <div className="text-xs font-black text-white">
+              {isRecipe ? `تنبيه المطبخ/البوفيه: خامات (${product.name}) نافدة!` : `تنبيه المخزن: (${product.name}) رصيده صفر`}
+            </div>
             <div className="text-[11px] text-amber-300 font-bold">تمت إضافته للسلة وسيتم تسجيل البيع بالسالب</div>
           </div>
         </div>
       ), {
         id: `stock-alert-${product.id}`,
-        duration: 2500,
+        duration: 3000,
         style: {
           background: '#0f172a',
           color: '#fff',
@@ -149,7 +166,15 @@ const POSPage = () => {
       if (existing) {
         return prev.map(i => i.productId === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       }
-      return [...prev, { productId: product.id, name: product.name, price: Number(product.sellingPrice), quantity: 1, maxStock: product.totalStock }];
+      return [...prev, { 
+        productId: product.id, 
+        name: product.name, 
+        price: Number(product.sellingPrice), 
+        quantity: 1, 
+        maxStock: product.totalStock,
+        activityType: product.activityType,
+        productType: product.productType
+      }];
     });
     return true;
   };
@@ -215,14 +240,20 @@ const POSPage = () => {
       
       toast.success('تم تسجيل الفاتورة بنجاح 🎉');
 
-      // Prepare receipt data
+      // Prepare receipt data with remaining patient balance (Stage 1.4)
       const selectedPatient = patients.find(p => p.id === Number(patientId));
+      let patientRemainingBalance = null;
+      if (typeToUse === 'CREDIT' && selectedPatient) {
+        patientRemainingBalance = Number(selectedPatient.currentDebt || 0) - totalAmount;
+      }
+
       const receipt = {
         invoiceNumber: invoiceData.invoiceNumber || `INV-${invoiceData.id}`,
         items: [...cart],
         total: totalAmount,
         type: typeToUse,
         patientName: typeToUse === 'CREDIT' ? (selectedPatient?.fullName || selectedPatient?.name) : null,
+        patientRemainingBalance,
         cashierName: user?.fullName || 'الكاشير',
         date: new Date()
       };
@@ -318,52 +349,32 @@ const POSPage = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-bold border border-indigo-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F2</kbd> البحث / الباركود
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-indigo-900">F2</kbd>
+            <span>بحث/باركود</span>
           </span>
-          <span className="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg font-bold border border-amber-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F4</kbd> تبديل (كاش / حساب المريض)
+          <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg font-bold border border-purple-100 flex items-center gap-1">
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-purple-900">F4</kbd>
+            <span>تحويل كاش/مريض</span>
           </span>
           <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg font-bold border border-emerald-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">F9</kbd> إنهاء كاش فوري
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-emerald-900">F9</kbd>
+            <span>إنهاء كاش فوري</span>
           </span>
-          <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-bold flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow-sm text-xs border">Esc</kbd> مسح / رجوع
+          <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-bold border border-gray-200 flex items-center gap-1">
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-gray-800">Esc</kbd>
+            <span>إلغاء</span>
           </span>
         </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Shift Status Badge */}
-          {isOpen ? (
-            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              وردية نشطة #{currentShift?.shiftNumber}
-            </span>
-          ) : (
-            <button
-              onClick={() => setIsOpeningModal(true)}
-              className="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 transition"
-            >
-              <Lock size={12} />
-              اليومية مغلقة (اضغط لفتحها)
-            </button>
-          )}
-
-          {/* Show receipt toggle */}
-          <button 
-            onClick={toggleShowReceipt}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold transition-all border ${
-              showReceiptModal 
-                ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
-                : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-            }`}
-            title="تفعيل أو إخفاء نافذة بون الفاتورة بعد إتمام البيع"
-          >
-            <Printer size={16} />
-            <span>إظهار بون الفاتورة:</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${showReceiptModal ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
-              {showReceiptModal ? 'مفعل' : 'معطل'}
-            </span>
-          </button>
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input 
+              type="checkbox" 
+              checked={showReceiptModal} 
+              onChange={toggleShowReceipt} 
+              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span>إظهار بون الفاتورة بعد الحفظ</span>
+          </label>
         </div>
       </div>
 
@@ -393,15 +404,17 @@ const POSPage = () => {
       <div className="flex flex-col md:flex-row gap-6 h-[80vh]">
         {/* Products Grid Section */}
         <div className="md:w-2/3 flex flex-col gap-4">
-          <div className="bg-white p-5 shadow-sm border-2 border-gray-100 rounded-2xl">
+          
+          {/* Search Box */}
+          <div className="bg-white p-4 shadow-sm border-2 border-gray-100 rounded-2xl">
             <form onSubmit={handleBarcodeSearch} className="flex gap-3">
               <div className="relative flex-1">
-                <Search className="absolute right-4 top-4 text-gray-400" size={24} />
+                <Search className="absolute right-4 top-3.5 text-gray-400" size={22} />
                 <input 
                   ref={barcodeInputRef}
                   type="text" 
-                  placeholder="مرر الباركود أو ابحث بالاسم أو الكود الداخلي... [اضغط F2 للتركيز]" 
-                  className="w-full pr-12 pl-4 py-3.5 border-2 border-gray-200 rounded-xl text-lg outline-none focus:border-indigo-500 focus:bg-white bg-gray-50/50 font-bold transition-all"
+                  placeholder="مرر الباركود أو ابحث بالاسم أو الكود... [F2 للتركيز]" 
+                  className="w-full pr-12 pl-4 py-3 border-2 border-gray-200 rounded-xl text-base outline-none focus:border-indigo-500 focus:bg-white bg-gray-50/50 font-bold transition-all"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   autoFocus
@@ -410,72 +423,182 @@ const POSPage = () => {
                   <button 
                     type="button" 
                     onClick={() => setSearch('')}
-                    className="absolute left-4 top-4 text-gray-400 hover:text-gray-600"
+                    className="absolute left-4 top-3.5 text-gray-400 hover:text-gray-600"
                   >
-                    <X size={20} />
+                    <X size={18} />
                   </button>
                 )}
               </div>
               <button 
                 type="submit" 
-                className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold px-8 rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2"
+                className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold px-7 rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2"
               >
                 بحث
               </button>
             </form>
           </div>
 
-          <div className="bg-white p-6 shadow-sm border-2 border-gray-100 rounded-2xl flex-1 overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-black text-gray-800">الأصناف المتوفرة ({filteredProducts.length})</h3>
-              <span className="text-xs text-gray-400 font-bold">نقرة واحدة لإضافة الصنف للسلة</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredProducts.map(p => (
-                <div 
-                  key={p.id} 
-                  onClick={() => addToCart(p)}
-                  className={`border-2 rounded-2xl p-4 text-center cursor-pointer transition-all group flex flex-col justify-between relative ${
-                    p.isExpired 
-                      ? 'border-red-200 bg-red-50/20 hover:bg-red-50 hover:border-red-300' 
-                      : p.isExpiringSoon 
-                      ? 'border-amber-200 bg-amber-50/20 hover:bg-amber-50 hover:border-amber-300' 
-                      : 'border-gray-100 hover:bg-indigo-50/60 hover:border-indigo-200 hover:shadow-md'
-                  }`}
-                >
-                  {/* Expiry Pill */}
-                  {p.isExpired && (
-                    <div className="absolute -top-2.5 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
-                      منتهي الصلاحية
-                    </div>
-                  )}
-                  {p.isExpiringSoon && !p.isExpired && (
-                    <div className="absolute -top-2.5 right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
-                      {p.daysUntilExpiry <= 0 ? 'ينتهي اليوم!' : p.daysUntilExpiry === 1 ? 'باقي يوم واحد' : p.daysUntilExpiry === 2 ? 'باقي يومان' : (p.daysUntilExpiry >= 3 && p.daysUntilExpiry <= 10) ? `باقي ${p.daysUntilExpiry} أيام` : `باقي ${p.daysUntilExpiry} يوماً`}
-                    </div>
-                  )}
+          {/* Products List & Division Tabs */}
+          <div className="bg-white p-5 shadow-sm border-2 border-gray-100 rounded-2xl flex-1 overflow-y-auto flex flex-col">
+            
+            {/* Division Tabs Filter */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1 border-b border-gray-100">
+              <button
+                type="button"
+                onClick={() => setDivisionTab('ALL')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  divisionTab === 'ALL'
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <span>جميع الأقسام</span>
+                <span className="text-[10px] bg-black/15 px-1.5 py-0.2 rounded-full font-mono">
+                  {products.filter(p => p.productType !== 'RAW_MATERIAL').length}
+                </span>
+              </button>
 
-                  <div>
-                    <div className="font-bold text-gray-800 mb-1 group-hover:text-indigo-900 transition-colors line-clamp-1">{p.name}</div>
-                    <div className="text-xs text-gray-400 font-bold mb-2">{p.internalCode}</div>
-                  </div>
-                  <div>
-                    <div className="text-indigo-600 font-black text-xl mb-2">{p.sellingPrice} <span className="text-sm font-bold text-gray-500">ج.م</span></div>
-                    <div className={`text-xs px-2.5 py-1 inline-block rounded-lg font-bold ${
-                      p.totalStock <= 0 
-                        ? 'bg-red-100 text-red-700' 
-                        : p.totalStock <= 10 
-                        ? 'bg-amber-100 text-amber-700' 
-                        : 'bg-emerald-50 text-emerald-700'
-                    }`}>
-                      المخزون: {p.totalStock}
+              <button
+                type="button"
+                onClick={() => setDivisionTab('CANTEEN')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  divisionTab === 'CANTEEN'
+                    ? 'bg-sky-600 text-white shadow-sm shadow-sky-200'
+                    : 'bg-sky-50 text-sky-800 hover:bg-sky-100'
+                }`}
+              >
+                <Store size={14} />
+                <span>الكانتين</span>
+                <span className="text-[10px] bg-sky-200/60 text-sky-950 px-1.5 py-0.2 rounded-full font-mono">
+                  {products.filter(p => p.activityType === 'CANTEEN' && p.productType !== 'RAW_MATERIAL').length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDivisionTab('BUFFET')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  divisionTab === 'BUFFET'
+                    ? 'bg-amber-600 text-white shadow-sm shadow-amber-200'
+                    : 'bg-amber-50 text-amber-900 hover:bg-amber-100'
+                }`}
+              >
+                <Coffee size={14} />
+                <span>البوفيه والمشروبات</span>
+                <span className="text-[10px] bg-amber-200/60 text-amber-950 px-1.5 py-0.2 rounded-full font-mono">
+                  {products.filter(p => p.activityType === 'BUFFET' && p.productType !== 'RAW_MATERIAL').length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDivisionTab('SANDWICH')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  divisionTab === 'SANDWICH'
+                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-200'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                }`}
+              >
+                <UtensilsCrossed size={14} />
+                <span>السندوتشات والمطبخ</span>
+                <span className="text-[10px] bg-emerald-200/60 text-emerald-950 px-1.5 py-0.2 rounded-full font-mono">
+                  {products.filter(p => p.activityType === 'SANDWICH' && p.productType !== 'RAW_MATERIAL').length}
+                </span>
+              </button>
+            </div>
+
+            {/* Products Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 flex-1 overflow-y-auto pr-1">
+              {filteredProducts.map(p => {
+                const isRecipe = p.productType === 'RECIPE';
+
+                return (
+                  <div 
+                    key={p.id} 
+                    onClick={() => addToCart(p)}
+                    className={`border-2 rounded-2xl p-3.5 text-center cursor-pointer transition-all group flex flex-col justify-between relative select-none ${
+                      p.isExpired 
+                        ? 'border-red-200 bg-red-50/20 hover:bg-red-50 hover:border-red-300' 
+                        : p.isExpiringSoon 
+                        ? 'border-amber-200 bg-amber-50/20 hover:bg-amber-50 hover:border-amber-300' 
+                        : isRecipe
+                        ? 'border-purple-100 bg-purple-50/10 hover:bg-purple-50 hover:border-purple-300 hover:shadow-md'
+                        : 'border-gray-100 hover:bg-indigo-50/60 hover:border-indigo-200 hover:shadow-md'
+                    }`}
+                  >
+                    {/* Expiry Pill */}
+                    {p.isExpired && (
+                      <div className="absolute -top-2.5 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                        منتهي الصلاحية
+                      </div>
+                    )}
+                    {p.isExpiringSoon && !p.isExpired && (
+                      <div className="absolute -top-2.5 right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                        {p.daysUntilExpiry <= 0 ? 'ينتهي اليوم!' : p.daysUntilExpiry === 1 ? 'باقي يوم واحد' : p.daysUntilExpiry === 2 ? 'باقي يومان' : (p.daysUntilExpiry >= 3 && p.daysUntilExpiry <= 10) ? `باقي ${p.daysUntilExpiry} أيام` : `باقي ${p.daysUntilExpiry} يوماً`}
+                      </div>
+                    )}
+
+                    {/* Division Badge */}
+                    <div className="flex justify-between items-center mb-1.5">
+                      {p.activityType === 'CANTEEN' && (
+                        <span className="text-[10px] font-black bg-sky-50 text-sky-800 border border-sky-200 px-1.5 py-0.2 rounded-md">
+                          🏪 كانتين
+                        </span>
+                      )}
+                      {p.activityType === 'BUFFET' && (
+                        <span className="text-[10px] font-black bg-amber-50 text-amber-900 border border-amber-200 px-1.5 py-0.2 rounded-md">
+                          ☕ بوفيه
+                        </span>
+                      )}
+                      {p.activityType === 'SANDWICH' && (
+                        <span className="text-[10px] font-black bg-emerald-50 text-emerald-900 border border-emerald-200 px-1.5 py-0.2 rounded-md">
+                          🍔 سندوتش
+                        </span>
+                      )}
+                      {isRecipe && (
+                        <span className="text-[9px] font-black bg-purple-100 text-purple-900 px-1.5 py-0.2 rounded-md mr-auto">
+                          تحضير
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <div className="font-bold text-gray-800 mb-1 group-hover:text-indigo-900 transition-colors line-clamp-1 text-sm">{p.name}</div>
+                      <div className="text-[11px] text-gray-400 font-bold mb-2 font-mono">{p.internalCode}</div>
+                    </div>
+
+                    <div>
+                      <div className="text-indigo-600 font-black text-xl mb-1.5 font-mono">
+                        {p.sellingPrice} <span className="text-xs font-bold text-gray-500">ج.م</span>
+                      </div>
+                      
+                      {/* Stock / Readiness display */}
+                      {isRecipe ? (
+                        <div className={`text-[11px] px-2 py-0.5 inline-block rounded-lg font-black font-mono ${
+                          p.totalStock <= 0 
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200' 
+                            : 'bg-purple-100 text-purple-900 border border-purple-200'
+                        }`}>
+                          {p.totalStock <= 0 ? `خامات ناقصة (${p.totalStock})` : `جاهز: ${p.totalStock}`}
+                        </div>
+                      ) : (
+                        <div className={`text-xs px-2.5 py-0.5 inline-block rounded-lg font-bold font-mono ${
+                          p.totalStock <= 0 
+                            ? 'bg-red-100 text-red-700' 
+                            : p.totalStock <= 10 
+                            ? 'bg-amber-100 text-amber-700' 
+                            : 'bg-emerald-50 text-emerald-700'
+                        }`}>
+                          المخزون: {p.totalStock}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {filteredProducts.length === 0 && (
                 <div className="col-span-full text-center py-12 text-gray-400 font-bold">
-                  لا توجد أصناف مطابقة للبحث
+                  لا توجد أصناف مطابقة في هذا القسم
                 </div>
               )}
             </div>
@@ -483,9 +606,9 @@ const POSPage = () => {
         </div>
 
         {/* Cart & Checkout Section */}
-        <div className="md:w-1/3 bg-white p-6 shadow-sm border-2 border-gray-100 rounded-2xl flex flex-col justify-between">
+        <div className="md:w-1/3 bg-white p-5 shadow-sm border-2 border-gray-100 rounded-2xl flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
+            <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-gray-800">الفاتورة الحالية</h2>
                 {cart.length > 0 && (
@@ -506,61 +629,48 @@ const POSPage = () => {
               )}
             </div>
             
-            <div className="max-h-[38vh] overflow-y-auto mb-4 pr-1">
+            <div className="max-h-[36vh] overflow-y-auto mb-3 pr-1">
               {cart.length === 0 ? (
-                <div className="text-gray-400 flex flex-col items-center justify-center py-16">
-                  <ShoppingCart size={48} className="text-gray-300 mb-3" />
+                <div className="text-gray-400 flex flex-col items-center justify-center py-14">
+                  <ShoppingCart size={44} className="text-gray-300 mb-2" />
                   <span className="font-bold text-gray-400">السلة فارغة</span>
                   <span className="text-xs text-gray-400 mt-1">اضغط على أي صنف لإضافته</span>
                 </div>
               ) : (
-                <table className="w-full text-right border-collapse">
+                <table className="w-full text-right border-collapse text-xs">
                   <tbody>
                     {cart.map(item => (
                       <tr key={item.productId} className="border-b border-gray-50 hover:bg-gray-50/80 transition-colors">
-                        <td className="py-3 pr-1 w-2/5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-gray-800 text-sm line-clamp-1">{item.name}</span>
-                            {item.maxStock <= 0 && (
-                              <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 px-1.5 py-0.2 rounded font-black whitespace-nowrap">
-                                سالب
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-400 font-bold">{item.price} ج.م</div>
+                        <td className="py-2.5 pl-2">
+                          <div className="font-bold text-gray-800 line-clamp-1">{item.name}</div>
+                          <div className="text-[11px] text-gray-400 font-mono">{item.price} ج.م</div>
                         </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl w-fit">
+                        <td className="py-2.5 px-1 text-center">
+                          <div className="flex items-center justify-center gap-1">
                             <button 
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1)} 
-                              className="bg-white hover:bg-gray-200 w-7 h-7 rounded-lg flex items-center justify-center text-gray-700 transition-colors font-bold shadow-sm"
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center justify-center"
                             >
                               -
                             </button>
-                            <input 
-                              type="number" 
-                              min="1"
-                              className="w-12 text-center font-black bg-white rounded-lg py-1 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 text-sm"
-                              value={item.quantity}
-                              onChange={(e) => updateQuantity(item.productId, e.target.value)}
-                            />
+                            <span className="w-7 text-center font-black font-mono text-sm">{item.quantity}</span>
                             <button 
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)} 
-                              className="bg-white hover:bg-gray-200 w-7 h-7 rounded-lg flex items-center justify-center text-gray-700 transition-colors font-bold shadow-sm"
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              className="w-6 h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs flex items-center justify-center"
                             >
                               +
                             </button>
                           </div>
                         </td>
-                        <td className="py-3 font-black text-indigo-700 text-sm text-left pl-2">
-                          {item.price * item.quantity} ج
+                        <td className="py-2.5 text-left font-black font-mono text-indigo-700 text-sm whitespace-nowrap">
+                          {(item.price * item.quantity).toFixed(2)} ج
                         </td>
-                        <td className="py-3 pl-1 text-left w-6">
+                        <td className="py-2.5 pr-1 text-left">
                           <button 
-                            onClick={() => removeFromCart(item.productId)} 
-                            className="text-gray-300 hover:text-red-500 font-bold transition-colors"
+                            onClick={() => removeFromCart(item.productId)}
+                            className="text-gray-300 hover:text-red-500 p-1 rounded transition-colors"
                           >
-                            <X size={18} />
+                            <Trash2 size={15} />
                           </button>
                         </td>
                       </tr>
@@ -571,111 +681,101 @@ const POSPage = () => {
             </div>
           </div>
 
-          <div className="border-t border-gray-100 pt-4">
-            <div className="flex justify-between items-center mb-4 bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100">
-              <span className="text-base font-bold text-gray-700">إجمالي الفاتورة:</span>
-              <span className="text-3xl font-black text-indigo-700">{totalAmount} <span className="text-base font-bold text-indigo-500">ج.م</span></span>
+          {/* Checkout Controls */}
+          <div className="border-t border-gray-100 pt-3 space-y-3">
+            {/* Total */}
+            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
+              <span className="font-black text-gray-700 text-sm">المبلغ الإجمالي:</span>
+              <span className="font-mono font-black text-2xl text-indigo-700">{totalAmount.toFixed(2)} <span className="text-sm">ج.م</span></span>
             </div>
 
-            <div className="mb-4">
-              <label className="block mb-2 font-bold text-gray-700 text-xs flex justify-between items-center">
-                <span>طريقة الدفع:</span>
-                <span className="text-gray-400 font-normal">اضغط F4 للتبديل</span>
-              </label>
-              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
-                <button 
-                  type="button"
-                  onClick={() => { setInvoiceType('CASH'); setPatientId(''); }}
-                  className={`flex-1 py-2.5 rounded-lg font-bold transition-all text-sm flex items-center justify-center gap-2 ${
-                    invoiceType === 'CASH' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+            {/* Payment Type Tabs */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setInvoiceType('CASH')}
+                className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  invoiceType === 'CASH'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <CreditCard size={15} />
+                <span>نقدي (كاش) [F4]</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInvoiceType('CREDIT')}
+                className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${
+                  invoiceType === 'CREDIT'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <User size={15} />
+                <span>على حساب مريض</span>
+              </button>
+            </div>
+
+            {/* Cash Drawer Select */}
+            {invoiceType === 'CASH' && (
+              <div>
+                <select
+                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 outline-none focus:border-indigo-600 font-bold text-xs bg-white text-gray-800"
+                  value={paymentMethodId}
+                  onChange={e => setPaymentMethodId(e.target.value)}
                 >
-                  <CreditCard size={16} />
-                  نقدي (كاش)
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => setInvoiceType('CREDIT')}
-                  className={`flex-1 py-2.5 rounded-lg font-bold transition-all text-sm flex items-center justify-center gap-2 ${
-                    invoiceType === 'CREDIT' ? 'bg-white shadow-sm text-indigo-700' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <User size={16} />
-                  على حساب المريض
-                </button>
+                  {paymentMethods.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
               </div>
-            </div>
+            )}
 
+            {/* Patient Select */}
             {invoiceType === 'CREDIT' && (
-              <div className="mb-4 animate-in fade-in duration-200">
-                <label className="block mb-1.5 font-bold text-gray-700 text-xs">تحديد المريض المستلم:</label>
-                <select 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold text-sm text-gray-800" 
-                  value={patientId} 
+              <div>
+                <select
+                  className="w-full border-2 border-purple-200 rounded-xl p-2.5 outline-none focus:border-purple-600 font-bold text-xs bg-white text-gray-800"
+                  value={patientId}
                   onChange={e => setPatientId(e.target.value)}
                 >
-                  <option value="">-- اختر اسم المريض --</option>
+                  <option value="">-- اختر المريض لإتمام البيع --</option>
                   {patients.map(p => (
                     <option key={p.id} value={p.id}>
-                      {p.name || p.fullName} — (الرصيد: {p.currentDebt} ج)
+                      {p.fullName || p.name} (الرصيد: {Number(p.currentDebt || 0).toFixed(2)} ج.م)
                     </option>
                   ))}
                 </select>
-                {patientId && (
-                  <div className="text-xs mt-2 bg-amber-50 text-amber-800 p-2.5 rounded-xl border border-amber-200 font-bold">
-                    سيتم قيد مبلغ {totalAmount} ج.م على حساب المريض المختار.
-                  </div>
-                )}
               </div>
             )}
 
-            {!isOpen ? (
-              <button 
-                type="button"
-                onClick={() => setIsOpeningModal(true)} 
-                className="w-full bg-rose-600 text-white font-black py-4 rounded-xl text-base hover:bg-rose-700 transition-all shadow-lg shadow-rose-200 flex items-center justify-center gap-2"
-              >
-                <Lock size={20} />
-                <span>اليومية مغلقة - اضغط لفتح اليومية للبيع</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => handleCheckout()} 
-                disabled={cart.length === 0 || isSubmitting}
-                className="w-full bg-indigo-600 text-white font-black py-4 rounded-xl text-lg hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
-              >
-                <CheckCircle2 size={22} />
-                <span>{isSubmitting ? 'جاري التأكيد...' : 'تأكيد وحفظ الفاتورة [F9]'}</span>
-              </button>
-            )}
+            {/* Submit Button */}
+            <button
+              type="button"
+              disabled={isSubmitting || cart.length === 0}
+              onClick={() => handleCheckout()}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-3 rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center justify-center gap-2 text-base"
+            >
+              <CheckCircle2 size={20} />
+              <span>{isSubmitting ? 'جاري التسجيل...' : 'إتمام ودفع الفاتورة'}</span>
+            </button>
           </div>
+
         </div>
       </div>
 
       {/* ================= Thermal Receipt Modal ================= */}
       {completedReceipt && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-gray-100 max-h-[90vh] overflow-y-auto">
             
-            {/* Action Bar (Top) */}
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 no-print">
-              <span className="font-black text-gray-800 text-base flex items-center gap-2">
-                <Printer className="text-indigo-600" size={20} />
-                بون الفاتورة
-              </span>
-              <button 
-                onClick={() => setCompletedReceipt(null)}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Printable Thermal Receipt Container */}
-            <div id="thermal-receipt" className="flex-1 overflow-y-auto bg-gray-50/50 p-4 rounded-2xl border border-dashed border-gray-300 font-mono text-gray-800">
-              <div className="text-center mb-3">
-                <h2 className="text-sm font-black text-gray-900 tracking-wide">المستشفى العسكري ق.م بالإسماعيلية</h2>
-                <p className="text-xs text-gray-600 font-sans font-black mt-0.5">إدارة الكانتين والخدمات</p>
+            {/* The Print Container */}
+            <div id="thermal-receipt" className="text-black bg-white p-2">
+              <div className="text-center space-y-1 mb-3">
+                <div className="font-black text-sm font-sans">المستشفى العسكري ق.م بالإسماعيلية</div>
+                <div className="font-bold text-xs text-gray-700 font-sans">إدارة الكانتين والبوفيه والمطبخ</div>
                 <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
                 <div className="text-xs text-gray-600 space-y-1 text-right font-sans font-bold">
                   <div>رقم الفاتورة: <span className="font-mono font-black">{completedReceipt.invoiceNumber}</span></div>
@@ -700,7 +800,7 @@ const POSPage = () => {
                     <tr key={idx} className="py-1">
                       <td className="py-1">{item.name}</td>
                       <td className="py-1 text-center font-mono">{item.quantity}</td>
-                      <td className="py-1 text-left font-mono">{item.price * item.quantity} ج</td>
+                      <td className="py-1 text-left font-mono">{(item.price * item.quantity).toFixed(2)} ج</td>
                     </tr>
                   ))}
                 </tbody>
@@ -711,8 +811,16 @@ const POSPage = () => {
               {/* Total */}
               <div className="flex justify-between items-center text-sm font-sans font-black py-1">
                 <span>الإجمالي الصافي:</span>
-                <span className="text-lg font-mono">{completedReceipt.total} ج.م</span>
+                <span className="text-lg font-mono">{completedReceipt.total.toFixed(2)} ج.م</span>
               </div>
+
+              {/* Patient Balance After Invoice (Stage 1.4) */}
+              {completedReceipt.type === 'CREDIT' && completedReceipt.patientRemainingBalance !== null && (
+                <div className="flex justify-between items-center text-xs font-sans font-bold py-1 bg-gray-50 p-1.5 rounded my-1 border border-gray-200">
+                  <span>الرصيد المتبقي لحساب المريض:</span>
+                  <span className="font-mono font-black text-gray-900">{Number(completedReceipt.patientRemainingBalance).toFixed(2)} ج.م</span>
+                </div>
+              )}
 
               <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
               <div className="text-center text-[11px] text-gray-500 font-sans mt-2">
