@@ -62,6 +62,10 @@ model Product {
   conversionFactor Decimal   @default(1.00) 
   alertThreshold   Int       @default(0)
   expiryDate       DateTime?
+  activityType     String    @default("CANTEEN") // "CANTEEN" (كانتين), "BUFFET" (بوفيه ومشروبات), "SANDWICH" (سندوتشات ومطبخ)
+  productType      String    @default("SIMPLE")  // "SIMPLE" (عادي), "RECIPE" (مركب/تصنيع), "RAW_MATERIAL" (مادة خام)
+  recipeYield      Decimal?  @default(1)         // كمية الإنتاج من الوصفة (مثلاً 100 كوب أو 20 سندوتش)
+  recipeNotes      String?
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now())
 
@@ -72,6 +76,20 @@ model Product {
   inventoryMovements InventoryMovement[]
   inventoryCounts    InventoryCount[]
   returnItems        ReturnItem[]
+  ingredients        ProductIngredient[] @relation("ParentProduct")
+  usedAsIngredientIn ProductIngredient[] @relation("RawMaterial")
+}
+
+model ProductIngredient {
+  id              Int      @id @default(autoincrement())
+  parentProductId Int
+  rawMaterialId   Int
+  quantityPerUnit Decimal  // حصة القطعة/الكوب الواحد من المادة الخام
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  parentProduct   Product  @relation("ParentProduct", fields: [parentProductId], references: [id], onDelete: Cascade)
+  rawMaterial     Product  @relation("RawMaterial", fields: [rawMaterialId], references: [id], onDelete: Cascade)
 }
 
 model Batch {
