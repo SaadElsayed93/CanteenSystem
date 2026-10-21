@@ -10,12 +10,19 @@ import {
 
 const SuppliersPage = () => {
   const [suppliers, setSuppliers] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { hasPermission } = useAuth();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', notes: '' });
+
+  // Direct Supplier Payment Modal State
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [selectedSupplierForPay, setSelectedSupplierForPay] = useState(null);
+  const [payForm, setPayForm] = useState({ amount: '', paymentMethodId: '', notes: '' });
+  const [isSubmittingPay, setIsSubmittingPay] = useState(false);
 
   // Statement Modal State
   const [isStatementOpen, setIsStatementOpen] = useState(false);
@@ -45,12 +52,61 @@ const SuppliersPage = () => {
 
   const fetchSuppliers = async () => {
     try {
-      const res = await client.get('/purchases/suppliers');
-      setSuppliers(res.data.data);
+      const [suppRes, posRes] = await Promise.all([
+        client.get('/purchases/suppliers'),
+        client.get('/sales/pos-data')
+      ]);
+      setSuppliers(suppRes.data.data);
+      if (posRes.data.data?.paymentMethods) {
+        setPaymentMethods(posRes.data.data.paymentMethods);
+      }
     } catch (err) {
       setError('فشل في جلب بيانات الموردين');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenPayModal = (supplier) => {
+    setSelectedSupplierForPay(supplier);
+    setPayForm({
+      amount: supplier.currentDebt > 0 ? String(supplier.currentDebt) : '',
+      paymentMethodId: paymentMethods[0]?.id ? String(paymentMethods[0].id) : '',
+      notes: ''
+    });
+    setIsPayModalOpen(true);
+  };
+
+  const handlePaySubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmittingPay) return;
+    const amountNum = Number(payForm.amount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error('يرجى إدخال مبلغ دفع صحيح أكبر من صفر');
+      return;
+    }
+    if (!payForm.paymentMethodId) {
+      toast.error('يرجى اختيار الخزينة');
+      return;
+    }
+    setIsSubmittingPay(true);
+    try {
+      await client.post('/purchases/payment', {
+        supplierId: selectedSupplierForPay.id,
+        amount: amountNum,
+        paymentMethodId: Number(payForm.paymentMethodId),
+        notes: payForm.notes
+      });
+      toast.success('تم تسجيل الدفعة للمورد وخصمها من الخزينة بنجاح');
+      setIsPayModalOpen(false);
+      fetchSuppliers();
+      if (isStatementOpen && statementData?.supplier?.id === selectedSupplierForPay.id) {
+        openStatement(selectedSupplierForPay.id);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل في تسجيل الدفعة');
+    } finally {
+      setIsSubmittingPay(false);
     }
   };
 
@@ -256,6 +312,17 @@ const SuppliersPage = () => {
                           <span>كشف الحساب</span>
                         </button>
 
+                        {hasPermission('MANAGE_PURCHASES') && s.isActive && (
+                          <button 
+                            onClick={() => handleOpenPayModal(s)}
+                            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5"
+                            title="سداد دفعة نقدية للمورد"
+                          >
+                            <Wallet size={14} />
+                            <span>سداد دفعة</span>
+                          </button>
+                        )}
+
                         {hasPermission('MANAGE_PURCHASES') && (
                           <button 
                             onClick={() => toggleStatus(s.id, s.isActive)} 
@@ -353,6 +420,109 @@ const SuppliersPage = () => {
         </div>
       )}
 
+      {/* ================= Direct Supplier Payment Modal ================= */}
+      {isPayModalOpen && selectedSupplierForPay && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
+            <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                <Wallet className="text-emerald-600" size={22} />
+                <span>سداد دفعة للمورد 💵</span>
+              </h3>
+              <button 
+                onClick={() => setIsPayModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl mb-4">
+              <div className="text-xs font-bold text-emerald-800 mb-1">اسم المورد:</div>
+              <div className="text-lg font-black text-gray-900">{selectedSupplierForPay.name}</div>
+              <div className="flex justify-between items-center mt-2 pt-2 border-t border-emerald-100 text-xs">
+                <span className="font-bold text-gray-600">المديونية الحالية المستحقة له:</span>
+                <span className="font-black text-red-600 text-sm">
+                  {Number(selectedSupplierForPay.currentDebt || 0).toFixed(2)} ج.م
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handlePaySubmit} className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-xs font-bold text-gray-700">مبلغ الدفعة المسدد (ج.م):</label>
+                  {Number(selectedSupplierForPay.currentDebt || 0) > 0 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setPayForm({...payForm, amount: String(selectedSupplierForPay.currentDebt)})}
+                      className="text-[11px] font-bold text-emerald-600 hover:underline"
+                    >
+                      سداد كامل المديونية ({Number(selectedSupplierForPay.currentDebt).toFixed(2)})
+                    </button>
+                  )}
+                </div>
+                <input 
+                  required 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-black text-lg text-emerald-700" 
+                  placeholder="0.00"
+                  value={payForm.amount} 
+                  onChange={e => setPayForm({...payForm, amount: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">خصم الدفعة من (الخزينة):</label>
+                <select 
+                  required 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800 bg-white"
+                  value={payForm.paymentMethodId}
+                  onChange={e => setPayForm({...payForm, paymentMethodId: e.target.value})}
+                >
+                  <option value="">-- اختر الخزينة التي تم الصرف منها --</option>
+                  {paymentMethods.map(pm => (
+                    <option key={pm.id} value={pm.id}>
+                      {pm.name} (الرصيد المتاح: {Number(pm.currentBalance || 0).toFixed(2)} ج.م)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">ملاحظات أو رقم الإيصال (اختياري):</label>
+                <input 
+                  type="text" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800" 
+                  placeholder="سداد دفعة تحت الحساب، إيصال استلام..."
+                  value={payForm.notes} 
+                  onChange={e => setPayForm({...payForm, notes: e.target.value})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={() => setIsPayModalOpen(false)} 
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingPay}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all disabled:opacity-50"
+                >
+                  {isSubmittingPay ? 'جاري السداد...' : 'تأكيد السداد والخصم'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ================= Supplier Statement Modal ================= */}
       {isStatementOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 print:static print:p-0 print:bg-white print:block">
@@ -379,6 +549,16 @@ const SuppliersPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 print:hidden">
+                {hasPermission('MANAGE_PURCHASES') && statementData?.supplier && (
+                  <button 
+                    type="button" 
+                    onClick={() => handleOpenPayModal(statementData.supplier)} 
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-100"
+                  >
+                    <Wallet size={16} />
+                    <span>سداد دفعة للمورد</span>
+                  </button>
+                )}
                 <button 
                   type="button" 
                   onClick={() => window.print()} 
