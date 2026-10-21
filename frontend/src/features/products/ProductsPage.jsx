@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { 
   Sparkles, Edit3, X, Barcode, Package, CheckCircle2, 
   Search, SlidersHorizontal, AlertTriangle, Clock, Calendar, 
-  Store, Coffee, UtensilsCrossed, Layers, Eye, ChefHat, Info, DollarSign
+  Store, Coffee, UtensilsCrossed, Layers, Eye, ChefHat, Info, DollarSign, Trash2
 } from 'lucide-react';
 import HotDrinksRecipeModal from './HotDrinksRecipeModal';
 
@@ -25,6 +25,10 @@ const ProductsPage = () => {
   // Quick Price Edit Modal State
   const [quickPriceModal, setQuickPriceModal] = useState(null);
   const [newSellingPrice, setNewSellingPrice] = useState('');
+
+  // Delete Product Modal State
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -174,6 +178,33 @@ const ProductsPage = () => {
       fetchProducts();
     } catch (err) {
       toast.error(err.response?.data?.message || 'فشل تحديث السعر');
+    }
+  };
+
+  const handleOpenDelete = (product) => {
+    setDeleteTarget(product);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    const directStock = Number(deleteTarget.directStock !== undefined ? deleteTarget.directStock : deleteTarget.totalStock || 0);
+    if (directStock > 0 && deleteTarget.productType !== 'RECIPE') {
+      toast.error(`لا يمكن حذف الصنف لوجود رصيد متبقي بالمخزن (${directStock} ${deleteTarget.unit || 'قطعة'})`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await client.delete(`/products/${deleteTarget.id}`);
+      toast.success(res.data?.message || `تم حذف الصنف (${deleteTarget.name}) بنجاح`);
+      setDeleteTarget(null);
+      fetchProducts();
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'فشل حذف الصنف';
+      toast.error(errMsg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -715,6 +746,16 @@ const ProductsPage = () => {
                           >
                             <SlidersHorizontal size={13} />
                             تسوية
+                          </button>
+                        )}
+                        {hasPermission('MANAGE_PRODUCTS') && (
+                          <button 
+                            onClick={() => handleOpenDelete(p)} 
+                            className="px-2.5 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
+                            title="حذف الصنف نهائياً"
+                          >
+                            <Trash2 size={13} />
+                            حذف
                           </button>
                         )}
                       </div>
@@ -1261,6 +1302,119 @@ const ProductsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Product Confirmation / Stock Warning Modal */}
+      {deleteTarget && (() => {
+        const directStock = Number(deleteTarget.directStock !== undefined ? deleteTarget.directStock : deleteTarget.totalStock || 0);
+        const hasStock = directStock > 0 && deleteTarget.productType !== 'RECIPE';
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md border border-gray-100 space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2.5 rounded-2xl ${hasStock ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700'}`}>
+                    {hasStock ? <AlertTriangle size={22} /> : <Trash2 size={22} />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-gray-900">
+                      {hasStock ? 'تحذير: لا يمكن حذف الصنف!' : 'تأكيد حذف الصنف نهائياً'}
+                    </h3>
+                    <p className="text-xs text-gray-500 font-bold">{deleteTarget.name} ({deleteTarget.internalCode})</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setDeleteTarget(null)} 
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {hasStock ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
+                    <div className="flex items-center gap-2 text-amber-900 font-black text-sm">
+                      <AlertTriangle size={18} className="text-amber-700 shrink-0" />
+                      <span>الصنف يحتوي على رصيد متبقي بالمخزن!</span>
+                    </div>
+                    <p className="text-xs text-amber-800 font-bold leading-relaxed">
+                      الرصيد الفعلي بالمخزن: <span className="font-black font-mono text-amber-950 text-sm underline">{directStock} {deleteTarget.unit || 'قطعة'}</span>
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
+                      حفاظاً على سلامة الجرد والأرصدة المحاسبية، يمنع النظام تماماً حذف أي صنف يحتوي على كميات بالمخزن. يرجى تصفير أو تسوية رصيد الصنف أولاً قبل حذفه.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(null)}
+                      className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+                    >
+                      إلغاء
+                    </button>
+                    {hasPermission('MANAGE_INVENTORY') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = deleteTarget;
+                          setDeleteTarget(null);
+                          openAdjustModal(target);
+                        }}
+                        className="flex-1 py-2.5 rounded-xl font-black bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 transition-colors text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <SlidersHorizontal size={14} />
+                        <span>الذهاب لتسوية الرصيد</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-4 bg-red-50/80 border border-red-200 rounded-2xl space-y-2">
+                    <p className="text-xs text-red-900 font-bold leading-relaxed">
+                      هل أنت متأكد من رغبتك في حذف الصنف <span className="font-black text-red-950">"{deleteTarget.name}"</span> نهائياً؟
+                    </p>
+                    <div className="text-[11px] text-gray-600 font-medium">
+                      • رصيد المخزن الحالي: <span className="font-bold text-emerald-700 font-mono">0 (مسموح بالحذف)</span>
+                    </div>
+                    <div className="text-[11px] text-gray-500 font-medium">
+                      • سيتم إزالة الصنف بالكامل من قوائم البيع والتقارير الحالية.
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => setDeleteTarget(null)}
+                      className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+                    >
+                      تراجع
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={handleConfirmDelete}
+                      className="flex-1 py-2.5 rounded-xl font-black bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 transition-colors text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isDeleting ? (
+                        <span>جاري الحذف...</span>
+                      ) : (
+                        <>
+                          <Trash2 size={15} />
+                          <span>تأكيد الحذف نهائياً</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Hot Drinks Recipe Modal */}
       <HotDrinksRecipeModal

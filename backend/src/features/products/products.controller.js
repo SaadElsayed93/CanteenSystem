@@ -92,6 +92,15 @@ const adjust = async (req, res, next) => {
   }
 };
 
+const remove = async (req, res, next) => {
+  try {
+    const result = await productsService.deleteProduct(Number(req.params.id), req.user.id);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = { 
   getAll, 
   getById, 
@@ -102,5 +111,6 @@ module.exports = {
   getRawMaterials,
   create, 
   update, 
-  adjust 
+  adjust,
+  remove
 };

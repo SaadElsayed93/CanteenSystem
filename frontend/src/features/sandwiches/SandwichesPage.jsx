@@ -22,6 +22,10 @@ const SandwichesPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [viewRecipeModal, setViewRecipeModal] = useState(null);
 
+  // Delete State
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Sandwich Form State
   const [form, setForm] = useState({
     name: '',
@@ -64,6 +68,33 @@ const SandwichesPage = () => {
       toast.error('فشل تحميل بيانات السندوتشات والمطبخ');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestDelete = (sandwich) => {
+    setDeleteTarget(sandwich);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    const directStock = Number(deleteTarget.directStock !== undefined ? deleteTarget.directStock : deleteTarget.totalStock || 0);
+    if (directStock > 0 && deleteTarget.productType !== 'RECIPE') {
+      toast.error(`لا يمكن حذف الصنف لوجود رصيد متبقي بالمخزن (${directStock} ${deleteTarget.unit || 'قطعة'})`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const res = await client.delete(`/products/${deleteTarget.id}`);
+      toast.success(res.data?.message || `تم حذف السندوتش (${deleteTarget.name}) بنجاح`);
+      setDeleteTarget(null);
+      loadData();
+    } catch (err) {
+      const errMsg = err.response?.data?.message || 'فشل حذف السندوتش';
+      toast.error(errMsg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -511,13 +542,23 @@ const SandwichesPage = () => {
                   </button>
 
                   {hasPermission('MANAGE_PRODUCTS') && (
-                    <button
-                      onClick={() => openEditModal(sandwich)}
-                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-sm"
-                    >
-                      <Edit3 size={14} />
-                      <span>تعديل السندوتش</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => openEditModal(sandwich)}
+                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-colors shadow-sm"
+                      >
+                        <Edit3 size={14} />
+                        <span>تعديل السندوتش</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleRequestDelete(sandwich)}
+                        className="p-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl font-bold text-xs flex items-center justify-center transition-colors shadow-sm"
+                        title="حذف السندوتش نهائياً"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -985,6 +1026,102 @@ const SandwichesPage = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Sandwich Confirmation / Stock Warning Modal */}
+      {deleteTarget && (() => {
+        const directStock = Number(deleteTarget.directStock !== undefined ? deleteTarget.directStock : deleteTarget.totalStock || 0);
+        const hasStock = directStock > 0 && deleteTarget.productType !== 'RECIPE';
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md border border-gray-100 space-y-4">
+              <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2.5 rounded-2xl ${hasStock ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700'}`}>
+                    {hasStock ? <AlertTriangle size={22} /> : <Trash2 size={22} />}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-gray-900">
+                      {hasStock ? 'تحذير: لا يمكن حذف الصنف!' : 'تأكيد حذف السندوتش نهائياً'}
+                    </h3>
+                    <p className="text-xs text-gray-500 font-bold">{deleteTarget.name} ({deleteTarget.internalCode})</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setDeleteTarget(null)} 
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {hasStock ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-2">
+                    <div className="flex items-center gap-2 text-amber-900 font-black text-sm">
+                      <AlertTriangle size={18} className="text-amber-700 shrink-0" />
+                      <span>يوجد رصيد متبقي بالمخزن لهذا الصنف!</span>
+                    </div>
+                    <p className="text-xs text-amber-800 font-bold leading-relaxed">
+                      الرصيد الفعلي الحالي: <span className="font-black font-mono text-amber-950 text-sm underline">{directStock} {deleteTarget.unit || 'قطعة'}</span>
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-medium leading-relaxed">
+                      يمنع النظام حذف أي صنف يحتوي على رصيد متبقي لحماية أرصدة المخزون والجرد الدوري.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(null)}
+                      className="w-full py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+                    >
+                      إغلاق
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-4 bg-red-50/80 border border-red-200 rounded-2xl space-y-2">
+                    <p className="text-xs text-red-900 font-bold leading-relaxed">
+                      هل أنت متأكد من رغبتك في حذف <span className="font-black text-red-950">"{deleteTarget.name}"</span> نهائياً من قائمة السندوتشات؟
+                    </p>
+                    <div className="text-[11px] text-gray-500 font-medium">
+                      • سيتم حذف معادلة السندوتش وإزالته من شاشة الكاشير والبيع.
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => setDeleteTarget(null)}
+                      className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+                    >
+                      تراجع
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={handleConfirmDelete}
+                      className="flex-1 py-2.5 rounded-xl font-black bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 transition-colors text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isDeleting ? (
+                        <span>جاري الحذف...</span>
+                      ) : (
+                        <>
+                          <Trash2 size={15} />
+                          <span>تأكيد الحذف نهائياً</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

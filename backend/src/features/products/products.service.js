@@ -142,6 +142,8 @@ const getAllProducts = async (filters = {}) => {
   }
   if (filters.isActive !== undefined) {
     where.isActive = filters.isActive === 'true' || filters.isActive === true;
+  } else if (filters.includeInactive !== 'true' && filters.includeInactive !== true) {
+    where.isActive = true;
   }
 
   const products = await prisma.product.findMany({
@@ -537,6 +539,119 @@ const saveRecipe = async (productId, recipeData, userId) => {
   }, userId);
 };
 
+/**
+ * حذف صنف مع التحقق الصارم من رصيد المخزن ومنع الحذف في حالة وجود رصيد متبقي
+ */
+const deleteProduct = async (id, userId) => {
+  const productId = Number(id);
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      batches: true,
+      usedAsIngredientIn: {
+        include: {
+          parentProduct: {
+            select: { id: true, name: true, isActive: true }
+          }
+        }
+      },
+      invoiceItems: { select: { id: true }, take: 1 },
+      purchaseItems: { select: { id: true }, take: 1 },
+      returnItems: { select: { id: true }, take: 1 },
+      ingredients: { select: { id: true } }
+    }
+  });
+
+  if (!product) {
+    throw new Error('الصنف المراد حذفه غير موجود');
+  }
+
+  // 1. التحقق من رصيد المخزن الفعلي: ممنوع حذف أي صنف لديه رصيد متبقي
+  const directStock = (product.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+  if (directStock > 0) {
+    throw new Error(`لا يمكن حذف الصنف (${product.name}) لوجود رصيد متبقي منه بالمخزن (${directStock} ${product.unit}). يرجى تسوية أو تصفير رصيد المخزن أولاً قبل الحذف.`);
+  }
+  if (directStock < 0) {
+    throw new Error(`لا يمكن حذف الصنف (${product.name}) لوجود رصيد سالب بالمخزن (${directStock} ${product.unit}). يرجى تسوية رصيد المخزن أولاً.`);
+  }
+
+  // 2. التحقق مما إذا كان الصنف مستخدماً كمادة خام في وصفات نشطة
+  const activeDependentRecipes = (product.usedAsIngredientIn || [])
+    .filter(u => u.parentProduct && u.parentProduct.isActive)
+    .map(u => u.parentProduct.name);
+
+  if (activeDependentRecipes.length > 0) {
+    const recipeNames = [...new Set(activeDependentRecipes)].join('، ');
+    throw new Error(`لا يمكن حذف الصنف (${product.name}) لأنه مستخدم كمكون أساسي في وصفات نشطة: (${recipeNames}). يرجى إزالته من تلك الوصفات أولاً.`);
+  }
+
+  // 3. استراتيجية الحذف:
+  // إذا كان للصنف معاملات مالية سابقة (فواتير بيع أو شراء أو مرتجعات)، يتم إلغاء التفعيل والأرشفة لحماية التقارير المحاسبية
+  const hasHistory = (product.invoiceItems && product.invoiceItems.length > 0) ||
+                     (product.purchaseItems && product.purchaseItems.length > 0) ||
+                     (product.returnItems && product.returnItems.length > 0);
+
+  if (hasHistory) {
+    const timestamp = Date.now();
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          isActive: false,
+          internalCode: `${product.internalCode}_ARCHIVED_${timestamp}`,
+          barcode: product.barcode ? `${product.barcode}_ARCHIVED_${timestamp}` : null
+        }
+      });
+
+      // إزالة روابط المكونات الخاصة بهذه الوصفة
+      await tx.productIngredient.deleteMany({
+        where: { parentProductId: productId }
+      });
+    });
+
+    return {
+      success: true,
+      type: 'SOFT_DELETE',
+      message: `تم إلغاء تفعيل وأرشفة الصنف (${product.name}) بنجاح لحماية التقارير المالية التاريخية.`,
+      data: { id: productId, name: product.name }
+    };
+  } else {
+    // إذا لم يكن هناك تاريخ معاملات بيع/شراء، يتم الحذف النهائي الكامل (Hard Delete)
+    await prisma.$transaction(async (tx) => {
+      await tx.productIngredient.deleteMany({
+        where: { OR: [{ parentProductId: productId }, { rawMaterialId: productId }] }
+      });
+
+      await tx.inventoryMovement.deleteMany({
+        where: { productId }
+      });
+
+      await tx.inventoryCount.deleteMany({
+        where: { productId }
+      });
+
+      await tx.priceHistory.deleteMany({
+        where: { productId }
+      });
+
+      await tx.batch.deleteMany({
+        where: { productId }
+      });
+
+      await tx.product.delete({
+        where: { id: productId }
+      });
+    });
+
+    return {
+      success: true,
+      type: 'HARD_DELETE',
+      message: `تم حذف الصنف (${product.name}) نهائياً بنجاح من النظام.`,
+      data: { id: productId, name: product.name }
+    };
+  }
+};
+
 module.exports = { 
   getAllProducts, 
   getProductById, 
@@ -549,5 +664,6 @@ module.exports = {
   getRawMaterials,
   getRecipes,
   getRecipe,
-  saveRecipe
+  saveRecipe,
+  deleteProduct
 };

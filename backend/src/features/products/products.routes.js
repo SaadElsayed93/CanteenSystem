@@ -18,6 +18,7 @@ router.get('/:id/recipe', productsController.getRecipe);
 // الإدارة فقط
 router.post('/', checkPermission('MANAGE_PRODUCTS'), logAudit('CREATE', 'PRODUCT'), productsController.create);
 router.put('/:id', checkPermission('MANAGE_PRODUCTS'), logAudit('UPDATE', 'PRODUCT'), productsController.update);
+router.delete('/:id', checkPermission('MANAGE_PRODUCTS'), logAudit('DELETE', 'PRODUCT'), productsController.remove);
 router.post('/:id/recipe', checkPermission('MANAGE_PRODUCTS'), logAudit('UPDATE_RECIPE', 'PRODUCT'), productsController.saveRecipe);
 router.post('/:id/adjust', checkPermission('MANAGE_INVENTORY'), logAudit('ADJUST_INVENTORY', 'PRODUCT'), productsController.adjust);
 
