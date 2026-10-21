@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -260,13 +261,13 @@ const ProductsPage = () => {
               <Coffee size={18} />
               <span>+ مشروب بوفيه (شاي/قهوة)</span>
             </button>
-            <button 
-              onClick={() => openAddModal('SANDWICH', 'RECIPE')} 
+            <Link 
+              to="/sandwiches" 
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2.5 rounded-2xl transition-all shadow-sm flex items-center gap-1.5 text-xs sm:text-sm"
             >
               <UtensilsCrossed size={18} />
-              <span>+ سندوتش مطبخ</span>
-            </button>
+              <span>+ سندوتش مطبخ (صفحة المأكولات)</span>
+            </Link>
             <button 
               onClick={() => openAddModal('BUFFET', 'RAW_MATERIAL')} 
               className="bg-slate-700 hover:bg-slate-800 text-white font-black px-4 py-2.5 rounded-2xl transition-all shadow-sm flex items-center gap-1.5 text-xs sm:text-sm"

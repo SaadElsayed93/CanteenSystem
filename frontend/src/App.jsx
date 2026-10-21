@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
@@ -10,6 +10,7 @@ import UserManagement from './features/settings/UserManagement';
 import HistoryPage from './features/settings/HistoryPage';
 import BackupPage from './features/settings/BackupPage';
 import ProductsPage from './features/products/ProductsPage';
+import SandwichesPage from './features/sandwiches/SandwichesPage';
 import SuppliersPage from './features/purchases/SuppliersPage';
 import NewPurchasePage from './features/purchases/NewPurchasePage';
 import POSPage from './features/pos/POSPage';
@@ -22,7 +23,7 @@ import HomePage from './features/home/HomePage';
 import { 
   Home, ShoppingCart, RotateCcw, Package, 
   Users, Wallet, Truck, Settings, LogOut, Menu,
-  Store, FileText, BarChart2, ShieldCheck
+  Store, FileText, BarChart2, ShieldCheck, UtensilsCrossed
 } from 'lucide-react';
 
 function MainLayout({ children }) {
@@ -36,6 +37,7 @@ function MainLayout({ children }) {
       { to: "/returns", icon: <RotateCcw size={20} />, label: "المرتجعات" }
     ] : []),
     { to: "/products", icon: <Package size={20} />, label: "الأصناف والمخزون" },
+    { to: "/sandwiches", icon: <UtensilsCrossed size={20} />, label: "المطبخ والسندوتشات" },
     ...(hasPermission('VIEW_PATIENTS') ? [
       { to: "/patients", icon: <Users size={20} />, label: "المرضى والأرصدة" }
     ] : []),
@@ -199,6 +201,14 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <ProductsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/sandwiches" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <SandwichesPage />
               </MainLayout>
             </ProtectedRoute>
           } />
