@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const getInvoiceByNumber = async (invoiceNumber) => {
@@ -81,35 +81,90 @@ const createReturn = async (data, userId) => {
         }
       });
 
-      const product = await tx.product.findUnique({ where: { id: item.productId } });
-
-      // Create a new batch for returned items using current purchase price
-      const newBatch = await tx.batch.create({
-        data: {
-          productId: item.productId,
-          quantityRemaining: item.quantity,
-          unitCost: product.purchasePrice,
+      const product = await tx.product.findUnique({ 
+        where: { id: item.productId },
+        include: {
+          ingredients: {
+            include: { rawMaterial: true }
+          }
         }
       });
 
-      // Calculate balance after
-      const currentMovements = await tx.inventoryMovement.findMany({ where: { productId: item.productId } });
-      const balance = currentMovements.reduce((acc, mov) => {
-        return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
-      }, 0);
+      if (product && product.productType === 'RECIPE') {
+        // إعادة المواد الخام المكونة للوصفة إلى المخزن
+        for (const ing of product.ingredients) {
+          const rawToRestore = Number(item.quantity) * Number(ing.quantityPerUnit);
+          if (rawToRestore <= 0) continue;
 
-      await tx.inventoryMovement.create({
-        data: {
-          productId: item.productId,
-          batchId: newBatch.id,
-          type: 'IN', // Return adds to stock
-          quantity: item.quantity,
-          balanceAfter: balance + item.quantity,
-          referenceType: 'RETURN',
-          referenceId: returnRecord.id,
-          createdBy: userId
+          const newRawBatch = await tx.batch.create({
+            data: {
+              productId: ing.rawMaterialId,
+              quantityRemaining: rawToRestore,
+              unitCost: ing.rawMaterial ? Number(ing.rawMaterial.purchasePrice) : 0
+            }
+          });
+
+          const currentRawMovements = await tx.inventoryMovement.findMany({ where: { productId: ing.rawMaterialId } });
+          const rawBalance = currentRawMovements.reduce((acc, mov) => {
+            return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
+          }, 0);
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId: ing.rawMaterialId,
+              batchId: newRawBatch.id,
+              type: 'IN',
+              quantity: rawToRestore,
+              balanceAfter: rawBalance + rawToRestore,
+              referenceType: 'RETURN_RECIPE',
+              referenceId: returnRecord.id,
+              createdBy: userId
+            }
+          });
         }
-      });
+
+        // تسجيل حركة مرتجع للصنف المركب
+        await tx.inventoryMovement.create({
+          data: {
+            productId: item.productId,
+            type: 'IN',
+            quantity: item.quantity,
+            balanceAfter: 0,
+            referenceType: 'RETURN',
+            referenceId: returnRecord.id,
+            createdBy: userId
+          }
+        });
+
+      } else {
+        // Create a new batch for returned items using current purchase price
+        const newBatch = await tx.batch.create({
+          data: {
+            productId: item.productId,
+            quantityRemaining: item.quantity,
+            unitCost: product.purchasePrice,
+          }
+        });
+
+        // Calculate balance after
+        const currentMovements = await tx.inventoryMovement.findMany({ where: { productId: item.productId } });
+        const balance = currentMovements.reduce((acc, mov) => {
+          return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
+        }, 0);
+
+        await tx.inventoryMovement.create({
+          data: {
+            productId: item.productId,
+            batchId: newBatch.id,
+            type: 'IN', // Return adds to stock
+            quantity: item.quantity,
+            balanceAfter: balance + item.quantity,
+            referenceType: 'RETURN',
+            referenceId: returnRecord.id,
+            createdBy: userId
+          }
+        });
+      }
     }
 
     // 3. Handle Financials
