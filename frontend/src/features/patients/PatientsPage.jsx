@@ -1,4 +1,4 @@
-﻿import toast from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -16,6 +16,9 @@ const PatientsPage = () => {
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addForm, setAddForm] = useState({ fullName: '', fileNumber: '', internalNumber: '', notes: '', initialBalance: '', paymentMethodId: '' });
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ id: null, fullName: '', fileNumber: '', internalNumber: '', notes: '' });
   
   const [isTransactModalOpen, setIsTransactModalOpen] = useState(false);
   const [transactForm, setTransactForm] = useState({ patientId: null, type: 'DEPOSIT', amount: '', source: '', description: '', paymentMethodId: '' });
@@ -74,6 +77,33 @@ const PatientsPage = () => {
       setIsSubmitting(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'خطأ في الإضافة');
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenEdit = (p) => {
+    setEditForm({
+      id: p.id,
+      fullName: p.fullName || '',
+      fileNumber: p.fileNumber || '',
+      internalNumber: p.internalNumber || '',
+      notes: p.notes || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await client.put(`/patients/${editForm.id}`, editForm);
+      toast.success('تم تعديل بيانات المريض بنجاح');
+      setIsEditModalOpen(false);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'خطأ في التعديل');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -189,6 +219,7 @@ const PatientsPage = () => {
                   </td>
                   <td className="p-4 border-b flex gap-2 justify-center">
                     <button onClick={() => viewStatement(p.id)} className="bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 font-bold transition-colors">كشف حساب</button>
+                    <button onClick={() => handleOpenEdit(p)} className="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg hover:bg-amber-200 font-bold transition-colors">تعديل</button>
                     {p.isActive ? (
                       <>
                         <button onClick={() => { setTransactForm({ ...transactForm, patientId: p.id }); setIsTransactModalOpen(true); }} className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 font-bold transition-colors">إيداع / سحب</button>
@@ -258,6 +289,43 @@ const PatientsPage = () => {
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
                 <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50">حفظ المريض</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-black text-gray-800">تعديل بيانات المريض ✏️</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">اسم المريض رباعي</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.fullName} onChange={e=>setEditForm({...editForm, fullName: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">رقم الملف</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.fileNumber} onChange={e=>setEditForm({...editForm, fileNumber: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">الرقم الداخلي (السرير)</label>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.internalNumber} onChange={e=>setEditForm({...editForm, internalNumber: e.target.value})}/>
+              </div>
+              <div>
+                <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
+                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.notes} onChange={e=>setEditForm({...editForm, notes: e.target.value})}></textarea>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-amber-600 text-white font-bold rounded-xl hover:bg-amber-700 transition-colors shadow-lg shadow-amber-200 disabled:opacity-50">تحديث البيانات</button>
               </div>
             </form>
           </div>

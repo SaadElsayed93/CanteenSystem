@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const patientsController = require('./patients.controller');
 const { authMiddleware } = require('../../common/middleware/auth');
@@ -11,6 +11,7 @@ router.get('/', checkPermission('VIEW_PATIENTS'), patientsController.getAll);
 router.get('/:id', checkPermission('VIEW_PATIENTS'), patientsController.getById);
 
 router.post('/', checkPermission('VIEW_PATIENTS'), logAudit('CREATE', 'PATIENT'), patientsController.create);
+router.put('/:id', checkPermission('VIEW_PATIENTS'), logAudit('UPDATE', 'PATIENT'), patientsController.update);
 router.patch('/:id/status', checkPermission('VIEW_PATIENTS'), logAudit('UPDATE', 'PATIENT'), patientsController.toggleStatus);
 
 // Deposits / Withdrawals

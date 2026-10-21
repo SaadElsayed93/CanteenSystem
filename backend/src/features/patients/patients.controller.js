@@ -1,4 +1,4 @@
-﻿const patientsService = require('./patients.service');
+const patientsService = require('./patients.service');
 
 const getAll = async (req, res, next) => {
   try {
@@ -46,6 +46,15 @@ const transact = async (req, res, next) => {
   }
 };
 
+const update = async (req, res, next) => {
+  try {
+    const patient = await patientsService.updatePatient(Number(req.params.id), req.body, req.user.id);
+    res.json({ success: true, message: 'تم تحديث بيانات المريض بنجاح', data: patient });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const discharge = async (req, res, next) => {
   try {
     const patient = await patientsService.dischargePatient(req.params.id, req.body.paymentMethodId, req.user.id);
@@ -55,5 +64,5 @@ const discharge = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, getById, create, toggleStatus, transact, discharge };
+module.exports = { getAll, getById, create, update, toggleStatus, transact, discharge };
 

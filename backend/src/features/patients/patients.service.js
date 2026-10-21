@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const getAllPatients = async () => {
@@ -75,6 +75,35 @@ const createPatient = async (data, userId) => {
     }
     
     return patient;
+  });
+};
+
+const updatePatient = async (id, data, userId) => {
+  const patientId = Number(id);
+  const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+  if (!patient) throw new Error('المريض غير موجود');
+
+  const { fileNumber, fullName, internalNumber, notes, isActive } = data;
+
+  if (fileNumber && fileNumber !== patient.fileNumber) {
+    const existingFile = await prisma.patient.findUnique({ where: { fileNumber } });
+    if (existingFile) throw new Error('رقم الملف موجود مسبقاً لمريض آخر');
+  }
+
+  if (internalNumber && internalNumber !== patient.internalNumber) {
+    const existingInternal = await prisma.patient.findUnique({ where: { internalNumber } });
+    if (existingInternal) throw new Error('الرقم الداخلي (السرير/الغرفة) موجود مسبقاً لمريض آخر');
+  }
+
+  return prisma.patient.update({
+    where: { id: patientId },
+    data: {
+      fullName: fullName !== undefined ? fullName : patient.fullName,
+      fileNumber: fileNumber !== undefined ? fileNumber : patient.fileNumber,
+      internalNumber: internalNumber !== undefined ? internalNumber : patient.internalNumber,
+      notes: notes !== undefined ? notes : patient.notes,
+      isActive: isActive !== undefined ? Boolean(isActive) : patient.isActive
+    }
   });
 };
 
@@ -308,4 +337,4 @@ const dischargePatient = async (id, paymentMethodId, userId) => {
   });
 };
 
-module.exports = { getAllPatients, getPatientById, createPatient, updatePatientStatus, addTransaction, dischargePatient };
+module.exports = { getAllPatients, getPatientById, createPatient, updatePatient, updatePatientStatus, addTransaction, dischargePatient };
