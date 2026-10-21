@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { calculateExpiryInfo } = require('../products/products.service');
 
 const getCategories = async () => {
   return prisma.category.findMany({ where: { isActive: true } });
@@ -13,13 +14,16 @@ const getPosData = async () => {
   
   const products = productsRaw.map(p => {
     const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+    const expiryInfo = calculateExpiryInfo(p);
     return {
       id: p.id,
       name: p.name,
       internalCode: p.internalCode,
       barcode: p.barcode,
       sellingPrice: p.sellingPrice,
-      totalStock
+      totalStock,
+      expiryDate: p.expiryDate,
+      ...expiryInfo
     };
   });
 

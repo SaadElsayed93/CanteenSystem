@@ -47,7 +47,8 @@ const NewPurchasePage = () => {
     unit: 'قطعة',
     packageUnit: '',
     piecesPerPackage: 1,
-    alertThreshold: 10
+    alertThreshold: 10,
+    expiryDate: ''
   });
 
   // Inline Edit Product Modal
@@ -110,7 +111,8 @@ const NewPurchasePage = () => {
         unit: 'قطعة',
         packageUnit: '',
         piecesPerPackage: 1,
-        alertThreshold: 10
+        alertThreshold: 10,
+        expiryDate: ''
       });
       setIsCreateModalOpen(true);
       toast('صنف جديد غير مسجل! يمكنك حفظه الآن وسينضاف للفاتورة فوراً', { icon: '✨' });
@@ -141,7 +143,10 @@ const NewPurchasePage = () => {
         displayCost: unitCost,
         baseQuantity: qtyToAdd,
         baseUnitCost: unitCost,
-        subtotal: qtyToAdd * unitCost
+        subtotal: qtyToAdd * unitCost,
+        expiryDate: prod.expiryDate,
+        isExpired: prod.isExpired,
+        isExpiringSoon: prod.isExpiringSoon
       }]);
     }
   };
@@ -162,7 +167,8 @@ const NewPurchasePage = () => {
         purchasePrice: Number(newProductForm.purchasePrice),
         sellingPrice: Number(newProductForm.sellingPrice),
         alertThreshold: Number(newProductForm.alertThreshold || 0),
-        piecesPerPackage: newProductForm.packageUnit ? Number(newProductForm.piecesPerPackage || 1) : 1
+        piecesPerPackage: newProductForm.packageUnit ? Number(newProductForm.piecesPerPackage || 1) : 1,
+        expiryDate: newProductForm.expiryDate || null
       });
 
       const created = res.data.data;
@@ -195,7 +201,8 @@ const NewPurchasePage = () => {
       unit: prod.unit || 'قطعة',
       packageUnit: prod.packageUnit || '',
       piecesPerPackage: prod.piecesPerPackage || 1,
-      alertThreshold: prod.alertThreshold || 0
+      alertThreshold: prod.alertThreshold || 0,
+      expiryDate: prod.expiryDate ? prod.expiryDate.split('T')[0] : ''
     });
     setIsEditModalOpen(true);
   };
@@ -212,7 +219,8 @@ const NewPurchasePage = () => {
         purchasePrice: Number(editingProduct.purchasePrice),
         sellingPrice: Number(editingProduct.sellingPrice),
         alertThreshold: Number(editingProduct.alertThreshold || 0),
-        piecesPerPackage: editingProduct.packageUnit ? Number(editingProduct.piecesPerPackage || 1) : 1
+        piecesPerPackage: editingProduct.packageUnit ? Number(editingProduct.piecesPerPackage || 1) : 1,
+        expiryDate: editingProduct.expiryDate || null
       });
 
       const updated = res.data.data;
@@ -303,7 +311,10 @@ const NewPurchasePage = () => {
       displayCost: currentItem.unitCost,
       baseQuantity: finalBaseQuantity,
       baseUnitCost: finalBaseUnitCost,
-      subtotal: Number(currentItem.quantity) * Number(currentItem.unitCost)
+      subtotal: Number(currentItem.quantity) * Number(currentItem.unitCost),
+      expiryDate: selectedProductInfo.expiryDate,
+      isExpired: selectedProductInfo.isExpired,
+      isExpiringSoon: selectedProductInfo.isExpiringSoon
     }]);
     
     setCurrentItem({ productId: '', buyInPackage: false, quantity: '', unitCost: '' });
@@ -490,7 +501,8 @@ const NewPurchasePage = () => {
                 unit: 'قطعة',
                 packageUnit: '',
                 piecesPerPackage: 1,
-                alertThreshold: 10
+                alertThreshold: 10,
+                expiryDate: ''
               });
               setIsCreateModalOpen(true);
             }}
@@ -596,16 +608,31 @@ const NewPurchasePage = () => {
           <tbody className="divide-y divide-gray-100 text-sm">
             {items.map((item, idx) => (
               <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
-                <td className="p-4 font-black text-gray-800 flex items-center gap-2">
-                  <span>{item.productName}</span>
-                  <button 
-                    type="button"
-                    onClick={() => handleOpenEditProduct(item.productId)}
-                    className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                    title="تعديل بيانات الصنف والباركود"
-                  >
-                    <Edit3 size={15} />
-                  </button>
+                <td className="p-4 font-black text-gray-800">
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span>{item.productName}</span>
+                      <button 
+                        type="button"
+                        onClick={() => handleOpenEditProduct(item.productId)}
+                        className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        title="تعديل بيانات الصنف والباركود وتاريخ الصلاحية"
+                      >
+                        <Edit3 size={15} />
+                      </button>
+                    </div>
+                    {item.expiryDate && (
+                      <span className="text-[11px] font-bold text-gray-500 mt-0.5">
+                        صلاحية: {new Date(item.expiryDate).toLocaleDateString('ar-EG')}
+                        {item.isExpired && (
+                          <span className="text-red-600 mr-1.5 font-black bg-red-50 px-1.5 py-0.5 rounded">منتهي!</span>
+                        )}
+                        {item.isExpiringSoon && !item.isExpired && (
+                          <span className="text-amber-600 mr-1.5 font-black bg-amber-50 px-1.5 py-0.5 rounded">أوشك على الانتهاء</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="p-4 font-bold text-gray-700">
                   {item.displayQty} <span className="text-xs text-gray-500 font-normal">{item.displayUnit}</span>
@@ -814,6 +841,18 @@ const NewPurchasePage = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block mb-1 text-xs font-bold text-gray-700">
+                  تاريخ انتهاء الصلاحية (اختياري):
+                </label>
+                <input 
+                  type="date" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                  value={newProductForm.expiryDate}
+                  onChange={e => setNewProductForm({ ...newProductForm, expiryDate: e.target.value })}
+                />
+              </div>
+
               <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
                 <button 
                   type="button"
@@ -933,6 +972,18 @@ const NewPurchasePage = () => {
                     onChange={e => setEditingProduct({ ...editingProduct, alertThreshold: e.target.value })}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-xs font-bold text-gray-700">
+                  تاريخ انتهاء الصلاحية (اختياري):
+                </label>
+                <input 
+                  type="date" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-amber-600 font-bold text-gray-800"
+                  value={editingProduct.expiryDate || ''}
+                  onChange={e => setEditingProduct({ ...editingProduct, expiryDate: e.target.value })}
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">

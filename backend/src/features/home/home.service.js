@@ -8,13 +8,15 @@ const getHomeDashboardData = async (userId, userRole) => {
 
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  // 1. Low Stock Items (For Sales/Purchases)
+  // 1. Low Stock & Expiry Items (For Sales/Purchases/Alerts)
   const products = await prisma.product.findMany({
     where: { isActive: true },
     include: { batches: true }
   });
 
   const lowStockItems = [];
+  const expiringSoonItems = [];
+  const expiredItems = [];
   let inventoryValue = 0;
 
   products.forEach(p => {
@@ -22,6 +24,33 @@ const getHomeDashboardData = async (userId, userRole) => {
     inventoryValue += totalQty * Number(p.purchasePrice);
     if (totalQty <= Number(p.alertThreshold) || totalQty === 0) {
       lowStockItems.push({ id: p.id, name: p.name, quantity: totalQty, alertThreshold: p.alertThreshold });
+    }
+
+    // Expiry check
+    let effectiveExpiry = p.expiryDate;
+    if (!effectiveExpiry && p.batches && p.batches.length > 0) {
+      const bWithExp = p.batches
+        .filter(b => b.expiryDate && Number(b.quantityRemaining) > 0)
+        .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate))[0];
+      if (bWithExp) effectiveExpiry = bWithExp.expiryDate;
+    }
+
+    if (effectiveExpiry) {
+      const exp = new Date(effectiveExpiry);
+      exp.setHours(0, 0, 0, 0);
+      const daysLeft = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+      const itemInfo = {
+        id: p.id,
+        name: p.name,
+        quantity: totalQty,
+        expiryDate: effectiveExpiry,
+        daysLeft
+      };
+      if (daysLeft < 0) {
+        expiredItems.push(itemInfo);
+      } else if (daysLeft <= 30) {
+        expiringSoonItems.push(itemInfo);
+      }
     }
   });
 
@@ -98,54 +127,38 @@ const getHomeDashboardData = async (userId, userRole) => {
       expectedCash: Number(expectedCash.toFixed(2))
     };
   } else {
+    // Closed Shift Stats
     const lastShift = await prisma.dailyShift.findFirst({
       where: { status: 'CLOSED' },
       orderBy: { closedAt: 'desc' },
-      include: {
-        userOpened: { select: { fullName: true } },
-        userClosed: { select: { fullName: true } }
-      }
+      include: { userClosed: { select: { fullName: true } } }
     });
 
     shiftStats = {
       isOpen: false,
-      shiftId: null,
-      shiftNumber: null,
       lastShift,
-      startingCash: Number(expectedCash.toFixed(2)),
-      sales: 0,
-      deposits: 0,
-      expenses: 0,
-      transfers: 0,
       expectedCash: Number(expectedCash.toFixed(2))
     };
   }
 
-  // 3. Admin Stats
-  // Patient Debts (Negative balance: what active patients owe to the canteen)
+  // 3. Admin Overview KPIs
   const debts = await prisma.patient.aggregate({
     where: { isActive: true, currentDebt: { lt: 0 } },
     _sum: { currentDebt: true }
   });
 
-  // Patient Deposits (Positive balance: liabilities/deposits owed to active patients upon discharge)
   const patientDepositsLiability = await prisma.patient.aggregate({
     where: { isActive: true, currentDebt: { gt: 0 } },
     _sum: { currentDebt: true }
   });
-  
-  const topDebtorsRaw = await prisma.patient.findMany({
-    where: { isActive: true, currentDebt: { lt: 0 } },
-    orderBy: { currentDebt: 'asc' }, // most negative first
-    take: 5,
-    select: { id: true, fullName: true, currentDebt: true }
-  });
-  const topDebtors = topDebtorsRaw.map(p => ({
-    ...p,
-    currentDebt: Number(Math.abs(Number(p.currentDebt || 0)).toFixed(2))
-  }));
 
-  // Monthly Net Profit
+  const topDebtors = await prisma.patient.findMany({
+    where: { isActive: true, currentDebt: { lt: 0 } },
+    orderBy: { currentDebt: 'asc' }, // الأكثر مديونية أولاً (أكبر قيمة سالبة)
+    take: 5
+  });
+
+  // Calculate Monthly Canteen Trading Profit (Revenue - Cost of Goods Sold)
   const monthInvoices = await prisma.invoice.findMany({
     where: { createdAt: { gte: startOfMonth }, status: 'COMPLETED' },
     include: { items: { include: { product: true } } }
@@ -153,10 +166,11 @@ const getHomeDashboardData = async (userId, userRole) => {
 
   let monthRevenue = 0;
   let monthCost = 0;
+
   monthInvoices.forEach(inv => {
     monthRevenue += Number(inv.totalAmount);
-    inv.items.forEach(item => {
-      monthCost += Number(item.quantity) * Number(item.product.purchasePrice);
+    inv.items.forEach(it => {
+      monthCost += Number(it.quantity) * Number(it.product?.purchasePrice || 0);
     });
   });
 
@@ -172,9 +186,11 @@ const getHomeDashboardData = async (userId, userRole) => {
     totalDebts: Number(Math.abs(Number(debts._sum.currentDebt || 0)).toFixed(2)),
     totalPatientDeposits: Number(Number(patientDepositsLiability._sum.currentDebt || 0).toFixed(2)),
     netProfit: Number(netProfit.toFixed(2)),
-    treasuryBalance: Number(treasuryBalance.toFixed(2))
+    treasuryBalance: Number(treasuryBalance.toFixed(2)),
+    expiringSoonCount: expiringSoonItems.length,
+    expiredCount: expiredItems.length,
+    totalExpiryAlerts: expiringSoonItems.length + expiredItems.length
   };
-
 
   // 4. Performance Metrics (Instead of sensitive logs)
   const chartData = await reportsService.getSalesChartData(7);
@@ -182,6 +198,10 @@ const getHomeDashboardData = async (userId, userRole) => {
 
   return {
     lowStockItems,
+    expiringSoonItems,
+    expiredItems,
+    expiringSoonCount: expiringSoonItems.length,
+    expiredCount: expiredItems.length,
     shiftStats,
     adminStats,
     topDebtors,

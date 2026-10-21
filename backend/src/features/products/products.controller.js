@@ -3,12 +3,7 @@ const productsService = require('./products.service');
 const getAll = async (req, res, next) => {
   try {
     const products = await productsService.getAllProducts();
-    // Calculate total stock for each product dynamically from batches
-    const data = products.map(p => {
-      const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
-      return { ...p, totalStock };
-    });
-    res.json({ success: true, data });
+    res.json({ success: true, data: products });
   } catch (error) {
     next(error);
   }
@@ -18,8 +13,16 @@ const getById = async (req, res, next) => {
   try {
     const product = await productsService.getProductById(Number(req.params.id));
     if (!product) return res.status(404).json({ success: false, message: 'الصنف غير موجود' });
-    const totalStock = product.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
-    res.json({ success: true, data: { ...product, totalStock } });
+    res.json({ success: true, data: product });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getExpiryAlerts = async (req, res, next) => {
+  try {
+    const alerts = await productsService.getExpiryAlerts();
+    res.json({ success: true, data: alerts });
   } catch (error) {
     next(error);
   }
@@ -53,4 +56,4 @@ const adjust = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, adjust };
+module.exports = { getAll, getById, getExpiryAlerts, create, update, adjust };

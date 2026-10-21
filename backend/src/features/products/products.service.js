@@ -1,18 +1,68 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const calculateExpiryInfo = (product) => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  let effectiveExpiryDate = product.expiryDate;
+  if (!effectiveExpiryDate && product.batches && product.batches.length > 0) {
+    const batchWithExpiry = product.batches
+      .filter(b => b.expiryDate && Number(b.quantityRemaining) > 0)
+      .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate))[0];
+    if (batchWithExpiry) {
+      effectiveExpiryDate = batchWithExpiry.expiryDate;
+    }
+  }
+
+  let expiryStatus = 'NO_EXPIRY';
+  let daysUntilExpiry = null;
+
+  if (effectiveExpiryDate) {
+    const exp = new Date(effectiveExpiryDate);
+    exp.setHours(0, 0, 0, 0);
+    daysUntilExpiry = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+    if (daysUntilExpiry < 0) {
+      expiryStatus = 'EXPIRED';
+    } else if (daysUntilExpiry <= 30) {
+      expiryStatus = 'EXPIRING_SOON';
+    } else {
+      expiryStatus = 'VALID';
+    }
+  }
+
+  return {
+    effectiveExpiryDate,
+    expiryStatus,
+    daysUntilExpiry,
+    isExpired: expiryStatus === 'EXPIRED',
+    isExpiringSoon: expiryStatus === 'EXPIRING_SOON'
+  };
+};
+
 const getAllProducts = async () => {
-  return prisma.product.findMany({
+  const products = await prisma.product.findMany({
     include: {
       batches: {
         orderBy: { receivedAt: 'asc' } // FIFO
       }
-    }
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  return products.map(p => {
+    const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+    const expiryInfo = calculateExpiryInfo(p);
+    return {
+      ...p,
+      totalStock,
+      ...expiryInfo
+    };
   });
 };
 
 const getProductById = async (id) => {
-  return prisma.product.findUnique({
+  const product = await prisma.product.findUnique({
     where: { id },
     include: {
       batches: {
@@ -20,13 +70,36 @@ const getProductById = async (id) => {
       }
     }
   });
+
+  if (!product) return null;
+
+  const totalStock = product.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+  const expiryInfo = calculateExpiryInfo(product);
+
+  return {
+    ...product,
+    totalStock,
+    ...expiryInfo
+  };
 };
 
 const createProduct = async (data, userId) => {
-  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, packageUnit, piecesPerPackage, conversionFactor, alertThreshold } = data;
+  const { 
+    name, internalCode, barcode, sellingPrice, purchasePrice, 
+    unit, packageUnit, piecesPerPackage, conversionFactor, 
+    alertThreshold, expiryDate 
+  } = data;
   
   const existingCode = await prisma.product.findUnique({ where: { internalCode } });
   if (existingCode) throw new Error('الكود الداخلي مستخدم مسبقاً');
+
+  let parsedExpiry = null;
+  if (expiryDate && String(expiryDate).trim() !== '') {
+    const parsed = new Date(expiryDate);
+    if (!isNaN(parsed.getTime())) {
+      parsedExpiry = parsed;
+    }
+  }
 
   return prisma.product.create({
     data: {
@@ -35,11 +108,12 @@ const createProduct = async (data, userId) => {
       barcode,
       sellingPrice: Number(sellingPrice),
       purchasePrice: Number(purchasePrice),
-      unit,
+      unit: unit || 'قطعة',
       packageUnit: packageUnit || null,
       piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
       conversionFactor: Number(conversionFactor || 1),
       alertThreshold: Number(alertThreshold || 0),
+      expiryDate: parsedExpiry,
       priceHistory: {
         create: {
           oldPrice: 0,
@@ -55,7 +129,11 @@ const updateProduct = async (id, data, userId) => {
   const product = await prisma.product.findUnique({ where: { id } });
   if (!product) throw new Error('الصنف غير موجود');
 
-  const { name, internalCode, barcode, sellingPrice, purchasePrice, unit, packageUnit, piecesPerPackage, conversionFactor, alertThreshold, isActive } = data;
+  const { 
+    name, internalCode, barcode, sellingPrice, purchasePrice, 
+    unit, packageUnit, piecesPerPackage, conversionFactor, 
+    alertThreshold, isActive, expiryDate 
+  } = data;
   
   if (internalCode !== product.internalCode) {
     const existingCode = await prisma.product.findUnique({ where: { internalCode } });
@@ -66,7 +144,10 @@ const updateProduct = async (id, data, userId) => {
   const oldSellingPrice = Number(product.sellingPrice);
   
   let updateData = {
-    name, internalCode, barcode, unit, 
+    name, 
+    internalCode, 
+    barcode, 
+    unit, 
     packageUnit: packageUnit || null,
     piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
     conversionFactor: Number(conversionFactor || 1), 
@@ -74,6 +155,15 @@ const updateProduct = async (id, data, userId) => {
     isActive,
     purchasePrice: Number(purchasePrice)
   };
+
+  if (expiryDate !== undefined) {
+    if (expiryDate && String(expiryDate).trim() !== '') {
+      const parsed = new Date(expiryDate);
+      updateData.expiryDate = isNaN(parsed.getTime()) ? null : parsed;
+    } else {
+      updateData.expiryDate = null;
+    }
+  }
 
   if (newSellingPrice !== oldSellingPrice) {
     updateData.sellingPrice = newSellingPrice;
@@ -100,9 +190,6 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
   const qty = Number(quantity);
   if (qty <= 0) throw new Error('الكمية يجب أن تكون أكبر من صفر');
 
-  // In real scenario, we should handle batch logic here for adjustments (FIFO), but for manual adjustments 
-  // without a specific batch, we create a generic movement. We calculate current balance from movements or batches.
-  // We'll simplify balance calculation:
   const currentMovements = await prisma.inventoryMovement.findMany({ where: { productId } });
   const balance = currentMovements.reduce((acc, mov) => {
     return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
@@ -111,17 +198,16 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
   let newBalance = balance;
   if (type === 'IN') {
     newBalance += qty;
-    // Create a manual batch
     await prisma.batch.create({
       data: {
         productId,
         quantityRemaining: qty,
-        unitCost: product.purchasePrice
+        unitCost: product.purchasePrice,
+        expiryDate: product.expiryDate || null
       }
     });
   } else {
     newBalance -= qty;
-    // Logic to reduce from batches (FIFO)
     let remainingToReduce = qty;
     const availableBatches = await prisma.batch.findMany({
       where: { productId, quantityRemaining: { gt: 0 } },
@@ -142,7 +228,7 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
   const movement = await prisma.inventoryMovement.create({
     data: {
       productId,
-      type: type, // "IN" or "OUT"
+      type: type,
       quantity: qty,
       balanceAfter: newBalance,
       referenceType: 'ADJUSTMENT',
@@ -153,5 +239,26 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
   return movement;
 };
 
-module.exports = { getAllProducts, getProductById, createProduct, updateProduct, adjustInventory };
+const getExpiryAlerts = async () => {
+  const products = await getAllProducts();
+  const expired = products.filter(p => p.isExpired);
+  const expiringSoon = products.filter(p => p.isExpiringSoon);
 
+  return {
+    expiredCount: expired.length,
+    expiringSoonCount: expiringSoon.length,
+    totalAlerts: expired.length + expiringSoon.length,
+    expired,
+    expiringSoon
+  };
+};
+
+module.exports = { 
+  getAllProducts, 
+  getProductById, 
+  createProduct, 
+  updateProduct, 
+  adjustInventory,
+  getExpiryAlerts,
+  calculateExpiryInfo
+};

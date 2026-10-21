@@ -110,6 +110,15 @@ const POSPage = () => {
   };
 
   const addToCart = (product) => {
+    if (product.isExpired) {
+      playTone(280, 0.2, 'square');
+      toast.error(`⚠️ تحذير: الصنف (${product.name}) منتهي الصلاحية!`, { duration: 3500 });
+    } else if (product.isExpiringSoon) {
+      toast(`⏳ تنبيه: الصنف (${product.name}) أوشكت صلاحيته على الانتهاء (${product.daysUntilExpiry} يوم متبقي)`, {
+        duration: 3000
+      });
+    }
+
     if (product.totalStock <= 0) {
       playTone(450, 0.1, 'triangle');
       toast((t) => (
@@ -426,8 +435,26 @@ const POSPage = () => {
                 <div 
                   key={p.id} 
                   onClick={() => addToCart(p)}
-                  className="border-2 border-gray-100 rounded-2xl p-4 text-center cursor-pointer hover:bg-indigo-50/60 hover:border-indigo-200 hover:shadow-md transition-all group flex flex-col justify-between"
+                  className={`border-2 rounded-2xl p-4 text-center cursor-pointer transition-all group flex flex-col justify-between relative ${
+                    p.isExpired 
+                      ? 'border-red-200 bg-red-50/20 hover:bg-red-50 hover:border-red-300' 
+                      : p.isExpiringSoon 
+                      ? 'border-amber-200 bg-amber-50/20 hover:bg-amber-50 hover:border-amber-300' 
+                      : 'border-gray-100 hover:bg-indigo-50/60 hover:border-indigo-200 hover:shadow-md'
+                  }`}
                 >
+                  {/* Expiry Pill */}
+                  {p.isExpired && (
+                    <div className="absolute -top-2.5 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                      منتهي الصلاحية
+                    </div>
+                  )}
+                  {p.isExpiringSoon && !p.isExpired && (
+                    <div className="absolute -top-2.5 right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">
+                      باقي {p.daysUntilExpiry} يوم
+                    </div>
+                  )}
+
                   <div>
                     <div className="font-bold text-gray-800 mb-1 group-hover:text-indigo-900 transition-colors line-clamp-1">{p.name}</div>
                     <div className="text-xs text-gray-400 font-bold mb-2">{p.internalCode}</div>

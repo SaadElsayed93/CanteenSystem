@@ -857,6 +857,11 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       totalValue += value;
       totalItems += qty;
 
+      let effectiveExpiry = p.expiryDate;
+      if (!effectiveExpiry && p.batches && p.batches.length > 0) {
+        const b = p.batches.find(b => b.expiryDate && Number(b.quantityRemaining) > 0);
+        if (b) effectiveExpiry = b.expiryDate;
+      }
       return {
         id: p.internalCode || `#${p.id}`,
         name: p.name,
@@ -864,7 +869,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         quantity: qty,
         purchasePrice: Number(p.purchasePrice),
         sellingPrice: Number(p.sellingPrice),
-        totalValue: value
+        totalValue: value,
+        expiryDate: effectiveExpiry
       };
     });
 
@@ -910,6 +916,82 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       summary: {
         lowStockCount,
         uniqueProducts: data.length
+      },
+      data
+    };
+  }
+
+  // ================= 10. EXPIRY & LOSS TRACKING REPORT =================
+  if (type === 'EXPIRY') {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      include: { batches: true },
+      orderBy: { name: 'asc' }
+    });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    let expiredCount = 0;
+    let expiringSoonCount = 0;
+    let totalEstimatedLoss = 0;
+    const data = [];
+
+    products.forEach(p => {
+      const qty = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+      
+      let effectiveExpiry = p.expiryDate;
+      if (!effectiveExpiry && p.batches && p.batches.length > 0) {
+        const bWithExp = p.batches
+          .filter(b => b.expiryDate && Number(b.quantityRemaining) > 0)
+          .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate))[0];
+        if (bWithExp) effectiveExpiry = bWithExp.expiryDate;
+      }
+
+      if (effectiveExpiry) {
+        const exp = new Date(effectiveExpiry);
+        exp.setHours(0, 0, 0, 0);
+        const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+        const costValue = qty * Number(p.purchasePrice);
+
+        let status = 'VALID';
+        if (daysLeft < 0) {
+          status = 'EXPIRED';
+          expiredCount++;
+          totalEstimatedLoss += costValue;
+        } else if (daysLeft <= 30) {
+          status = 'EXPIRING_SOON';
+          expiringSoonCount++;
+        }
+
+        if (status !== 'VALID') {
+          data.push({
+            id: p.internalCode || `#${p.id}`,
+            name: p.name,
+            barcode: p.barcode || 'بدون باركود',
+            unit: p.unit || 'قطعة',
+            quantity: qty,
+            purchasePrice: Number(p.purchasePrice),
+            sellingPrice: Number(p.sellingPrice),
+            totalCostValue: Number(costValue.toFixed(2)),
+            expiryDate: effectiveExpiry,
+            daysLeft,
+            status,
+            statusText: status === 'EXPIRED' ? 'منتهي الصلاحية' : `قريب الانتهاء (متبقي ${daysLeft} يوم)`
+          });
+        }
+      }
+    });
+
+    data.sort((a, b) => a.daysLeft - b.daysLeft);
+
+    return {
+      reportType: 'EXPIRY',
+      summary: {
+        totalAlerts: data.length,
+        expiredCount,
+        expiringSoonCount,
+        totalEstimatedLoss: Number(totalEstimatedLoss.toFixed(2))
       },
       data
     };

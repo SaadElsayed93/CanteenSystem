@@ -61,6 +61,7 @@ model Product {
   piecesPerPackage Int       @default(1) // Number of base units in a package
   conversionFactor Decimal   @default(1.00) 
   alertThreshold   Int       @default(0)
+  expiryDate       DateTime?
   isActive         Boolean   @default(true)
   createdAt        DateTime  @default(now())
 

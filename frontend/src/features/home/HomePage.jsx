@@ -195,7 +195,7 @@ const HomePage = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Low Stock Alerts */}
             <div className="bg-white rounded-2xl border-2 border-red-100 shadow-sm overflow-hidden">
               <div className="bg-red-50 p-4 border-b border-red-100 flex items-center gap-2 text-red-700">
@@ -217,6 +217,65 @@ const HomePage = () => {
                     ))}
                   </ul>
                 )}
+              </div>
+            </div>
+
+            {/* Expiry Alerts Card */}
+            <div className="bg-white rounded-2xl border-2 border-amber-100 shadow-sm overflow-hidden flex flex-col">
+              <div className="bg-amber-50 p-4 border-b border-amber-100 flex items-center justify-between text-amber-800">
+                <div className="flex items-center gap-2">
+                  <Clock size={22} className="text-amber-600" />
+                  <h3 className="font-black text-base">صلاحية الأصناف</h3>
+                </div>
+                {(data.expiredCount > 0 || data.expiringSoonCount > 0) && (
+                  <div className="flex gap-1.5">
+                    {data.expiredCount > 0 && (
+                      <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full font-black">
+                        {data.expiredCount} منتهي
+                      </span>
+                    )}
+                    {data.expiringSoonCount > 0 && (
+                      <span className="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full font-black">
+                        {data.expiringSoonCount} وشيك
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="p-4 max-h-64 overflow-y-auto flex-1">
+                {(data.expiredItems?.length === 0 && data.expiringSoonItems?.length === 0) ? (
+                  <p className="text-gray-400 font-bold text-center py-6 text-sm">جميع تواريخ الصلاحية ممتازة وسارية 👍</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.expiredItems?.map(item => (
+                      <div key={item.id} className="flex justify-between items-center p-2.5 bg-red-50/70 border border-red-100 rounded-xl">
+                        <div>
+                          <p className="font-black text-red-800 text-sm">{item.name}</p>
+                          <p className="text-[11px] text-red-600 font-bold">منتهي منذ {Math.abs(item.daysUntilExpiry)} يوم</p>
+                        </div>
+                        <span className="bg-red-600 text-white text-[10px] px-2 py-1 rounded-md font-black">
+                          تالف / سحب
+                        </span>
+                      </div>
+                    ))}
+                    {data.expiringSoonItems?.map(item => (
+                      <div key={item.id} className="flex justify-between items-center p-2.5 bg-amber-50/70 border border-amber-100 rounded-xl">
+                        <div>
+                          <p className="font-bold text-amber-900 text-sm">{item.name}</p>
+                          <p className="text-[11px] text-amber-700 font-bold">متبقي {item.daysUntilExpiry} يوم</p>
+                        </div>
+                        <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-1 rounded-md font-bold">
+                          أولوية بيع
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-2.5 bg-gray-50 border-t border-gray-100 text-center">
+                <Link to="/products" className="text-xs font-bold text-indigo-600 hover:text-indigo-800">
+                  عرض كل الأصناف وإدارتها &larr;
+                </Link>
               </div>
             </div>
 
@@ -311,6 +370,38 @@ const HomePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Expiry Warning Banner (if alerts exist) */}
+          {data.adminStats?.totalExpiryAlerts > 0 && (
+            <div className="bg-gradient-to-r from-red-600 via-amber-600 to-amber-700 text-white rounded-3xl p-5 shadow-lg border-2 border-red-300 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                  <AlertTriangle size={28} className="text-white" />
+                </div>
+                <div>
+                  <h4 className="font-black text-lg">تنبيه رقابي: أصناف تحتاج للمتابعة بشأن تاريخ الصلاحية</h4>
+                  <p className="text-white/90 text-sm font-bold mt-1 flex flex-wrap gap-2">
+                    {data.adminStats.expiredCount > 0 && (
+                      <span className="bg-red-800/80 px-2.5 py-0.5 rounded-lg font-black">
+                        {data.adminStats.expiredCount} أصناف منتهية الصلاحية
+                      </span>
+                    )}
+                    {data.adminStats.expiringSoonCount > 0 && (
+                      <span className="bg-amber-800/80 px-2.5 py-0.5 rounded-lg font-black">
+                        {data.adminStats.expiringSoonCount} أصناف أوشكت على الانتهاء (خلال 30 يوم)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Link 
+                to="/products"
+                className="bg-white text-gray-900 hover:bg-gray-100 font-black px-5 py-2.5 rounded-2xl text-sm shadow-md transition-all whitespace-nowrap"
+              >
+                فحص وإدارة الأصناف &larr;
+              </Link>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Performance Metrics: Chart and Top Products */}

@@ -7,8 +7,9 @@ const { logAudit } = require('../../common/middleware/audit');
 
 router.use(authMiddleware);
 
-// الجميع بـ auth يقدر يشوف الأصناف
+// الجميع بـ auth يقدر يشوف الأصناف وتنبيهات الصلاحية
 router.get('/', productsController.getAll);
+router.get('/expiry/alerts', productsController.getExpiryAlerts);
 router.get('/:id', productsController.getById);
 
 // الإدارة فقط
