@@ -40,54 +40,165 @@ const calculateExpiryInfo = (product) => {
   };
 };
 
-const getAllProducts = async () => {
+/**
+ * حساب تفاصيل الوصفة: التكلفة الإجمالية للحصة الواحدة،
+ * وعدد الحصص المتاحة للتحضير والبيع حالياً وفق رصيد المواد الخام بالمخزن
+ */
+const calculateRecipeStats = (product) => {
+  if (!product.ingredients || product.ingredients.length === 0) {
+    return {
+      calculatedCost: 0,
+      maxAvailablePortions: 0,
+      ingredientsWithStats: []
+    };
+  }
+
+  let totalCost = 0;
+  let maxPortions = Infinity;
+
+  const ingredientsWithStats = product.ingredients.map(ing => {
+    const raw = ing.rawMaterial || {};
+    const rawStock = (raw.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+    const qtyPerUnit = Number(ing.quantityPerUnit || 0);
+    const unitPurchasePrice = Number(raw.purchasePrice || 0);
+    const itemCost = qtyPerUnit * unitPurchasePrice;
+    totalCost += itemCost;
+
+    let possiblePortions = 0;
+    if (qtyPerUnit > 0) {
+      possiblePortions = Math.floor(rawStock / qtyPerUnit);
+      if (possiblePortions < maxPortions) {
+        maxPortions = possiblePortions;
+      }
+    }
+
+    return {
+      id: ing.id,
+      rawMaterialId: ing.rawMaterialId,
+      rawMaterialName: raw.name || 'مكون غير معروف',
+      rawMaterialCode: raw.internalCode || '',
+      rawMaterialUnit: raw.unit || 'قطعة',
+      rawMaterialPurchasePrice: unitPurchasePrice,
+      rawMaterialStock: rawStock,
+      quantityPerUnit: qtyPerUnit,
+      itemCost: Number(itemCost.toFixed(4)),
+      possiblePortions: qtyPerUnit > 0 ? possiblePortions : 0,
+      notes: ing.notes || null
+    };
+  });
+
+  if (maxPortions === Infinity) {
+    maxPortions = 0;
+  }
+
+  return {
+    calculatedCost: Number(totalCost.toFixed(2)),
+    maxAvailablePortions: maxPortions,
+    ingredientsWithStats
+  };
+};
+
+const formatProductOutput = (p) => {
+  const directStock = (p.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+  const expiryInfo = calculateExpiryInfo(p);
+  const recipeStats = calculateRecipeStats(p);
+
+  const isRecipe = p.productType === 'RECIPE';
+  const totalStock = isRecipe ? recipeStats.maxAvailablePortions : directStock;
+  const effectiveCost = isRecipe ? (Number(p.purchasePrice) > 0 ? Number(p.purchasePrice) : recipeStats.calculatedCost) : Number(p.purchasePrice || 0);
+  const sellingPrice = Number(p.sellingPrice || 0);
+  const profitPerUnit = Number((sellingPrice - effectiveCost).toFixed(2));
+  const profitMargin = sellingPrice > 0 ? Number(((profitPerUnit / sellingPrice) * 100).toFixed(1)) : 0;
+
+  return {
+    ...p,
+    totalStock,
+    directStock,
+    calculatedCost: recipeStats.calculatedCost,
+    recipeStats: isRecipe ? recipeStats : null,
+    effectiveCost,
+    profitPerUnit,
+    profitMargin,
+    ...expiryInfo
+  };
+};
+
+const getAllProducts = async (filters = {}) => {
+  const where = {};
+
+  if (filters.activityType && filters.activityType !== 'ALL') {
+    where.activityType = filters.activityType;
+  }
+  if (filters.productType && filters.productType !== 'ALL') {
+    where.productType = filters.productType;
+  }
+  if (filters.search && filters.search.trim()) {
+    const q = filters.search.trim();
+    where.OR = [
+      { name: { contains: q } },
+      { internalCode: { contains: q } },
+      { barcode: { contains: q } }
+    ];
+  }
+  if (filters.isActive !== undefined) {
+    where.isActive = filters.isActive === 'true' || filters.isActive === true;
+  }
+
   const products = await prisma.product.findMany({
+    where,
     include: {
       batches: {
         orderBy: { receivedAt: 'asc' } // FIFO
+      },
+      ingredients: {
+        include: {
+          rawMaterial: {
+            include: {
+              batches: {
+                where: { quantityRemaining: { gt: 0 } }
+              }
+            }
+          }
+        }
       }
     },
     orderBy: { name: 'asc' }
   });
 
-  return products.map(p => {
-    const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
-    const expiryInfo = calculateExpiryInfo(p);
-    return {
-      ...p,
-      totalStock,
-      ...expiryInfo
-    };
-  });
+  return products.map(formatProductOutput);
 };
 
 const getProductById = async (id) => {
   const product = await prisma.product.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     include: {
       batches: {
         orderBy: { receivedAt: 'asc' }
+      },
+      ingredients: {
+        include: {
+          rawMaterial: {
+            include: {
+              batches: {
+                where: { quantityRemaining: { gt: 0 } }
+              }
+            }
+          }
+        }
       }
     }
   });
 
   if (!product) return null;
-
-  const totalStock = product.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
-  const expiryInfo = calculateExpiryInfo(product);
-
-  return {
-    ...product,
-    totalStock,
-    ...expiryInfo
-  };
+  return formatProductOutput(product);
 };
 
 const createProduct = async (data, userId) => {
   const { 
     name, internalCode, barcode, sellingPrice, purchasePrice, 
     unit, packageUnit, piecesPerPackage, conversionFactor, 
-    alertThreshold, expiryDate 
+    alertThreshold, expiryDate,
+    activityType, productType, recipeYield, recipeNotes, ingredients
   } = data;
   
   const existingCode = await prisma.product.findUnique({ where: { internalCode } });
@@ -101,60 +212,118 @@ const createProduct = async (data, userId) => {
     }
   }
 
-  return prisma.product.create({
+  const yieldCount = recipeYield ? Number(recipeYield) : 1;
+  const isRecipe = productType === 'RECIPE';
+
+  // Calculate purchase price from ingredients if recipe and purchasePrice is 0 or omitted
+  let finalPurchasePrice = Number(purchasePrice || 0);
+  if (isRecipe && (!finalPurchasePrice || finalPurchasePrice <= 0) && Array.isArray(ingredients) && ingredients.length > 0) {
+    let autoCost = 0;
+    for (const ing of ingredients) {
+      const rawMat = await prisma.product.findUnique({ where: { id: Number(ing.rawMaterialId) } });
+      if (rawMat) {
+        const qtyPerUnit = ing.quantityPerUnit !== undefined && ing.quantityPerUnit !== null
+          ? Number(ing.quantityPerUnit)
+          : (Number(ing.batchQuantity || 0) / yieldCount);
+        autoCost += qtyPerUnit * Number(rawMat.purchasePrice || 0);
+      }
+    }
+    finalPurchasePrice = Number(autoCost.toFixed(2));
+  }
+
+  const product = await prisma.product.create({
     data: {
       name,
       internalCode,
-      barcode,
-      sellingPrice: Number(sellingPrice),
-      purchasePrice: Number(purchasePrice),
+      barcode: barcode || null,
+      sellingPrice: Number(sellingPrice || 0),
+      purchasePrice: finalPurchasePrice,
       unit: unit || 'قطعة',
       packageUnit: packageUnit || null,
       piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
       conversionFactor: Number(conversionFactor || 1),
       alertThreshold: Number(alertThreshold || 0),
       expiryDate: parsedExpiry,
+      activityType: activityType || 'CANTEEN',
+      productType: productType || 'SIMPLE',
+      recipeYield: yieldCount,
+      recipeNotes: recipeNotes || null,
       priceHistory: {
         create: {
           oldPrice: 0,
-          newPrice: Number(sellingPrice),
+          newPrice: Number(sellingPrice || 0),
           changedBy: userId
         }
       }
     }
   });
+
+  // Create ingredients if provided
+  if (Array.isArray(ingredients) && ingredients.length > 0) {
+    for (const ing of ingredients) {
+      if (!ing.rawMaterialId) continue;
+      const qtyPerUnit = ing.quantityPerUnit !== undefined && ing.quantityPerUnit !== null
+        ? Number(ing.quantityPerUnit)
+        : (Number(ing.batchQuantity || 0) / yieldCount);
+
+      await prisma.productIngredient.create({
+        data: {
+          parentProductId: product.id,
+          rawMaterialId: Number(ing.rawMaterialId),
+          quantityPerUnit: qtyPerUnit,
+          notes: ing.notes || null
+        }
+      });
+    }
+  }
+
+  return getProductById(product.id);
 };
 
 const updateProduct = async (id, data, userId) => {
-  const product = await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findUnique({ 
+    where: { id: Number(id) },
+    include: { ingredients: true }
+  });
   if (!product) throw new Error('الصنف غير موجود');
 
   const { 
     name, internalCode, barcode, sellingPrice, purchasePrice, 
     unit, packageUnit, piecesPerPackage, conversionFactor, 
-    alertThreshold, isActive, expiryDate 
+    alertThreshold, isActive, expiryDate,
+    activityType, productType, recipeYield, recipeNotes, ingredients
   } = data;
   
-  if (internalCode !== product.internalCode) {
+  if (internalCode && internalCode !== product.internalCode) {
     const existingCode = await prisma.product.findUnique({ where: { internalCode } });
     if (existingCode) throw new Error('الكود الداخلي مستخدم مسبقاً');
   }
 
-  const newSellingPrice = Number(sellingPrice);
+  const newSellingPrice = sellingPrice !== undefined ? Number(sellingPrice) : Number(product.sellingPrice);
   const oldSellingPrice = Number(product.sellingPrice);
   
+  const yieldCount = recipeYield !== undefined ? Number(recipeYield) : (Number(product.recipeYield) || 1);
+  const effectiveProductType = productType !== undefined ? productType : product.productType;
+
   let updateData = {
-    name, 
-    internalCode, 
-    barcode, 
-    unit, 
-    packageUnit: packageUnit || null,
-    piecesPerPackage: piecesPerPackage ? Number(piecesPerPackage) : 1,
-    conversionFactor: Number(conversionFactor || 1), 
-    alertThreshold: Number(alertThreshold || 0), 
-    isActive,
-    purchasePrice: Number(purchasePrice)
+    name: name !== undefined ? name : product.name, 
+    internalCode: internalCode !== undefined ? internalCode : product.internalCode, 
+    barcode: barcode !== undefined ? barcode : product.barcode, 
+    unit: unit !== undefined ? unit : product.unit, 
+    packageUnit: packageUnit !== undefined ? packageUnit : product.packageUnit,
+    piecesPerPackage: piecesPerPackage !== undefined ? Number(piecesPerPackage) : product.piecesPerPackage,
+    conversionFactor: conversionFactor !== undefined ? Number(conversionFactor) : product.conversionFactor, 
+    alertThreshold: alertThreshold !== undefined ? Number(alertThreshold) : product.alertThreshold, 
+    isActive: isActive !== undefined ? isActive : product.isActive,
+    activityType: activityType !== undefined ? activityType : product.activityType,
+    productType: effectiveProductType,
+    recipeYield: yieldCount,
+    recipeNotes: recipeNotes !== undefined ? recipeNotes : product.recipeNotes
   };
+
+  if (purchasePrice !== undefined) {
+    updateData.purchasePrice = Number(purchasePrice);
+  }
 
   if (expiryDate !== undefined) {
     if (expiryDate && String(expiryDate).trim() !== '') {
@@ -176,21 +345,58 @@ const updateProduct = async (id, data, userId) => {
     };
   }
 
-  return prisma.product.update({
-    where: { id },
+  // Handle ingredients update if provided
+  if (Array.isArray(ingredients)) {
+    // Delete existing ingredients
+    await prisma.productIngredient.deleteMany({
+      where: { parentProductId: Number(id) }
+    });
+
+    let autoCost = 0;
+    for (const ing of ingredients) {
+      if (!ing.rawMaterialId) continue;
+      const qtyPerUnit = ing.quantityPerUnit !== undefined && ing.quantityPerUnit !== null
+        ? Number(ing.quantityPerUnit)
+        : (Number(ing.batchQuantity || 0) / yieldCount);
+
+      await prisma.productIngredient.create({
+        data: {
+          parentProductId: Number(id),
+          rawMaterialId: Number(ing.rawMaterialId),
+          quantityPerUnit: qtyPerUnit,
+          notes: ing.notes || null
+        }
+      });
+
+      const rawMat = await prisma.product.findUnique({ where: { id: Number(ing.rawMaterialId) } });
+      if (rawMat) {
+        autoCost += qtyPerUnit * Number(rawMat.purchasePrice || 0);
+      }
+    }
+
+    // Auto-update purchasePrice for recipes if purchasePrice was not explicitly provided or is 0
+    if (effectiveProductType === 'RECIPE' && (purchasePrice === undefined || Number(purchasePrice) === 0)) {
+      updateData.purchasePrice = Number(autoCost.toFixed(2));
+    }
+  }
+
+  await prisma.product.update({
+    where: { id: Number(id) },
     data: updateData
   });
+
+  return getProductById(id);
 };
 
 // Inventory Adjustments (Manual)
 const adjustInventory = async (productId, quantity, type, reason, userId) => {
-  const product = await prisma.product.findUnique({ where: { id: productId }, include: { batches: true } });
+  const product = await prisma.product.findUnique({ where: { id: Number(productId) }, include: { batches: true } });
   if (!product) throw new Error('الصنف غير موجود');
 
   const qty = Number(quantity);
   if (qty <= 0) throw new Error('الكمية يجب أن تكون أكبر من صفر');
 
-  const currentMovements = await prisma.inventoryMovement.findMany({ where: { productId } });
+  const currentMovements = await prisma.inventoryMovement.findMany({ where: { productId: Number(productId) } });
   const balance = currentMovements.reduce((acc, mov) => {
     return mov.type === 'IN' ? acc + Number(mov.quantity) : acc - Number(mov.quantity);
   }, 0);
@@ -200,7 +406,7 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
     newBalance += qty;
     await prisma.batch.create({
       data: {
-        productId,
+        productId: Number(productId),
         quantityRemaining: qty,
         unitCost: product.purchasePrice,
         expiryDate: product.expiryDate || null
@@ -210,7 +416,7 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
     newBalance -= qty;
     let remainingToReduce = qty;
     const availableBatches = await prisma.batch.findMany({
-      where: { productId, quantityRemaining: { gt: 0 } },
+      where: { productId: Number(productId), quantityRemaining: { gt: 0 } },
       orderBy: { receivedAt: 'asc' }
     });
 
@@ -227,7 +433,7 @@ const adjustInventory = async (productId, quantity, type, reason, userId) => {
 
   const movement = await prisma.inventoryMovement.create({
     data: {
-      productId,
+      productId: Number(productId),
       type: type,
       quantity: qty,
       balanceAfter: newBalance,
@@ -253,6 +459,84 @@ const getExpiryAlerts = async () => {
   };
 };
 
+/**
+ * الحصول على كافة الأصناف المؤهلة للاستخدام كمواد خام (RAW_MATERIAL أو SIMPLE)
+ */
+const getRawMaterials = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      productType: { in: ['RAW_MATERIAL', 'SIMPLE'] },
+      isActive: true
+    },
+    include: {
+      batches: {
+        where: { quantityRemaining: { gt: 0 } }
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  return products.map(p => {
+    const totalStock = p.batches.reduce((sum, b) => sum + Number(b.quantityRemaining), 0);
+    return {
+      id: p.id,
+      name: p.name,
+      internalCode: p.internalCode,
+      unit: p.unit,
+      purchasePrice: Number(p.purchasePrice),
+      sellingPrice: Number(p.sellingPrice),
+      activityType: p.activityType,
+      productType: p.productType,
+      totalStock
+    };
+  });
+};
+
+/**
+ * الحصول على كافة الأصناف المركبة (RECIPES)
+ */
+const getRecipes = async () => {
+  return getAllProducts({ productType: 'RECIPE' });
+};
+
+/**
+ * تفاصيل وصفة صنف معين
+ */
+const getRecipe = async (productId) => {
+  const product = await getProductById(productId);
+  if (!product) throw new Error('الصنف غير موجود');
+  return {
+    productId: product.id,
+    name: product.name,
+    internalCode: product.internalCode,
+    activityType: product.activityType,
+    productType: product.productType,
+    recipeYield: product.recipeYield || 1,
+    recipeNotes: product.recipeNotes,
+    sellingPrice: product.sellingPrice,
+    purchasePrice: product.purchasePrice,
+    calculatedCost: product.calculatedCost,
+    profitPerUnit: product.profitPerUnit,
+    profitMargin: product.profitMargin,
+    maxAvailablePortions: product.totalStock,
+    ingredients: product.recipeStats ? product.recipeStats.ingredientsWithStats : []
+  };
+};
+
+/**
+ * حفظ أو تعديل وصفة صنف معين
+ */
+const saveRecipe = async (productId, recipeData, userId) => {
+  const { recipeYield, recipeNotes, ingredients, sellingPrice } = recipeData;
+  return updateProduct(Number(productId), {
+    productType: 'RECIPE',
+    recipeYield: recipeYield || 1,
+    recipeNotes,
+    ingredients: ingredients || [],
+    sellingPrice: sellingPrice !== undefined ? sellingPrice : undefined
+  }, userId);
+};
+
 module.exports = { 
   getAllProducts, 
   getProductById, 
@@ -260,5 +544,10 @@ module.exports = {
   updateProduct, 
   adjustInventory,
   getExpiryAlerts,
-  calculateExpiryInfo
+  calculateExpiryInfo,
+  calculateRecipeStats,
+  getRawMaterials,
+  getRecipes,
+  getRecipe,
+  saveRecipe
 };
