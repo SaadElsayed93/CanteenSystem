@@ -1,6 +1,41 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const calculateDivisionBreakdown = (invoices) => {
+  const divisions = {
+    CANTEEN: { name: 'الكانتين (معلبات وسناكس)', activityType: 'CANTEEN', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
+    BUFFET: { name: 'البوفيه والمشروبات', activityType: 'BUFFET', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
+    SANDWICH: { name: 'السندوتشات والمطبخ', activityType: 'SANDWICH', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 }
+  };
+
+  invoices.forEach(inv => {
+    inv.items?.forEach(item => {
+      const act = item.product?.activityType || 'CANTEEN';
+      if (!divisions[act]) {
+        divisions[act] = { name: act, activityType: act, revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 };
+      }
+      const qty = Number(item.quantity || 0);
+      const rev = Number(item.subtotal || 0);
+      const cost = qty * Number(item.product?.purchasePrice || 0);
+
+      divisions[act].revenue += rev;
+      divisions[act].cost += cost;
+      divisions[act].profit += (rev - cost);
+      divisions[act].count += qty;
+    });
+  });
+
+  Object.keys(divisions).forEach(k => {
+    const d = divisions[k];
+    d.revenue = Number(d.revenue.toFixed(2));
+    d.cost = Number(d.cost.toFixed(2));
+    d.profit = Number(d.profit.toFixed(2));
+    d.margin = d.revenue > 0 ? Number(((d.profit / d.revenue) * 100).toFixed(1)) : 0;
+  });
+
+  return divisions;
+};
+
 const getDashboardMetrics = async () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -304,6 +339,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
     });
 
     const productsList = Object.values(productMap).sort((a, b) => b.quantity - a.quantity);
+    const divisions = calculateDivisionBreakdown(invoices);
 
     return {
       reportType: 'DAILY_FINANCIAL',
@@ -324,8 +360,10 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         netProfit,
         patientDeposits,
         patientWithdrawals,
-        shiftsCount: shifts.length
+        shiftsCount: shifts.length,
+        divisions
       },
+      divisions: Object.values(divisions),
       shifts: shiftsList,
       products: productsList,
       expenses: expensesList,
@@ -476,6 +514,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         profit: Number(Number(p.profit || 0).toFixed(2))
       }));
 
+    const divisions = calculateDivisionBreakdown(invoices);
+
     return {
       reportType: 'MONTHLY_FINANCIAL',
       period: { startDate, endDate },
@@ -499,8 +539,10 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         totalPatientDeposits: Number(patientDeposits._sum.currentDebt || 0),
         totalPatientDebts: Math.abs(Number(patientDebts._sum.currentDebt || 0)),
         activePatientsCount,
-        totalSupplierDebts
+        totalSupplierDebts,
+        divisions
       },
+      divisions: Object.values(divisions),
       expensesByCategory: Object.values(categoryMap),
       treasuryBalances,
       topProducts: allSoldProducts,
@@ -1044,6 +1086,81 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         activePatients: patients.length
       },
       data
+    };
+  }
+
+  // ================= 10. RAW MATERIALS CONSUMPTION REPORT =================
+  if (type === 'RAW_MATERIALS') {
+    const rawMaterials = await prisma.product.findMany({
+      where: { productType: 'RAW_MATERIAL' },
+      include: {
+        batches: true,
+        inventoryMovements: {
+          where: {
+            createdAt: { gte: startDate, lte: endDate }
+          },
+          include: { user: { select: { fullName: true } } },
+          orderBy: { createdAt: 'desc' }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    let totalRawValueConsumed = 0;
+    const materialsList = rawMaterials.map(rm => {
+      const currentStock = rm.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      
+      let consumedQty = 0;
+      let returnedQty = 0;
+      let purchasedQty = 0;
+      let adjustmentIn = 0;
+      let adjustmentOut = 0;
+
+      rm.inventoryMovements.forEach(m => {
+        const qty = Number(m.quantity || 0);
+        if (m.type === 'OUT' && (m.referenceType === 'SALE_RECIPE' || m.referenceType === 'SALE')) {
+          consumedQty += qty;
+        } else if (m.type === 'IN' && m.referenceType === 'RETURN_RECIPE') {
+          returnedQty += qty;
+        } else if (m.type === 'IN' && m.referenceType === 'PURCHASE') {
+          purchasedQty += qty;
+        } else if (m.type === 'IN' && m.referenceType === 'ADJUSTMENT') {
+          adjustmentIn += qty;
+        } else if (m.type === 'OUT' && m.referenceType === 'ADJUSTMENT') {
+          adjustmentOut += qty;
+        }
+      });
+
+      const netConsumedQty = Math.max(0, consumedQty - returnedQty);
+      const unitCost = Number(rm.purchasePrice || 0);
+      const totalCostConsumed = Number((netConsumedQty * unitCost).toFixed(2));
+      totalRawValueConsumed += totalCostConsumed;
+
+      return {
+        id: rm.id,
+        name: rm.name,
+        code: rm.internalCode,
+        unit: rm.unit,
+        unitCost,
+        currentStock,
+        consumedQty: Number(consumedQty.toFixed(3)),
+        returnedQty: Number(returnedQty.toFixed(3)),
+        netConsumedQty: Number(netConsumedQty.toFixed(3)),
+        totalCostConsumed,
+        purchasedQty: Number(purchasedQty.toFixed(3)),
+        movementsCount: rm.inventoryMovements.length
+      };
+    });
+
+    return {
+      reportType: 'RAW_MATERIALS',
+      period: { startDate, endDate },
+      summary: {
+        totalMaterialsCount: rawMaterials.length,
+        totalRawValueConsumed: Number(totalRawValueConsumed.toFixed(2))
+      },
+      materials: materialsList,
+      data: materialsList
     };
   }
 

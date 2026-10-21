@@ -13,7 +13,7 @@ import {
   TrendingUp, TrendingDown, DollarSign, PackageOpen, Users, 
   ShoppingCart, Calendar, AlertTriangle, Download, Printer, 
   Filter, Clock, FileText, CheckCircle2, Truck, Wallet, ArrowUpRight,
-  ArrowDownRight, Layers, Sparkles
+  ArrowDownRight, Layers, Sparkles, Store, Coffee, UtensilsCrossed, ChefHat, Package
 } from 'lucide-react';
 
 const formatDate = (dateString) => {
@@ -524,6 +524,7 @@ const ReportsPage = () => {
                   </optgroup>
                   <optgroup label="📊 حركة المبيعات والمخزن">
                     <option value="SALES">تقرير المبيعات والأرباح حسب الأصناف</option>
+                    <option value="RAW_MATERIALS">📦 تقرير استهلاك وحركة المواد الخام بالمطبخ والبوفيه</option>
                     <option value="SHIFTS">تقرير الورديات اليومية وتقفيل الدرج</option>
                     <option value="INVENTORY">تقرير تقييم المخزون الحالي</option>
                     <option value="LOW_STOCK">تقرير نواقص المخزون واحتياجات الشراء</option>
@@ -882,6 +883,105 @@ const ReportsPage = () => {
                     })()}
                   </div>
 
+                  {/* 3 Independent Business Divisions Breakdown (Canteen, Buffet, Sandwich) */}
+                  {detailedData.summary?.divisions && (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                          <span>أرباح ومبيعات الأقسام الثلاثة المستقلة (كانتين - بوفيه - سندوتشات)</span>
+                        </h3>
+                        <span className="text-xs text-gray-500 font-bold">
+                          حسابات وأرباح كل قسم على حدة
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Canteen Division */}
+                        <div className="bg-gradient-to-br from-sky-50 to-blue-50/50 p-4 rounded-2xl border-2 border-sky-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-sky-950 text-sm flex items-center gap-1.5">
+                              <Store size={18} className="text-sky-600" />
+                              <span>أرباح الكانتين (سناكس ومعلبات)</span>
+                            </span>
+                            <span className="text-xs bg-sky-100 text-sky-800 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.CANTEEN?.count || 0} قطعة
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.CANTEEN?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.CANTEEN?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-sky-100 p-2 rounded-xl border border-sky-200">
+                              <div className="text-[10px] text-sky-800 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-sky-950">+{Number(detailedData.summary.divisions.CANTEEN?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-sky-700 font-bold font-sans">({detailedData.summary.divisions.CANTEEN?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Buffet Division */}
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-4 rounded-2xl border-2 border-amber-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-amber-950 text-sm flex items-center gap-1.5">
+                              <Coffee size={18} className="text-amber-600" />
+                              <span>أرباح البوفيه والمشروبات</span>
+                            </span>
+                            <span className="text-xs bg-amber-100 text-amber-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.BUFFET?.count || 0} كوب/مشروب
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.BUFFET?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.BUFFET?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-amber-100 p-2 rounded-xl border border-amber-200">
+                              <div className="text-[10px] text-amber-900 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-amber-950">+{Number(detailedData.summary.divisions.BUFFET?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-amber-800 font-bold font-sans">({detailedData.summary.divisions.BUFFET?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sandwich Division */}
+                        <div className="bg-gradient-to-br from-emerald-50 to-green-50/50 p-4 rounded-2xl border-2 border-emerald-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-emerald-950 text-sm flex items-center gap-1.5">
+                              <UtensilsCrossed size={18} className="text-emerald-600" />
+                              <span>أرباح السندوتشات والمطبخ</span>
+                            </span>
+                            <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.SANDWICH?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.SANDWICH?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-emerald-100 p-2 rounded-xl border border-emerald-200">
+                              <div className="text-[10px] text-emerald-900 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-emerald-950">+{Number(detailedData.summary.divisions.SANDWICH?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-emerald-800 font-bold font-sans">({detailedData.summary.divisions.SANDWICH?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Section A: Shifts & Cash Box Drawer */}
                   <div className="space-y-3">
                     <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
@@ -1076,6 +1176,105 @@ const ReportsPage = () => {
                       );
                     })()}
                   </div>
+
+                  {/* 3 Independent Business Divisions Breakdown (Canteen, Buffet, Sandwich) */}
+                  {detailedData.summary?.divisions && (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                          <span>أرباح ومبيعات الأقسام الثلاثة في تقفيلة الشهر (كانتين - بوفيه - سندوتشات)</span>
+                        </h3>
+                        <span className="text-xs text-gray-500 font-bold">
+                          أرباح كل قسم مستقلة تماماً
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Canteen Division */}
+                        <div className="bg-gradient-to-br from-sky-50 to-blue-50/50 p-4 rounded-2xl border-2 border-sky-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-sky-950 text-sm flex items-center gap-1.5">
+                              <Store size={18} className="text-sky-600" />
+                              <span>أرباح الكانتين (سناكس ومعلبات)</span>
+                            </span>
+                            <span className="text-xs bg-sky-100 text-sky-800 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.CANTEEN?.count || 0} قطعة
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.CANTEEN?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-sky-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.CANTEEN?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-sky-100 p-2 rounded-xl border border-sky-200">
+                              <div className="text-[10px] text-sky-800 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-sky-950">+{Number(detailedData.summary.divisions.CANTEEN?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-sky-700 font-bold font-sans">({detailedData.summary.divisions.CANTEEN?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Buffet Division */}
+                        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 p-4 rounded-2xl border-2 border-amber-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-amber-950 text-sm flex items-center gap-1.5">
+                              <Coffee size={18} className="text-amber-600" />
+                              <span>أرباح البوفيه والمشروبات</span>
+                            </span>
+                            <span className="text-xs bg-amber-100 text-amber-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.BUFFET?.count || 0} كوب/مشروب
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.BUFFET?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.BUFFET?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-amber-100 p-2 rounded-xl border border-amber-200">
+                              <div className="text-[10px] text-amber-900 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-amber-950">+{Number(detailedData.summary.divisions.BUFFET?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-amber-800 font-bold font-sans">({detailedData.summary.divisions.BUFFET?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sandwich Division */}
+                        <div className="bg-gradient-to-br from-emerald-50 to-green-50/50 p-4 rounded-2xl border-2 border-emerald-200 space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-black text-emerald-950 text-sm flex items-center gap-1.5">
+                              <UtensilsCrossed size={18} className="text-emerald-600" />
+                              <span>أرباح السندوتشات والمطبخ</span>
+                            </span>
+                            <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                              {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
+                            <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">المبيعات</div>
+                              <div className="font-black text-gray-900">{Number(detailedData.summary.divisions.SANDWICH?.revenue || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
+                              <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
+                              <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.SANDWICH?.cost || 0).toFixed(2)}</div>
+                            </div>
+                            <div className="bg-emerald-100 p-2 rounded-xl border border-emerald-200">
+                              <div className="text-[10px] text-emerald-900 font-bold font-sans">الربح الصافي</div>
+                              <div className="font-black text-emerald-950">+{Number(detailedData.summary.divisions.SANDWICH?.profit || 0).toFixed(2)}</div>
+                              <div className="text-[9px] text-emerald-800 font-bold font-sans">({detailedData.summary.divisions.SANDWICH?.margin || 0}%)</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Section: Treasury Balances at Month End */}
                   {detailedData.treasuryBalances && (
@@ -1470,9 +1669,11 @@ const ReportsPage = () => {
                                 {key === 'netDifference' && 'صافي الفارق المالي'}
                                 {key === 'totalPatients' && 'إجمالي عدد المرضى النشطين'}
                                 {key === 'activePatients' && 'عدد المرضى النشطين'}
+                                {key === 'totalRawValueConsumed' && 'إجمالي قيمة المواد الخام المستهلكة'}
+                                {key === 'totalMaterialsCount' && 'عدد خامات المطبخ والبوفيه'}
                               </p>
                               <p className="text-xl font-black text-indigo-700">
-                                {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients'].includes(key)
+                                {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients', 'totalMaterialsCount'].includes(key)
                                   ? `${Number(val || 0).toFixed(2)} ج.م` 
                                   : val}
                               </p>
@@ -1538,6 +1739,17 @@ const ReportsPage = () => {
                               <th className="p-3">الرصيد المالي</th>
                               <th className="p-3">الحالة</th>
                               <th className="p-3">ملاحظات</th>
+                            </>
+                          )}
+                          {reportType === 'RAW_MATERIALS' && (
+                            <>
+                              <th className="p-3">المادة الخام والكود</th>
+                              <th className="p-3">سعر التكلفة للوحدة</th>
+                              <th className="p-3">الرصيد المتبقي بالمخزن</th>
+                              <th className="p-3">المستهلك بالتحضير</th>
+                              <th className="p-3">المرتجع للمخزن</th>
+                              <th className="p-3">صافي الاستهلاك</th>
+                              <th className="p-3">إجمالي قيمة المستهلك</th>
                             </>
                           )}
                         </tr>
@@ -1639,6 +1851,26 @@ const ReportsPage = () => {
                                   </span>
                                 </td>
                                 <td className="p-3 text-gray-400 font-normal">{row.notes || '-'}</td>
+                              </>
+                            )}
+                            {reportType === 'RAW_MATERIALS' && (
+                              <>
+                                <td className="p-3">
+                                  <div className="font-black text-gray-900">{row.name}</div>
+                                  <div className="text-[10px] text-gray-400 font-mono">{row.code}</div>
+                                </td>
+                                <td className="p-3 font-mono">{Number(row.unitCost || 0).toFixed(2)} ج.م / {row.unit}</td>
+                                <td className="p-3 font-mono">
+                                  <span className={`px-2 py-0.5 rounded-lg text-xs font-black ${
+                                    row.currentStock <= 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                                  }`}>
+                                    {row.currentStock} {row.unit}
+                                  </span>
+                                </td>
+                                <td className="p-3 font-mono text-purple-700 font-black">{row.consumedQty} {row.unit}</td>
+                                <td className="p-3 font-mono text-emerald-700 font-black">{row.returnedQty} {row.unit}</td>
+                                <td className="p-3 font-mono text-indigo-900 font-black text-sm">{row.netConsumedQty} {row.unit}</td>
+                                <td className="p-3 font-mono text-red-600 font-black text-sm">{Number(row.totalCostConsumed || 0).toFixed(2)} ج.م</td>
                               </>
                             )}
                           </tr>
