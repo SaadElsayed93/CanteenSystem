@@ -7,6 +7,7 @@ import {
   Search, SlidersHorizontal, AlertTriangle, Clock, Calendar, 
   Store, Coffee, UtensilsCrossed, Layers, Eye, ChefHat, Info
 } from 'lucide-react';
+import HotDrinksRecipeModal from './HotDrinksRecipeModal';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -48,6 +49,15 @@ const ProductsPage = () => {
 
   // Modal to preview recipe ingredients
   const [viewRecipeModal, setViewRecipeModal] = useState(null);
+
+  // Modal for Hot Drinks Recipe Builder
+  const [hotDrinkModalOpen, setHotDrinkModalOpen] = useState(false);
+  const [editingHotDrink, setEditingHotDrink] = useState(null);
+
+  const openHotDrinkModal = (recipe = null) => {
+    setEditingHotDrink(recipe);
+    setHotDrinkModalOpen(true);
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -137,6 +147,10 @@ const ProductsPage = () => {
   };
 
   const openEditModal = (product) => {
+    if (product.activityType === 'BUFFET' && product.productType === 'RECIPE') {
+      return openHotDrinkModal(product);
+    }
+
     setIsEditMode(true);
     setCurrentId(product.id);
     
@@ -240,11 +254,11 @@ const ProductsPage = () => {
               <span>+ صنف كانتين</span>
             </button>
             <button 
-              onClick={() => openAddModal('BUFFET', 'RECIPE')} 
+              onClick={() => openHotDrinkModal(null)} 
               className="bg-amber-600 hover:bg-amber-700 text-white font-black px-4 py-2.5 rounded-2xl transition-all shadow-sm flex items-center gap-1.5 text-xs sm:text-sm"
             >
               <Coffee size={18} />
-              <span>+ مشروب بوفيه</span>
+              <span>+ مشروب بوفيه (شاي/قهوة)</span>
             </button>
             <button 
               onClick={() => openAddModal('SANDWICH', 'RECIPE')} 
@@ -1133,6 +1147,14 @@ const ProductsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Hot Drinks Recipe Modal */}
+      <HotDrinksRecipeModal
+        isOpen={hotDrinkModalOpen}
+        onClose={() => { setHotDrinkModalOpen(false); setEditingHotDrink(null); }}
+        onSuccess={fetchProducts}
+        initialRecipe={editingHotDrink}
+      />
 
     </div>
   );
