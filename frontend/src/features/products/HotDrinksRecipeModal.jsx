@@ -118,48 +118,48 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
     if (type === 'TEA') {
       const newIngs = [];
       if (tea) newIngs.push({ rawMaterialId: tea.id, batchQuantity: 100, notes: '1 فتلة لكل كوب' });
-      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 2, notes: '2 كجم لكل 100 كوب (20 جم/كوب)' });
-      if (cups) newIngs.push({ rawMaterialId: cups.id, batchQuantity: 100, notes: '1 كوب لكل كوب' });
+      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 2, notes: '2 كجم سكر (20 جم/كوب)' });
+      if (cups) newIngs.push({ rawMaterialId: cups.id, batchQuantity: 100, notes: '1 كوب لكل مشروب' });
 
       setForm(prev => ({
         ...prev,
-        name: prev.name || 'كوب شاي فتلة مخصوص',
+        name: prev.name || 'شاي',
         recipeYield: yieldVal,
         sellingPrice: 10,
-        recipeNotes: '100 فتلة شاي + 2 كجم سكر + 100 كوب ورقي = 100 كوباية شاي',
+        recipeNotes: '100 فتلة شاي + 2 كيلو سكر + 100 كوب بلاستيك = 100 كوباية شاي',
         ingredients: newIngs
       }));
-      toast.success('تم تطبيق وصفة الشاي الافتراضية (100 كوب)');
+      toast.success('تم تطبيق معادلة الشاي (100 فتلة + 2 كجم سكر + 100 كوب)');
     } else if (type === 'COFFEE') {
       const newIngs = [];
-      if (coffee) newIngs.push({ rawMaterialId: coffee.id, batchQuantity: 1, notes: '1 كجم بن لكل 100 فنجان (10 جم/فنجان)' });
-      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 1.5, notes: '1.5 كجم سكر لكل 100 فنجان' });
-      if (cups) newIngs.push({ rawMaterialId: cups.id, batchQuantity: 100, notes: '100 فنجان/كوب' });
-
-      setForm(prev => ({
-        ...prev,
-        name: prev.name || 'كوب قهوة تركي مظبوط',
-        recipeYield: yieldVal,
-        sellingPrice: 15,
-        recipeNotes: '1 كجم بن + 1.5 كجم سكر + 100 كوب = 100 كوباية قهوة',
-        ingredients: newIngs
-      }));
-      toast.success('تم تطبيق وصفة القهوة الافتراضية (100 فنجان)');
-    } else if (type === 'NESCAFE') {
-      const newIngs = [];
-      if (nescafe) newIngs.push({ rawMaterialId: nescafe.id, batchQuantity: 100, notes: '100 كيس كوفي/نسكافيه' });
-      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 1.5, notes: '1.5 كجم سكر' });
+      if (coffee) newIngs.push({ rawMaterialId: coffee.id, batchQuantity: 1, notes: '1 كجم بن (10 جم/كوب)' });
+      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 2, notes: '2 كجم سكر (20 جم/كوب)' });
       if (cups) newIngs.push({ rawMaterialId: cups.id, batchQuantity: 100, notes: '100 كوب' });
 
       setForm(prev => ({
         ...prev,
-        name: prev.name || 'كوب نسكافيه 3*1 / كوفي',
+        name: prev.name || 'قهوة',
         recipeYield: yieldVal,
         sellingPrice: 15,
-        recipeNotes: '100 كيس كوفي + 1.5 كجم سكر + 100 كوب = 100 كوب كوفي',
+        recipeNotes: '1 كيلو بن + 2 كيلو سكر + 100 كوباية = 100 كوباية قهوة',
         ingredients: newIngs
       }));
-      toast.success('تم تطبيق وصفة الكوفي/النسكافيه (100 كوب)');
+      toast.success('تم تطبيق معادلة القهوة (1 كجم بن + 2 كجم سكر + 100 كوب)');
+    } else if (type === 'NESCAFE') {
+      const newIngs = [];
+      if (nescafe) newIngs.push({ rawMaterialId: nescafe.id, batchQuantity: 100, notes: '100 كيس كوفي (1 كيس/كوب)' });
+      if (sugar) newIngs.push({ rawMaterialId: sugar.id, batchQuantity: 2, notes: '2 كجم سكر (20 جم/كوب)' });
+      if (cups) newIngs.push({ rawMaterialId: cups.id, batchQuantity: 100, notes: '100 كوب' });
+
+      setForm(prev => ({
+        ...prev,
+        name: prev.name || 'كوفي',
+        recipeYield: yieldVal,
+        sellingPrice: 15,
+        recipeNotes: '100 كيس كوفي + 2 ك سكر + 100 كوبايه بلاستيك = 100 كوباية كوفي',
+        ingredients: newIngs
+      }));
+      toast.success('تم تطبيق معادلة الكوفي (100 كيس كوفي + 2 كجم سكر + 100 كوب)');
     }
   };
 
@@ -278,37 +278,54 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
         </div>
 
         {/* Quick Presets Buttons */}
-        {!form.id && (
-          <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-2">
+        <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200/80 space-y-2.5">
+          <div className="flex justify-between items-center">
             <div className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-              <Sparkles size={15} className="text-amber-600" />
-              <span>قوالب تحضير سريعة جاهزة (100 كوب):</span>
+              <Sparkles size={16} className="text-amber-600" />
+              <span>معادلات المشروبات السريعة بنقرة واحدة (جاهزة ومضبوطة للـ 100 كوب):</span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => applyPreset('TEA')}
-                className="bg-white text-amber-900 hover:bg-amber-100/80 border border-amber-300 font-black px-3.5 py-1.5 rounded-xl text-xs transition-colors shadow-sm"
-              >
-                ☕ شاي فتلة (100 فتلة + 2 كجم سكر + 100 كوب)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('COFFEE')}
-                className="bg-white text-amber-900 hover:bg-amber-100/80 border border-amber-300 font-black px-3.5 py-1.5 rounded-xl text-xs transition-colors shadow-sm"
-              >
-                ☕ قهوة تركي (1 كجم بن + 1.5 كجم سكر + 100 فنجان)
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset('NESCAFE')}
-                className="bg-white text-amber-900 hover:bg-amber-100/80 border border-amber-300 font-black px-3.5 py-1.5 rounded-xl text-xs transition-colors shadow-sm"
-              >
-                ☕ كوفي/نسكافيه (100 كيس + 1.5 كجم سكر + 100 كوب)
-              </button>
-            </div>
+            <span className="text-[11px] text-amber-700 font-bold bg-amber-100/60 px-2 py-0.5 rounded-lg">
+              اختر لتطبيق المقادير فورياً
+            </span>
           </div>
-        )}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <button
+              type="button"
+              onClick={() => applyPreset('TEA')}
+              className="bg-white hover:bg-amber-100/90 text-amber-950 border-2 border-amber-300/80 font-black p-3 rounded-2xl text-xs transition-all shadow-sm text-right flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black">☕ شاي</span>
+                <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">100 كوب</span>
+              </div>
+              <span className="text-[11px] text-gray-500 font-bold">100 فتلة + 2 كجم سكر + 100 كوب</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('COFFEE')}
+              className="bg-white hover:bg-amber-100/90 text-amber-950 border-2 border-amber-300/80 font-black p-3 rounded-2xl text-xs transition-all shadow-sm text-right flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black">☕ قهوة</span>
+                <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">100 كوب</span>
+              </div>
+              <span className="text-[11px] text-gray-500 font-bold">1 كجم بن + 2 كجم سكر + 100 كوب</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('NESCAFE')}
+              className="bg-white hover:bg-amber-100/90 text-amber-950 border-2 border-amber-300/80 font-black p-3 rounded-2xl text-xs transition-all shadow-sm text-right flex flex-col gap-1"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black">☕ كوفي / نسكافيه</span>
+                <span className="text-[11px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">100 كوب</span>
+              </div>
+              <span className="text-[11px] text-gray-500 font-bold">100 كيس كوفي + 2 كجم سكر + 100 كوب</span>
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           

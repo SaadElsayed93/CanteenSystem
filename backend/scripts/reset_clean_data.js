@@ -66,21 +66,44 @@ async function resetCleanData() {
     await prisma.inventoryCount.deleteMany({});
     await prisma.auditLog.deleteMany({});
 
-    // 7. التأكد من سلامة الأصناف والمكونات والوصفات
+    // 7. تهيئة أرصدة افتتاحية جاهزة للمخزن
+    console.log('⏳ [7/7] تهيئة الأرصدة الافتتاحية للمواد الخام وأصناف الكانتين...');
+    const allProducts = await prisma.product.findMany();
+    for (const prod of allProducts) {
+      if (prod.productType === 'RAW_MATERIAL') {
+        let initialQty = 100;
+        if (prod.internalCode === 'RAW-TEA') initialQty = 500;
+        if (prod.internalCode === 'RAW-CUP') initialQty = 1000;
+        if (prod.internalCode === 'RAW-SUGAR') initialQty = 50;
+        if (prod.internalCode === 'RAW-COFFEE') initialQty = 10;
+        if (prod.internalCode === 'RAW-NESCAFE') initialQty = 200;
+        if (prod.internalCode === 'RAW-VEG') initialQty = 20;
+        await prisma.batch.create({
+          data: { productId: prod.id, quantityRemaining: initialQty, unitCost: Number(prod.purchasePrice) }
+        });
+      } else if (prod.productType === 'SIMPLE') {
+        await prisma.batch.create({
+          data: { productId: prod.id, quantityRemaining: 50, unitCost: Number(prod.purchasePrice) }
+        });
+      }
+    }
+
+    // 8. التأكد من سلامة الأصناف والمكونات والوصفات
     const productsCount = await prisma.product.count();
     const recipesCount = await prisma.productIngredient.count();
     const usersCount = await prisma.user.count();
     const paymentMethodsCount = await prisma.paymentMethod.count();
 
     console.log('\n================================================================');
-    console.log(' ✅ تم التصفير الآمن بنجاح تام! النظام الآن جاهز للعمل الفعلي:');
+    console.log(' ✅ تم التصفير والتهيئة بنجاح تام! النظام الآن جاهز للعمل الفعلي:');
     console.log(`   - عدد المستخدمين النشطين: ${usersCount}`);
     console.log(`   - عدد الأصناف المسجلة: ${productsCount}`);
     console.log(`   - عدد شجرات المكونات والوصفات المحفوظة: ${recipesCount}`);
     console.log(`   - عدد الخزائن والقنوات المهيأة: ${paymentMethodsCount}`);
-    console.log('   - أرصدة الخزائن: 0.00 ج.م');
+    console.log('   - أرصدة الخزائن: 0.00 ج.م (جاهزة لبدء الوردية)');
     console.log('   - أرصدة المرضى والديون: 0.00 ج.م');
     console.log('   - الفواتير والمرتجعات: 0 (مصفرة تماماً)');
+    console.log('   - رصيد المواد الخام وأصناف الكانتين: مهيأ برصيد افتتاحي ممتاز');
     console.log('================================================================\n');
 
   } catch (error) {

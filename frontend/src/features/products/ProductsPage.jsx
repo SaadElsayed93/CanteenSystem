@@ -6,11 +6,12 @@ import { useAuth } from '../auth/AuthContext';
 import { 
   Sparkles, Edit3, X, Barcode, Package, CheckCircle2, 
   Search, SlidersHorizontal, AlertTriangle, Clock, Calendar, 
-  Store, Coffee, UtensilsCrossed, Layers, Eye, ChefHat, Info
+  Store, Coffee, UtensilsCrossed, Layers, Eye, ChefHat, Info, DollarSign
 } from 'lucide-react';
 import HotDrinksRecipeModal from './HotDrinksRecipeModal';
 
 const ProductsPage = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,6 +21,10 @@ const ProductsPage = () => {
   const [activityFilter, setActivityFilter] = useState('ALL'); // 'ALL', 'CANTEEN', 'BUFFET', 'SANDWICH', 'RAW_MATERIAL'
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL', 'LOW_STOCK', 'EXPIRING_SOON', 'EXPIRED'
   const { hasPermission } = useAuth();
+
+  // Quick Price Edit Modal State
+  const [quickPriceModal, setQuickPriceModal] = useState(null);
+  const [newSellingPrice, setNewSellingPrice] = useState('');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -147,9 +152,37 @@ const ProductsPage = () => {
     setIsModalOpen(true);
   };
 
+  const handleOpenQuickPrice = (product) => {
+    setQuickPriceModal(product);
+    setNewSellingPrice(String(product.sellingPrice));
+  };
+
+  const handleSaveQuickPrice = async (e) => {
+    e.preventDefault();
+    if (!quickPriceModal) return;
+    const num = Number(newSellingPrice);
+    if (isNaN(num) || num < 0) {
+      return toast.error('يرجى إدخال سعر بيع صحيح');
+    }
+    try {
+      await client.put(`/products/${quickPriceModal.id}`, {
+        ...quickPriceModal,
+        sellingPrice: num
+      });
+      toast.success(`تم تحديث سعر بيع (${quickPriceModal.name}) إلى ${num} ج.م بنجاح ✅`);
+      setQuickPriceModal(null);
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'فشل تحديث السعر');
+    }
+  };
+
   const openEditModal = (product) => {
     if (product.activityType === 'BUFFET' && product.productType === 'RECIPE') {
       return openHotDrinkModal(product);
+    }
+    if (product.activityType === 'SANDWICH' && product.productType === 'RECIPE') {
+      return navigate(`/sandwiches?edit=${product.id}`);
     }
 
     setIsEditMode(true);
@@ -573,8 +606,20 @@ const ProductsPage = () => {
 
                     {/* Selling Price & Unit Profit */}
                     <td className="p-3.5">
-                      <div className="font-black text-emerald-600 font-mono text-sm">
-                        {Number(p.sellingPrice || 0).toFixed(2)} ج.م
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-black text-emerald-600 font-mono text-sm">
+                          {Number(p.sellingPrice || 0).toFixed(2)} ج.م
+                        </span>
+                        {hasPermission('MANAGE_PRODUCTS') && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenQuickPrice(p)}
+                            className="text-gray-400 hover:text-emerald-700 hover:bg-emerald-50 p-1 rounded-lg transition-colors"
+                            title="تعديل سريع لسعر البيع فقط ⚡"
+                          >
+                            <Edit3 size={13} />
+                          </button>
+                        )}
                       </div>
                       {!isRaw && (
                         <div className="text-[11px] text-emerald-700 font-black mt-0.5">
@@ -1142,6 +1187,74 @@ const ProductsPage = () => {
                   className="px-6 py-2.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200"
                 >
                   تنفيذ التسوية
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Price Edit Modal */}
+      {quickPriceModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm border border-gray-100 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+                  <DollarSign size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-800">تعديل سريع لسعر البيع ⚡</h3>
+                  <p className="text-xs text-gray-500 font-bold">{quickPriceModal.name}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setQuickPriceModal(null)} 
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveQuickPrice} className="space-y-4">
+              <div>
+                <label className="block mb-1.5 text-xs font-bold text-gray-700">
+                  سعر البيع الجديد للمريض/العميل (ج.م):
+                </label>
+                <div className="relative">
+                  <input
+                    required
+                    autoFocus
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    className="w-full border-2 border-emerald-500 rounded-2xl p-3.5 pr-4 pl-12 outline-none font-black text-2xl text-emerald-600 text-center bg-emerald-50/20 focus:bg-white transition-all"
+                    value={newSellingPrice}
+                    onChange={e => setNewSellingPrice(e.target.value)}
+                  />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-sm text-gray-400">
+                    ج.م
+                  </span>
+                </div>
+                <div className="text-[11px] text-gray-400 font-bold mt-1 text-center">
+                  السعر القديم: {Number(quickPriceModal.sellingPrice).toFixed(2)} ج.م
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQuickPriceModal(null)}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200 transition-colors text-xs flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>تأكيد وحفظ السعر</span>
                 </button>
               </div>
             </form>

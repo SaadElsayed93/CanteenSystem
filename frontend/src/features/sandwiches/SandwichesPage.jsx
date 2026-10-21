@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
 import { useAuth } from '../auth/AuthContext';
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 
 const SandwichesPage = () => {
+  const [searchParams] = useSearchParams();
   const [sandwiches, setSandwiches] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,12 +47,63 @@ const SandwichesPage = () => {
         client.get('/products?activityType=SANDWICH'),
         client.get('/products/raw-materials')
       ]);
-      setSandwiches(prodsRes.data.data.filter(p => p.productType === 'RECIPE'));
-      setRawMaterials(rawRes.data.data || []);
+      const loadedSandwiches = prodsRes.data.data.filter(p => p.productType === 'RECIPE');
+      const loadedRaw = rawRes.data.data || [];
+      setSandwiches(loadedSandwiches);
+      setRawMaterials(loadedRaw);
+
+      // Auto-open edit modal if ?edit=ID passed in URL
+      const editId = searchParams.get('edit');
+      if (editId) {
+        const target = loadedSandwiches.find(s => s.id === Number(editId));
+        if (target) {
+          openEditModal(target);
+        }
+      }
     } catch (err) {
       toast.error('فشل تحميل بيانات السندوتشات والمطبخ');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const applyPreset = (type) => {
+    const burger = rawMaterials.find(r => r.name.includes('برجر'));
+    const strips = rawMaterials.find(r => r.name.includes('ستربس'));
+    const bun = rawMaterials.find(r => r.name.includes('كايزر') || r.name.includes('برجر'));
+    const fino = rawMaterials.find(r => r.name.includes('فينو'));
+    const veg = rawMaterials.find(r => r.name.includes('خضار') || r.name.includes('طماطم'));
+
+    if (type === 'BURGER') {
+      const extras = [];
+      if (bun) extras.push({ rawMaterialId: bun.id, batchQuantity: 20, notes: '1 رغيف لكل سندوتش' });
+      if (veg) extras.push({ rawMaterialId: veg.id, batchQuantity: 1, notes: '1 كجم خضار وسلطة لـ 20 سندوتش' });
+
+      setForm(prev => ({
+        ...prev,
+        name: 'سندوتش برجر',
+        baseRawMaterialId: burger ? burger.id : prev.baseRawMaterialId,
+        basePiecesCount: 20,
+        sellingPrice: 35,
+        recipeNotes: '20 قطعة برجر + 20 عيش كايزر + 1 كجم خضار = 20 سندوتش برجر',
+        additionalIngredients: extras
+      }));
+      toast.success('تم تطبيق معادلة سندوتش البرجر (20 سندوتش)');
+    } else if (type === 'STRIPS') {
+      const extras = [];
+      if (fino) extras.push({ rawMaterialId: fino.id, batchQuantity: 20, notes: '1 رغيف لكل سندوتش' });
+      if (veg) extras.push({ rawMaterialId: veg.id, batchQuantity: 1, notes: '1 كجم خضار وسلطة لـ 20 سندوتش' });
+
+      setForm(prev => ({
+        ...prev,
+        name: 'سندوتش ستربس',
+        baseRawMaterialId: strips ? strips.id : prev.baseRawMaterialId,
+        basePiecesCount: 20,
+        sellingPrice: 30,
+        recipeNotes: '20 قطعة ستربس + 20 عيش فينو + 1 كجم خضار = 20 سندوتش ستربس',
+        additionalIngredients: extras
+      }));
+      toast.success('تم تطبيق معادلة سندوتش الستربس (20 سندوتش)');
     }
   };
 
@@ -509,6 +562,44 @@ const SandwichesPage = () => {
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-xl">
                 <X size={22} />
               </button>
+            </div>
+
+            {/* Quick Presets Buttons */}
+            <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 space-y-2.5">
+              <div className="flex justify-between items-center">
+                <div className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-emerald-600" />
+                  <span>معادلات الأكل والسندوتشات الجاهزة بنقرة واحدة (محسوبة على 20 سندوتش):</span>
+                </div>
+                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-100/60 px-2 py-0.5 rounded-lg">
+                  اختر لتطبيق المقادير والتكلفة فورياً
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => applyPreset('BURGER')}
+                  className="bg-white hover:bg-emerald-100/90 text-emerald-950 border-2 border-emerald-300/80 font-black p-3 rounded-2xl text-xs transition-all shadow-sm text-right flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black">🍔 سندوتش برجر</span>
+                    <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">20 سندوتش</span>
+                  </div>
+                  <span className="text-[11px] text-gray-500 font-bold">20 قطعة برجر + 20 عيش كايزر + 1 كجم خضار</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => applyPreset('STRIPS')}
+                  className="bg-white hover:bg-emerald-100/90 text-emerald-950 border-2 border-emerald-300/80 font-black p-3 rounded-2xl text-xs transition-all shadow-sm text-right flex flex-col gap-1"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black">🥪 سندوتش ستربس</span>
+                    <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">20 سندوتش</span>
+                  </div>
+                  <span className="text-[11px] text-gray-500 font-bold">20 قطعة ستربس + 20 عيش فينو + 1 كجم خضار</span>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
