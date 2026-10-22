@@ -164,7 +164,7 @@ exports.createBackup = async ({ type = 'MANUAL', userId = 1, notes = '' } = {}) 
  * List all backups with file status and statistics
  */
 exports.listBackups = async () => {
-  const [backups, extSetting] = await Promise.all([
+  const [backups, extSetting, schedEnabledSetting, schedTimeSetting, lastAutoRecord] = await Promise.all([
     prisma.backup.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
@@ -173,8 +173,21 @@ exports.listBackups = async () => {
         }
       }
     }),
-    prisma.setting.findUnique({ where: { key: 'BACKUP_EXTERNAL_PATH' } })
+    prisma.setting.findUnique({ where: { key: 'BACKUP_EXTERNAL_PATH' } }),
+    prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_ENABLED' } }),
+    prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_TIME' } }),
+    prisma.backup.findFirst({
+      where: { type: 'AUTO' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true }
+    })
   ]);
+
+  const scheduleSettings = {
+    enabled: schedEnabledSetting ? schedEnabledSetting.value === 'true' : true,
+    time: schedTimeSetting ? schedTimeSetting.value : '00:00',
+    lastAutoBackupTime: lastAutoRecord ? lastAutoRecord.createdAt : null
+  };
 
   let totalSizeBytes = 0;
   const enriched = backups.map(b => {
@@ -203,7 +216,8 @@ exports.listBackups = async () => {
       totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
       lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,
       backupDir: BACKUP_DIR,
-      externalPath: extSetting ? extSetting.value : null
+      externalPath: extSetting ? extSetting.value : null,
+      schedule: scheduleSettings
     }
   };
 };
@@ -450,6 +464,62 @@ exports.setExternalPath = async (externalPath) => {
 };
 
 /**
+ * Get and update automated backup schedule settings
+ */
+exports.getScheduleSettings = async () => {
+  const [schedEnabled, schedTime, lastAutoRecord] = await Promise.all([
+    prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_ENABLED' } }),
+    prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_TIME' } }),
+    prisma.backup.findFirst({
+      where: { type: 'AUTO' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true, filename: true, sizeBytes: true }
+    })
+  ]);
+
+  return {
+    enabled: schedEnabled ? schedEnabled.value === 'true' : true,
+    time: schedTime ? schedTime.value : '00:00',
+    lastAutoBackup: lastAutoRecord ? {
+      createdAt: lastAutoRecord.createdAt,
+      filename: lastAutoRecord.filename,
+      sizeFormatted: `${(Number(lastAutoRecord.sizeBytes) / (1024 * 1024)).toFixed(2)} MB`
+    } : null
+  };
+};
+
+exports.setScheduleSettings = async ({ enabled = true, time = '00:00' }) => {
+  const cleanTime = (time || '00:00').trim();
+  const isEnabledStr = String(Boolean(enabled));
+
+  await Promise.all([
+    prisma.setting.upsert({
+      where: { key: 'BACKUP_SCHEDULE_ENABLED' },
+      update: { value: isEnabledStr, description: 'تفعيل النسخ الاحتياطي التلقائي المجدول' },
+      create: { key: 'BACKUP_SCHEDULE_ENABLED', value: isEnabledStr, description: 'تفعيل النسخ الاحتياطي التلقائي المجدول' }
+    }),
+    prisma.setting.upsert({
+      where: { key: 'BACKUP_SCHEDULE_TIME' },
+      update: { value: cleanTime, description: 'توقيت النسخ الاحتياطي التلقائي اليومي (HH:mm)' },
+      create: { key: 'BACKUP_SCHEDULE_TIME', value: cleanTime, description: 'توقيت النسخ الاحتياطي التلقائي اليومي (HH:mm)' }
+    })
+  ]);
+
+  return exports.getScheduleSettings();
+};
+
+/**
+ * Trigger an immediate test run of the automated scheduled backup
+ */
+exports.triggerAutoBackupNow = async (userId = 1) => {
+  return exports.createBackup({
+    type: 'AUTO',
+    userId,
+    notes: 'نسخة تلقائية مجدولة فورية (تشغيل تجريبي / يدوي)'
+  });
+};
+
+/**
  * Startup and daily scheduled backups engine
  */
 exports.initAutoBackupEngine = () => {
@@ -464,12 +534,30 @@ exports.initAutoBackupEngine = () => {
     }
   }, 10000);
 
-  // 2. Check every 30 minutes if it's 03:00 AM and no backup was taken today
+  // 2. Check every 60 seconds if it's the scheduled time and no backup was taken today
   setInterval(async () => {
     try {
+      const [schedEnabledSetting, schedTimeSetting] = await Promise.all([
+        prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_ENABLED' } }),
+        prisma.setting.findUnique({ where: { key: 'BACKUP_SCHEDULE_TIME' } })
+      ]);
+
+      const isEnabled = schedEnabledSetting ? schedEnabledSetting.value === 'true' : true;
+      if (!isEnabled) {
+        return;
+      }
+
+      const scheduledTimeStr = schedTimeSetting ? schedTimeSetting.value : '00:00';
+      const [schedHour, schedMin] = scheduledTimeStr.split(':').map(n => parseInt(n, 10) || 0);
+
       const now = new Date();
-      // Target 03:00 AM window (between 03:00 and 03:30)
-      if (now.getHours() === 3 && now.getMinutes() < 30) {
+      // Trigger when current hour and minute match, with a 5-minute safety window
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+
+      const isTimeMatch = (currentHour === schedHour && currentMin >= schedMin && currentMin < schedMin + 5);
+
+      if (isTimeMatch) {
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
         const todaysBackup = await prisma.backup.findFirst({
           where: {
@@ -479,15 +567,19 @@ exports.initAutoBackupEngine = () => {
         });
 
         if (!todaysBackup) {
-          console.log('[Auto Backup Engine] Running daily scheduled 03:00 AM backup...');
-          await exports.createBackup({ type: 'AUTO', userId: 1, notes: 'نسخة يومية مجدولة تلقائية' });
-          console.log('[Auto Backup Engine] Daily scheduled backup completed.');
+          console.log(`[Auto Backup Engine] Running daily scheduled ${scheduledTimeStr} backup...`);
+          await exports.createBackup({
+            type: 'AUTO',
+            userId: 1,
+            notes: `نسخة يومية مجدولة تلقائية (${scheduledTimeStr})`
+          });
+          console.log('[Auto Backup Engine] Daily scheduled backup completed successfully.');
         }
       }
     } catch (err) {
       console.warn('[Auto Backup Engine Scheduled Warning]:', err.message);
     }
-  }, 30 * 60 * 1000); // Check every 30 mins
+  }, 60 * 1000); // Check every 60 seconds
 };
 
 exports.openInExplorer = (targetPath) => {

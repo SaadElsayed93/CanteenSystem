@@ -17,6 +17,7 @@ import {
   RotateCcw, Calculator, Check, RefreshCw, Lock, Unlock, Edit3, ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { exportToExcel } from '../../utils/excelExport';
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -348,6 +349,254 @@ const ReportsPage = () => {
     window.print();
   };
 
+  const handleExportToExcel = () => {
+    if (!detailedData) {
+      toast.error('لا توجد بيانات متاحة للتصدير حالياً');
+      return;
+    }
+
+    try {
+      const dateRangeStr = `${formatDate(startDate)}_إلى_${formatDate(endDate)}`;
+      let filename = `تقرير_${reportType}_${dateRangeStr}`;
+      let sheets = [];
+
+      if (reportType === 'KITCHEN_CLOSING') {
+        filename = `تقفيل_وجرد_خامات_المطبخ_${dateRangeStr}`;
+        const materialsData = (detailedData.materials || []).map((m, idx) => {
+          const act = kitchenActualCounts[m.id] !== undefined ? Number(kitchenActualCounts[m.id]) : (m.actualRemaining ?? m.currentStock);
+          const used = Math.max(0, (m.openingStock + m.purchasesQty) - act);
+          const cost = used * (m.unitCost || 0);
+          return {
+            'م': idx + 1,
+            'كود الخامة': m.internalCode || '—',
+            'اسم الخامة': m.name,
+            'الوحدة': m.unit || 'قطعة',
+            'رصيد أول الشهر': m.openingStock || 0,
+            'وارد مشتريات الشهر': m.purchasesQty || 0,
+            'الرصيد الدفتري': m.currentStock || 0,
+            'الرصيد الفعلي المتبقي': act,
+            'المستهلك الفعلي': Number(used.toFixed(2)),
+            'سعر الوحدة (ج.م)': Number((m.unitCost || 0).toFixed(2)),
+            'تكلفة الاستهلاك الفعلي (ج.م)': Number(cost.toFixed(2))
+          };
+        });
+
+        const sum = detailedData.summary || {};
+        const summaryData = [
+          { 'البيان': 'إجمالي مبيعات السندوتشات', 'القيمة (ج.م)': sum.totalSandwichSales || 0 },
+          { 'البيان': 'تكلفة اللحوم والقطع الأساسية المباعة', 'القيمة (ج.م)': sum.meatBaseCost || 0 },
+          { 'البيان': 'وارد مشتريات الشهر من الخامات', 'القيمة (ج.م)': sum.totalPurchasesThisMonth || 0 },
+          { 'البيان': 'تكلفة الخامات المكملة المستهلكة (بالجرد)', 'القيمة (ج.م)': sum.actualMaterialCostSettled || 0 },
+          { 'البيان': 'صافي الربح الفعلي لمطبخ السندوتشات', 'القيمة (ج.م)': sum.netKitchenProfit || 0 },
+          { 'البيان': 'نسبة هامش الربح', 'القيمة (ج.م)': `${sum.marginPercent || 0}%` },
+          { 'البيان': 'إجمالي عدد السندوتشات المباعة', 'القيمة (ج.م)': sum.sandwichesSold || 0 },
+          { 'البيان': 'حالة التقفيلة', 'القيمة (ج.م)': detailedData.isClosed ? 'معتمدة ومقفلة رسمياً 🔒' : 'مسودة قيد الجرد والتسوية' }
+        ];
+
+        sheets = [
+          { name: 'جرد خامات المطبخ', data: materialsData },
+          { name: 'ملخص أرباح المطبخ', data: summaryData }
+        ];
+      } else if (reportType === 'DAILY_FINANCIAL') {
+        filename = `اليومية_الشاملة_${formatDate(startDate)}`;
+        const s = detailedData.summary || {};
+        const summaryData = [
+          { 'المؤشر المالي': 'إجمالي المبيعات', 'المبلغ (ج.م)': s.totalSales || 0 },
+          { 'المؤشر المالي': 'المرتجعات', 'المبلغ (ج.م)': s.totalReturns || 0 },
+          { 'المؤشر المالي': 'صافي المبيعات', 'المبلغ (ج.م)': s.netSales || 0 },
+          { 'المؤشر المالي': 'تكلفة البضاعة المباعة (COGS)', 'المبلغ (ج.م)': s.totalCost || 0 },
+          { 'المؤشر المالي': 'مجمل ربح النشاط', 'المبلغ (ج.م)': s.netProfit || 0 },
+          { 'المؤشر المالي': 'نسبة هامش الربح', 'المبلغ (ج.م)': `${s.profitMargin || 0}%` },
+          { 'المؤشر المالي': 'المصروفات النقدية', 'المبلغ (ج.م)': s.totalExpenses || 0 },
+          { 'المؤشر المالي': 'صافي الدخل النهائي', 'المبلغ (ج.م)': s.netIncome || 0 },
+          { 'المؤشر المالي': 'مبيعات الكانتين', 'المبلغ (ج.م)': s.canteenSales || 0 },
+          { 'المؤشر المالي': 'أرباح الكانتين', 'المبلغ (ج.م)': s.canteenProfit || 0 },
+          { 'المؤشر المالي': 'مبيعات البوفيه', 'المبلغ (ج.م)': s.buffetSales || 0 },
+          { 'المؤشر المالي': 'أرباح البوفيه', 'المبلغ (ج.م)': s.buffetProfit || 0 },
+          { 'المؤشر المالي': 'مبيعات السندوتشات', 'المبلغ (ج.م)': s.sandwichSales || 0 },
+          { 'المؤشر المالي': 'أرباح السندوتشات (مبدئي)', 'المبلغ (ج.م)': s.sandwichProfit || 0 }
+        ];
+
+        const paymentsData = (detailedData.paymentBreakdown || []).map(p => ({
+          'طريقة الدفع': p.name || p.method,
+          'إجمالي التحصيل (ج.م)': p.amount || 0
+        }));
+
+        const expensesData = (detailedData.expenses || []).map((e, idx) => ({
+          'م': idx + 1,
+          'التاريخ': formatDateTime(e.expenseDate),
+          'التصنيف': e.category?.name || e.categoryName || '—',
+          'البيان': e.description || '—',
+          'المبلغ (ج.م)': e.amount || 0,
+          'طريقة السداد': e.paymentMethod?.name || e.paymentMethodName || '—',
+          'المسؤول': e.user?.fullName || e.user?.username || '—'
+        }));
+
+        sheets = [
+          { name: 'ملخص اليومية', data: summaryData },
+          { name: 'طرق التحصيل والخزينة', data: paymentsData }
+        ];
+        if (expensesData.length > 0) {
+          sheets.push({ name: 'كشف المصروفات', data: expensesData });
+        }
+      } else if (reportType === 'MONTHLY_FINANCIAL') {
+        filename = `التقرير_الشهري_الشامل_${dateRangeStr}`;
+        const s = detailedData.summary || {};
+        const summaryData = [
+          { 'البند المالي': 'إجمالي الإيرادات (المبيعات)', 'القيمة (ج.م)': s.totalSales || 0 },
+          { 'البند المالي': 'المرتجعات', 'القيمة (ج.م)': s.totalReturns || 0 },
+          { 'البند المالي': 'صافي المبيعات', 'القيمة (ج.م)': s.netSales || 0 },
+          { 'البند المالي': 'تكلفة البضاعة المباعة', 'القيمة (ج.م)': s.totalCost || 0 },
+          { 'البند المالي': 'مجمل الأرباح', 'القيمة (ج.م)': s.netProfit || 0 },
+          { 'البند المالي': 'إجمالي المصروفات والرواتب', 'القيمة (ج.م)': s.totalExpenses || 0 },
+          { 'البند المالي': 'صافي الدخل والربح النهائي', 'القيمة (ج.م)': s.netIncome || 0 },
+          { 'البند المالي': 'مبيعات الكانتين', 'القيمة (ج.م)': s.canteenSales || 0 },
+          { 'البند المالي': 'صافي ربح الكانتين', 'القيمة (ج.م)': s.canteenProfit || 0 },
+          { 'البند المالي': 'مبيعات البوفيه', 'القيمة (ج.م)': s.buffetSales || 0 },
+          { 'البند المالي': 'صافي ربح البوفيه', 'القيمة (ج.م)': s.buffetProfit || 0 },
+          { 'البند المالي': 'مبيعات السندوتشات', 'القيمة (ج.م)': s.sandwichSales || 0 },
+          { 'البند المالي': 'صافي ربح المطبخ والسندوتشات', 'القيمة (ج.م)': s.sandwichProfit || 0 }
+        ];
+
+        sheets = [
+          { name: 'الملخص المالي العام', data: summaryData }
+        ];
+
+        if (Array.isArray(detailedData.expenses) && detailedData.expenses.length > 0) {
+          const expSheet = detailedData.expenses.map((e, idx) => ({
+            'م': idx + 1,
+            'التاريخ': formatDateTime(e.expenseDate),
+            'التصنيف': e.category?.name || e.categoryName || '—',
+            'البيان': e.description || '—',
+            'المبلغ (ج.م)': e.amount || 0,
+            'طريقة السداد': e.paymentMethod?.name || e.paymentMethodName || '—'
+          }));
+          sheets.push({ name: 'تفاصيل المصروفات', data: expSheet });
+        }
+      } else if (reportType === 'SHIFTS' && Array.isArray(detailedData.data)) {
+        filename = `تقرير_الورديات_${dateRangeStr}`;
+        const shiftsData = detailedData.data.map((s, idx) => ({
+          'م': idx + 1,
+          'رقم الوردية': s.shiftNumber || s.id,
+          'الحالة': s.status,
+          'فتح بواسطة': s.openedBy || '-',
+          'وقت الفتح': formatDateTime(s.openedAt),
+          'إغلاق بواسطة': s.closedBy || '-',
+          'وقت الإغلاق': s.closedAt ? formatDateTime(s.closedAt) : '-',
+          'عهدة البداية (ج.م)': Number(s.startingCash || 0).toFixed(2),
+          'المتوقع بالدرج (ج.م)': s.systemBalance !== null && s.systemBalance !== '-' ? Number(s.systemBalance).toFixed(2) : '-',
+          'المحصي فعلياً (ج.م)': s.actualBalance !== null && s.actualBalance !== '-' ? Number(s.actualBalance).toFixed(2) : '-',
+          'الفارق / العجز': s.discrepancy || 'مطابق للنظام',
+          'المورد للخزينة (ج.م)': Number(s.transferredCash || 0).toFixed(2),
+          'المتبقي بالدرج (ج.م)': Number(s.remainingCash || 0).toFixed(2)
+        }));
+        sheets = [{ name: 'سجل الورديات', data: shiftsData }];
+      } else if (reportType === 'SUPPLIERS' && Array.isArray(detailedData.data)) {
+        filename = `كشف_حسابات_الموردين_${dateRangeStr}`;
+        const supData = detailedData.data.map((s, idx) => ({
+          'م': idx + 1,
+          'اسم المورد': s.name,
+          'رقم الهاتف': s.phone || '-',
+          'عدد الفواتير': s.purchasesCount ?? 0,
+          'إجمالي المشتريات (ج.م)': Number(s.totalPurchases || 0).toFixed(2),
+          'إجمالي المسدد (ج.م)': Number(s.totalPaid || 0).toFixed(2),
+          'المديونية المستحقة (ج.م)': Number(s.currentDebt || 0).toFixed(2),
+          'الحالة': s.status || ((s.currentDebt || 0) > 0 ? 'مستحق له مديونية' : 'خالص الحساب')
+        }));
+        sheets = [{ name: 'كشف الموردين', data: supData }];
+      } else if (Array.isArray(detailedData.data)) {
+        const rowData = detailedData.data.map((row, idx) => {
+          if (reportType === 'SALES') {
+            filename = `تقرير_المبيعات_${dateRangeStr}`;
+            return {
+              'م': idx + 1,
+              'اسم الصنف': row.name,
+              'الكمية المباعة': row.quantity ?? 0,
+              'تكلفة الشراء (ج.م)': Number(row.cost || 0).toFixed(2),
+              'إجمالي الإيراد (ج.م)': Number(row.revenue || 0).toFixed(2),
+              'صافي الربح (ج.م)': Number(row.profit || 0).toFixed(2)
+            };
+          } else if (reportType === 'PURCHASES') {
+            filename = `تقرير_المشتريات_${dateRangeStr}`;
+            return {
+              'م': idx + 1,
+              'رقم الفاتورة': row.id,
+              'التاريخ والوقت': formatDateTime(row.date),
+              'المورد': row.supplierName || 'غير محدد',
+              'الأصناف': row.itemsSummary || '-',
+              'الإجمالي (ج.م)': Number(row.total || 0).toFixed(2),
+              'المدفوع (ج.م)': Number(row.paid || 0).toFixed(2),
+              'المتبقي (ج.م)': Number(row.remaining || 0).toFixed(2),
+              'الحالة': row.status || '-'
+            };
+          } else if (reportType === 'EXPENSES') {
+            filename = `تقرير_المصروفات_${dateRangeStr}`;
+            return {
+              'م': idx + 1,
+              'التاريخ والوقت': formatDateTime(row.date),
+              'نوع المصروف': row.category || 'عام',
+              'البيان والتفاصيل': row.description || '-',
+              'القناة المالية': row.paymentMethod || 'نقدي (الدرج)',
+              'المسؤول': row.user || 'النظام',
+              'المبلغ (ج.م)': Number(row.amount || 0).toFixed(2)
+            };
+          } else if (reportType === 'INVENTORY' || reportType === 'LOW_STOCK') {
+            filename = reportType === 'LOW_STOCK' ? `نواقص_المخزون_${dateRangeStr}` : `تقييم_المخزون_${dateRangeStr}`;
+            return {
+              'م': idx + 1,
+              'الصنف': row.name,
+              'الوحدة / التصنيف': row.category || row.unit || '-',
+              'الكمية الحالية': row.quantity ?? 0,
+              'سعر الشراء (ج.م)': Number(row.purchasePrice || 0).toFixed(2),
+              'القيمة الإجمالية (ج.م)': Number(row.totalValue || row.estimatedCost || 0).toFixed(2)
+            };
+          } else if (reportType === 'PATIENTS') {
+            filename = `كشف_حسابات_المرضى_${dateRangeStr}`;
+            return {
+              'م': idx + 1,
+              'رقم الملف': row.id,
+              'اسم المريض': row.name,
+              'الرقم الداخلي / الغرفة': row.internalNumber || '-',
+              'نوع الحساب': row.type,
+              'الرصيد المالي (ج.م)': Math.abs(Number(row.currentDebt || 0)).toFixed(2),
+              'طبيعة الرصيد': (row.currentDebt || 0) < 0 ? 'مديونية عليه' : (row.currentDebt || 0) > 0 ? 'رصيد دائن له' : 'خالص',
+              'الحالة': row.status,
+              'ملاحظات': row.notes || '-'
+            };
+          } else if (reportType === 'RAW_MATERIALS') {
+            filename = `استهلاك_المواد_الخام_${dateRangeStr}`;
+            const totalCost = Number((row.totalCostConsumed || 0) + (row.theoreticalSandwichCost || 0));
+            return {
+              'م': idx + 1,
+              'المادة الخام': row.name,
+              'الكود': row.code || '—',
+              'الوحدة': row.unit || 'قطعة',
+              'سعر التكلفة (ج.م)': Number(row.unitCost || 0).toFixed(2),
+              'الرصيد المتبقي': row.currentStock ?? 0,
+              'المستهلك بالبيع المباشر': row.consumedQty ?? 0,
+              'الاستهلاك التقديري للسندوتشات': row.isSandwichAuxiliary ? (row.theoreticalSandwichUsage ?? 0) : '—',
+              'إجمالي قيمة المستهلك (ج.م)': Number(totalCost.toFixed(2))
+            };
+          }
+          return row;
+        });
+
+        sheets = [{ name: 'بيانات التقرير', data: rowData }];
+      }
+
+      if (sheets.length === 0) {
+        toast.error('لا توجد بيانات مطابقة لتصديرها');
+        return;
+      }
+
+      exportToExcel({ filename, sheets });
+      toast.success('تم تصدير ملف الإكسيل بنجاح 📊');
+    } catch (err) {
+      console.error('Excel Export Error:', err);
+      toast.error('حدث خطأ أثناء تصدير ملف الإكسيل');
+    }
+  };
+
   if (loading || !data) return (
     <div className="flex justify-center items-center h-96">
       <div className="text-2xl font-bold text-gray-400 animate-pulse">جاري تحضير الإحصائيات والتقارير...</div>
@@ -669,8 +918,16 @@ const ReportsPage = () => {
                     <span>{isGenerating ? 'جاري الاستخراج...' : 'تحديث التقرير'}</span>
                   </button>
                   <button 
+                    onClick={handleExportToExcel}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-3 rounded-xl flex items-center gap-1.5 transition-all text-sm cursor-pointer shadow-md hover:shadow-lg whitespace-nowrap"
+                    title="تصدير كشف التقرير كملف إكسيل Excel (.xlsx)"
+                  >
+                    <Download size={18} />
+                    <span className="hidden sm:inline">إكسيل</span>
+                  </button>
+                  <button 
                     onClick={handlePrint}
-                    className="bg-gray-800 text-white font-black px-5 py-3 rounded-xl hover:bg-black flex items-center gap-2 transition-all text-sm"
+                    className="bg-gray-800 text-white font-black px-4 py-3 rounded-xl hover:bg-black flex items-center gap-2 transition-all text-sm cursor-pointer"
                     title="طباعة التقرير"
                   >
                     <Printer size={18} />
@@ -807,14 +1064,22 @@ const ReportsPage = () => {
                 <button 
                   onClick={generateReport}
                   disabled={isGenerating}
-                  className="bg-indigo-600 text-white font-black px-8 py-3 rounded-xl hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200 text-sm"
+                  className="bg-indigo-600 text-white font-black px-8 py-3 rounded-xl hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200 text-sm cursor-pointer"
                 >
                   <Filter size={18} />
                   <span>{isGenerating ? 'جاري الاستخراج...' : 'استخراج التقرير'}</span>
                 </button>
                 <button 
+                  onClick={handleExportToExcel}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3 rounded-xl flex items-center gap-2 transition-all text-sm cursor-pointer shadow-md hover:shadow-lg"
+                  title="تصدير كشف التقرير كملف إكسيل Excel (.xlsx)"
+                >
+                  <Download size={18} />
+                  <span>تصدير إكسيل 📊</span>
+                </button>
+                <button 
                   onClick={handlePrint}
-                  className="bg-gray-800 text-white font-black px-6 py-3 rounded-xl hover:bg-black flex items-center gap-2 transition-all text-sm"
+                  className="bg-gray-800 text-white font-black px-6 py-3 rounded-xl hover:bg-black flex items-center gap-2 transition-all text-sm cursor-pointer"
                 >
                   <Printer size={18} />
                   <span>طباعة A4</span>
@@ -842,6 +1107,26 @@ const ReportsPage = () => {
                   <div className="text-right">
                     <div className="text-base font-black text-gray-900">المستشفى العسكري ق.م بالإسماعيلية</div>
                     <div className="text-xs text-indigo-900 font-bold">إدارة الكانتين والخدمات الغذائية</div>
+                  </div>
+                  <div className="flex items-center gap-2 print:hidden">
+                    <button
+                      type="button"
+                      onClick={handleExportToExcel}
+                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm hover:shadow transition-all cursor-pointer"
+                      title="تصدير بيانات هذا التقرير كملف إكسيل (.xlsx)"
+                    >
+                      <Download size={14} />
+                      <span>تصدير إكسيل 📊</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="px-3.5 py-1.5 bg-gray-800 hover:bg-black text-white rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                      title="طباعة التقرير"
+                    >
+                      <Printer size={14} />
+                      <span>طباعة A4</span>
+                    </button>
                   </div>
                   <div className="text-left font-mono text-gray-500">
                     <div>تاريخ ووقت الطباعة:</div>
@@ -1765,6 +2050,15 @@ const ReportsPage = () => {
                           )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
+                          <button
+                            type="button"
+                            onClick={handleExportToExcel}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-1.5 transition-all cursor-pointer border border-emerald-400/40"
+                            title="تصدير كشف جرد المطبخ وأرباح السندوتشات إلى إكسيل"
+                          >
+                            <Download size={16} />
+                            <span>تصدير إكسيل 📊</span>
+                          </button>
                           <button
                             type="button"
                             onClick={handlePrint}

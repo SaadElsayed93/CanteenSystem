@@ -106,3 +106,32 @@ exports.openBackupFileLocation = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getScheduleSettings = async (req, res, next) => {
+  try {
+    const schedule = await backupsService.getScheduleSettings();
+    res.json({ success: true, data: schedule });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.setScheduleSettings = async (req, res, next) => {
+  try {
+    const { enabled, time } = req.body;
+    const schedule = await backupsService.setScheduleSettings({ enabled, time });
+    res.json({ success: true, data: schedule, message: 'تم حفظ إعدادات النسخ الاحتياطي التلقائي بنجاح' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.triggerAutoBackupNow = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || 1;
+    const result = await backupsService.triggerAutoBackupNow(userId);
+    res.json({ success: true, data: result, message: 'تم تشغيل النسخة الاحتياطية التلقائية وحفظها بنجاح' });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -26,7 +26,7 @@ const formatDateTime = (dateString) => {
 
 const typeMap = {
   'MANUAL': { label: 'يدوي بطلب المدير', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  'AUTO': { label: 'تلقائي مجدول (03:00 ص)', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  'AUTO': { label: 'تلقائي مجدول (يومياً)', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   'SHIFT_CLOSE': { label: 'تقفيل وردية ويومية', color: 'bg-violet-100 text-violet-800 border-violet-200' },
   'STARTUP': { label: 'وقائي عند تشغيل السيرفر', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   'SAFETY_PRE_RESTORE': { label: 'أمان تلقائي قبل استرجاع', color: 'bg-rose-100 text-rose-800 border-rose-200' }
@@ -39,7 +39,8 @@ const BackupPage = () => {
     totalSizeBytes: 0,
     totalSizeFormatted: '0 MB',
     lastBackupTime: null,
-    externalPath: ''
+    externalPath: '',
+    schedule: { enabled: true, time: '00:00', lastAutoBackupTime: null }
   });
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -48,6 +49,12 @@ const BackupPage = () => {
   // External Path State
   const [externalPath, setExternalPath] = useState('');
   const [savingPath, setSavingPath] = useState(false);
+
+  // Scheduled Auto Backup State
+  const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  const [scheduleTime, setScheduleTime] = useState('00:00');
+  const [savingSchedule, setSavingSchedule] = useState(false);
+  const [testingAuto, setTestingAuto] = useState(false);
 
   // Restore Modal State
   const [selectedForRestore, setSelectedForRestore] = useState(null);
@@ -69,14 +76,55 @@ const BackupPage = () => {
       const res = await client.get('/backups');
       if (res.data?.success) {
         setBackups(res.data.data.backups || []);
-        setStats(res.data.data.stats || {});
-        setExternalPath(res.data.data.stats.externalPath || '');
+        const s = res.data.data.stats || {};
+        setStats(s);
+        setExternalPath(s.externalPath || '');
+        if (s.schedule) {
+          setScheduleEnabled(s.schedule.enabled !== false);
+          setScheduleTime(s.schedule.time || '00:00');
+        }
       }
     } catch (err) {
       console.error(err);
       toast.error('تعذر جلب سجل النسخ الاحتياطية');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    setSavingSchedule(true);
+    try {
+      const res = await client.post('/backups/settings/schedule', {
+        enabled: scheduleEnabled,
+        time: scheduleTime
+      });
+      if (res.data?.success) {
+        toast.success('تم حفظ وضبط توقيت النسخ الاحتياطي التلقائي بنجاح ⏰');
+        fetchBackups();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'تعذر حفظ إعدادات الجدولة');
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  const handleTriggerAutoBackup = async () => {
+    setTestingAuto(true);
+    const toastId = toast.loading('جاري تشغيل واختبار النسخة التلقائية المجدولة فورياً...');
+    try {
+      const res = await client.post('/backups/trigger-auto');
+      if (res.data?.success) {
+        toast.success(`تم أخذ النسخة التلقائية بنجاح: ${res.data.data.filename} 🛡️`, { id: toastId });
+        fetchBackups();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'فشل تشغيل النسخة التلقائية', { id: toastId });
+    } finally {
+      setTestingAuto(false);
     }
   };
 
@@ -327,8 +375,9 @@ const BackupPage = () => {
               <Clock size={22} />
             </div>
           </div>
-          <div className="text-xs font-bold text-indigo-700 bg-indigo-50/80 p-2 rounded-lg border border-indigo-100">
-            نسخ تلقائي مجدول عند التقفيل و03:00 ص
+          <div className="text-xs font-bold text-indigo-700 bg-indigo-50/80 p-2 rounded-lg border border-indigo-100 flex items-center justify-between">
+            <span>مجدول يومياً: {scheduleTime === '00:00' ? '12:00 منتصف الليل' : scheduleTime}</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
         </div>
 
@@ -366,6 +415,110 @@ const BackupPage = () => {
           <div className="text-xs font-bold text-amber-800 bg-amber-50/80 p-2 rounded-lg border border-amber-100 truncate">
             {stats.externalPath || 'يمكنك تحديد مسار فلاشة بالأسفل'}
           </div>
+        </div>
+      </div>
+
+      {/* Automated Daily Scheduled Backup Panel */}
+      <div className="bg-gradient-to-l from-indigo-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-md border-2 border-indigo-700/50 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <span className="p-3 bg-white/10 backdrop-blur rounded-2xl text-emerald-400 border border-white/10">
+              <Clock size={24} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-black tracking-wide">النسخ الاحتياطي التلقائي المجدول (Daily Auto-Backup)</h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${scheduleEnabled ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'}`}>
+                  {scheduleEnabled ? '● النظام التلقائي نَشِط' : '○ متوقف'}
+                </span>
+              </div>
+              <p className="text-xs font-bold text-indigo-200 mt-0.5">
+                يقوم النظام تلقائياً بأخذ نسخة كاملة من قاعدة البيانات يومياً في الموعد المحدد وحفظها بأمان دون أي تدخل بشري
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleTriggerAutoBackup}
+            disabled={testingAuto}
+            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
+          >
+            {testingAuto ? (
+              <>
+                <RotateCcw size={15} className="animate-spin" />
+                <span>جاري أخذ النسخة التلقائية...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck size={16} />
+                <span>تشغيل تجريبي فوري للنسخة المجدولة ⚡</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 items-end">
+          {/* Time Picker */}
+          <div>
+            <label className="block text-xs font-black text-indigo-200 mb-1.5">
+              توقيت النسخ اليومي التلقائي:
+            </label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="time" 
+                value={scheduleTime}
+                onChange={e => setScheduleTime(e.target.value)}
+                className="w-full bg-white/10 border-2 border-indigo-400/40 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-emerald-400 text-center"
+                dir="ltr"
+              />
+              <span className="text-xs font-bold text-indigo-300 whitespace-nowrap">
+                {scheduleTime === '00:00' ? '(منتصف الليل 12:00 ص)' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Toggle Enable */}
+          <div>
+            <label className="block text-xs font-black text-indigo-200 mb-1.5">
+              حالة التفعيل:
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setScheduleEnabled(!scheduleEnabled)}
+                className={`flex-1 py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 border transition-colors cursor-pointer ${scheduleEnabled ? 'bg-emerald-600/30 border-emerald-400 text-emerald-200' : 'bg-white/5 border-white/20 text-gray-400'}`}
+              >
+                <CheckCircle2 size={16} className={scheduleEnabled ? 'text-emerald-400' : 'text-gray-500'} />
+                <span>{scheduleEnabled ? 'الجدولة اليومية مفعلة' : 'الجدولة معطلة مؤقتاً'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Save Settings */}
+          <div>
+            <button
+              onClick={handleSaveSchedule}
+              disabled={savingSchedule}
+              className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow border border-indigo-300/30 disabled:opacity-50 cursor-pointer"
+            >
+              <Save size={16} />
+              <span>{savingSchedule ? 'جاري الحفظ...' : 'حفظ إعدادات الجدولة 💾'}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-indigo-300 border-t border-white/10">
+          <div>
+            📂 مسار الحفظ المزدوج: <span className="text-white font-mono" dir="ltr">{stats.backupDir || 'السيرفر/backups'}</span>
+            {stats.externalPath ? (
+              <span className="text-amber-300 mr-2 font-mono" dir="ltr">+ {stats.externalPath} (فلاشة خارجية)</span>
+            ) : null}
+          </div>
+          {stats.schedule?.lastAutoBackupTime && (
+            <div className="text-emerald-300">
+              ✓ آخر نسخة تلقائية أُخذت بنجاح: {formatDateTime(stats.schedule.lastAutoBackupTime)}
+            </div>
+          )}
         </div>
       </div>
 

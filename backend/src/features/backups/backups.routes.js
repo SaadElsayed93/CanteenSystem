@@ -29,4 +29,9 @@ router.post('/:id/open-location', backupsController.openBackupFileLocation);
 router.get('/settings/external-path', backupsController.getExternalPath);
 router.post('/settings/external-path', backupsController.setExternalPath);
 
+// Automated scheduled backups settings & trigger
+router.get('/settings/schedule', backupsController.getScheduleSettings);
+router.post('/settings/schedule', backupsController.setScheduleSettings);
+router.post('/trigger-auto', backupsController.triggerAutoBackupNow);
+
 module.exports = router;
