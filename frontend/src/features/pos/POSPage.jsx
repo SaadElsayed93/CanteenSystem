@@ -63,7 +63,9 @@ const POSPage = () => {
   const fetchPosData = async () => {
     try {
       const res = await client.get('/sales/pos-data');
-      setProducts(res.data.data.products);
+      // حجب واستبعاد المواد الخام نهائياً من الـ POS
+      const sellableProducts = (res.data.data.products || []).filter(p => p.productType !== 'RAW_MATERIAL');
+      setProducts(sellableProducts);
       
       const methods = res.data.data.paymentMethods;
       setPaymentMethods(methods);
@@ -81,7 +83,7 @@ const POSPage = () => {
   };
 
   const filteredProducts = products.filter(p => {
-    // إخفاء المواد الخام من الكتالوج المباشر للبيع
+    // إخفاء المواد الخام من الكتالوج المباشر للبيع نهائياً
     if (p.productType === 'RAW_MATERIAL') return false;
 
     // تصفية حسب القسم
@@ -100,8 +102,8 @@ const POSPage = () => {
     e.preventDefault();
     if (!search.trim()) return;
     
-    // Exact match on barcode or internal code
-    const exactProduct = products.find(p => p.barcode === search.trim() || p.internalCode === search.trim());
+    // Exact match on barcode or internal code (باستثناء المواد الخام)
+    const exactProduct = products.find(p => p.productType !== 'RAW_MATERIAL' && (p.barcode === search.trim() || p.internalCode === search.trim()));
     
     if (exactProduct) {
       const added = addToCart(exactProduct);
@@ -122,6 +124,10 @@ const POSPage = () => {
   };
 
   const addToCart = (product) => {
+    if (!product || product.productType === 'RAW_MATERIAL') {
+      toast.error('المواد الخام مخصصة للتصنيع ولا يمكن بيعها في نقطة البيع');
+      return false;
+    }
     const isRecipe = product.productType === 'RECIPE';
 
     if (product.isExpired) {

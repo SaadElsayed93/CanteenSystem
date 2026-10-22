@@ -8,7 +8,10 @@ const getCategories = async () => {
 
 const getPosData = async () => {
   const productsRaw = await prisma.product.findMany({
-    where: { isActive: true },
+    where: { 
+      isActive: true,
+      productType: { not: 'RAW_MATERIAL' } // استبعاد المواد الخام نهائياً من شاشة البيع
+    },
     include: { 
       batches: true,
       ingredients: {
@@ -95,6 +98,9 @@ const createSale = async (data, userId) => {
       });
       
       if (!product) throw new Error(`صنف غير موجود: ${item.productId}`);
+      if (product.productType === 'RAW_MATERIAL') {
+        throw new Error(`لا يمكن بيع المادة الخام (${product.name}) مباشرة عبر شاشة البيع.`);
+      }
       
       const qtyRequired = Number(item.quantity);
       const subtotal = qtyRequired * Number(product.sellingPrice);
