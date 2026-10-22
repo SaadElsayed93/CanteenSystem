@@ -1282,12 +1282,18 @@ const getKitchenClosingStatus = async (startDate, endDate) => {
         const rev = Number(item.subtotal || 0);
         const pid = item.productId;
 
-        const ingredients = item.product.ingredients || [];
-        const baseIng = ingredients.find(i => i.notes?.includes('الأساسي')) || ingredients[0];
-        const baseUnitCost = baseIng 
-          ? Number(baseIng.quantityPerUnit || 1) * Number(baseIng.rawMaterial?.purchasePrice || 0) 
-          : Number(item.product.purchasePrice || 0);
-        const itemBaseCost = qty * baseUnitCost;
+        const isBulkSettlement = item.product?.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                                 (item.product?.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
+        const ingredients = item.product?.ingredients || [];
+        let itemBaseCost = 0;
+        if (!isBulkSettlement) {
+          const baseIng = ingredients.find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية') && !i.notes?.includes('مفتوح')) || ingredients[0];
+          const baseUnitCost = baseIng 
+            ? Number(baseIng.quantityPerUnit || 1) * Number(baseIng.rawMaterial?.purchasePrice || 0) 
+            : Number(item.product?.purchasePrice || 0);
+          itemBaseCost = qty * baseUnitCost;
+        }
 
         totalSandwichesSold += qty;
         totalSandwichRevenue += rev;
@@ -1330,9 +1336,15 @@ const getKitchenClosingStatus = async (startDate, endDate) => {
   const auxiliaryRecipeNamesMap = {};
 
   sandwichRecipes.forEach(recipe => {
+    const isBulkSettlement = recipe.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                             (recipe.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
     const ingredients = recipe.ingredients || [];
-    const baseIng = ingredients.find(i => i.notes?.includes('الأساسي')) || ingredients[0];
-    if (baseIng) baseRawMaterialIds.add(baseIng.rawMaterialId);
+    if (!isBulkSettlement) {
+      const baseIng = ingredients.find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية')) || ingredients[0];
+      if (baseIng) baseRawMaterialIds.add(baseIng.rawMaterialId);
+    }
+
     ingredients.forEach(ing => {
       allSandwichRawMaterialIds.add(ing.rawMaterialId);
       if (!auxiliaryRecipeNamesMap[ing.rawMaterialId]) {
@@ -1413,7 +1425,11 @@ const getKitchenClosingStatus = async (startDate, endDate) => {
       purchasedQty: Number(purch.quantity.toFixed(3)),
       purchasedCost: Number(purch.totalCost.toFixed(2)),
       isBase,
-      categoryType: isBase ? 'مكون أساسي (لحوم/دجاج)' : 'خامة مكملة (مطبخ/تسوية)',
+      categoryType: isBase 
+        ? 'مكون أساسي بالقطعة (لحوم/دجاج)' 
+        : (recipeNames.some(name => name.includes('ستربس') || name.includes('كبدة') || name.includes('بانيه') || name.includes('شاورما') || name.includes('سجق'))
+            ? 'خامة فريزر رئيسية (تسوية بالوزن والجرد)'
+            : 'خامة مكملة (مطبخ/تسوية)'),
       theoreticalUsage: Number(theoreticalQty.toFixed(3)),
       theoreticalCost: Number((theoreticalQty * unitCost).toFixed(2)),
       settledInPeriod: Number(netSettledThisPeriod.toFixed(3)),

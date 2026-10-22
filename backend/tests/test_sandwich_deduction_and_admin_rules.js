@@ -85,11 +85,11 @@ async function runTests() {
       }
     }
 
-    // 4. Test Sandwich POS Deduction: ONLY base raw material is deducted on sale!
-    console.log('\n--- Test 3: Sandwich POS Sale Deducts ONLY Base Ingredient ---');
+    // 4. Test Sandwich POS Deduction: ONLY base raw material is deducted on sale for Countable Base!
+    console.log('\n--- Test 3.a: Countable Base Sandwich (Burger) POS Sale Deducts ONLY Base Ingredient ---');
     // Fetch recipe details of burger sandwich
     const recipeData = await productsService.getRecipe(burgerSandwich.id);
-    console.log('Sandwich ingredients in recipe:');
+    console.log('Burger sandwich ingredients in recipe:');
     recipeData.ingredients.forEach(ing => {
       console.log(` - ${ing.rawMaterialName} (${ing.isBaseIngredient ? '⭐ المادة الأساسية' : '🥗 مكمل'}): ${ing.quantityPerUnit} ${ing.rawMaterialUnit}, currentStock = ${ing.rawMaterialStock}`);
     });
@@ -102,13 +102,13 @@ async function runTests() {
 
     const pm = await prisma.paymentMethod.findFirst();
 
-    // Make a sale of 2 sandwiches
+    // Make a sale of 2 burger sandwiches
     const saleResult = await salesService.createSale({
       items: [{ productId: burgerSandwich.id, quantity: 2 }],
       type: 'CASH',
       paymentMethodId: pm ? pm.id : undefined
     }, admin.id);
-    console.log('✅ Sale completed, Invoice ID:', saleResult.id);
+    console.log('✅ Burger sale completed, Invoice ID:', saleResult.id);
 
     // Check stock after sale
     const baseMatAfter = await prisma.product.findUnique({
@@ -135,6 +135,34 @@ async function runTests() {
         throw new Error(`FAILED: Auxiliary material was deducted during POS sale! Expected ${auxStockBefore}, got ${auxStockAfter}`);
       }
       console.log('✅ Auxiliary material stock remained completely intact (not deducted on POS sale)!');
+    }
+
+    // 4.b Test Bulk Freezer Sandwich (Strips): Zero deduction on sale!
+    console.log('\n--- Test 3.b: Bulk Freezer Sandwich (Strips) POS Sale Deducts ZERO Pieces ---');
+    const stripsSandwich = await prisma.product.findFirst({
+      where: { internalCode: 'REC-STRIPS' },
+      include: { ingredients: { include: { rawMaterial: true } } }
+    });
+    if (stripsSandwich) {
+      const rawStrips = await prisma.product.findFirst({ where: { internalCode: 'RAW-STRIPS' }, include: { batches: true } });
+      const stripsStockBefore = rawStrips.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      console.log(`❄️ Raw Strips in Freezer before sale: ${stripsStockBefore} ${rawStrips.unit}`);
+
+      const stripsSale = await salesService.createSale({
+        items: [{ productId: stripsSandwich.id, quantity: 3 }],
+        type: 'CASH',
+        paymentMethodId: pm ? pm.id : undefined
+      }, admin.id);
+      console.log('✅ Strips sandwich sale completed, Invoice ID:', stripsSale.id);
+
+      const rawStripsAfter = await prisma.product.findFirst({ where: { internalCode: 'RAW-STRIPS' }, include: { batches: true } });
+      const stripsStockAfter = rawStripsAfter.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      console.log(`❄️ Raw Strips in Freezer after selling 3 sandwiches: ${stripsStockAfter} ${rawStrips.unit}`);
+
+      if (stripsStockAfter !== stripsStockBefore) {
+        throw new Error(`FAILED: Bulk freezer raw material (Strips) should NOT be deducted on POS sale! Before: ${stripsStockBefore}, After: ${stripsStockAfter}`);
+      }
+      console.log('✅ Strips freezer stock remained 100% intact! (Zero daily deduction, settled monthly by actual physical count).');
     }
 
     // 5. Test Return of Sandwich: Only base ingredient is restored

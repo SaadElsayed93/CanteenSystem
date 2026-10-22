@@ -157,10 +157,14 @@ const createSale = async (data, userId) => {
       });
 
       if (item.productType === 'RECIPE') {
-        // في السندوتشات: يتم فقط خصم المادة الخام الأساسية عند البيع بالكاشير، وباقي المواد تسجل للتسوية وتقفيلة الشهر
+        // في السندوتشات: يتم فقط خصم المادة الأساسية بالقطعة (مثل قطعة البرجر). 
+        // أما السندوتشات ذات خامات الفريزر المفتوحة بالوزن (كالاستربس والكبدة والشاورما) فلا يخصم منها شيء يومياً وتترك لجرد الفريزر الشهري.
         const isSandwich = item.activityType === 'SANDWICH';
-        const baseIng = isSandwich
-          ? ((item.ingredients || []).find(i => i.notes?.includes('الأساسي')) || item.ingredients[0])
+        const isBulkSettlement = item.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                                 (item.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
+        const baseIng = isSandwich && !isBulkSettlement
+          ? ((item.ingredients || []).find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية') && !i.notes?.includes('مفتوح')) || item.ingredients[0])
           : null;
 
         const ingredientsToDeduct = isSandwich

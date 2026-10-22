@@ -81,8 +81,11 @@ const calculateRecipeStats = (product) => {
   let maxPortions = Infinity;
 
   const isSandwich = product.activityType === 'SANDWICH';
-  const baseIng = isSandwich
-    ? ((product.ingredients || []).find(i => i.notes?.includes('الأساسي')) || product.ingredients[0])
+  const isBulkSettlement = product.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                           (product.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
+  const baseIng = isSandwich && !isBulkSettlement
+    ? ((product.ingredients || []).find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية') && !i.notes?.includes('مفتوح')) || product.ingredients[0])
     : null;
 
   const ingredientsWithStats = product.ingredients.map(ing => {
@@ -93,12 +96,14 @@ const calculateRecipeStats = (product) => {
     const itemCost = qtyPerUnit * unitPurchasePrice;
     totalCost += itemCost;
 
-    const isBase = isSandwich ? (ing.id === baseIng?.id || ing.rawMaterialId === baseIng?.rawMaterialId) : true;
+    const isBase = isSandwich 
+      ? (!isBulkSettlement && (ing.id === baseIng?.id || ing.rawMaterialId === baseIng?.rawMaterialId)) 
+      : true;
 
     let possiblePortions = 0;
     if (qtyPerUnit > 0) {
       possiblePortions = Math.floor(rawStock / qtyPerUnit);
-      // في السندوتشات: الحصص المتاحة للبيع تعتمد على المادة الأساسية فقط (البرجر/الستربس)
+      // في السندوتشات: الحصص المتاحة للبيع تعتمد على المادة الأساسية بالقطعة فقط
       if (isBase && possiblePortions < maxPortions) {
         maxPortions = possiblePortions;
       }
@@ -120,7 +125,15 @@ const calculateRecipeStats = (product) => {
     };
   });
 
-  if (maxPortions === Infinity) {
+  if (isBulkSettlement) {
+    // خامات فريزر مفتوحة بالوزن (مثل الاستربس والكبدة): متاحة للبيع طالما يوجد رصيد خامات في الفريزر
+    const hasRawStock = (product.ingredients || []).some(ing => {
+      const raw = ing.rawMaterial || {};
+      const stock = (raw.batches || []).reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      return stock > 0;
+    });
+    maxPortions = hasRawStock ? 100 : 0;
+  } else if (maxPortions === Infinity) {
     maxPortions = 0;
   }
 

@@ -33,6 +33,7 @@ const SandwichesPage = () => {
     barcode: '',
     sellingPrice: 35,
     recipeNotes: '',
+    costingMode: 'MONTHLY_SETTLEMENT', // 'MONTHLY_SETTLEMENT' or 'COUNTABLE_PIECE'
     // Base ingredient (المكون الأساسي: برجر / ستربس)
     baseRawMaterialId: '',
     basePiecesCount: 20, // عدد القطع الأساسية المشتراة
@@ -116,13 +117,14 @@ const SandwichesPage = () => {
       setForm(prev => ({
         ...prev,
         name: 'سندوتش برجر',
+        costingMode: 'COUNTABLE_PIECE',
         baseRawMaterialId: burger ? burger.id : prev.baseRawMaterialId,
         basePiecesCount: 20,
         sellingPrice: 35,
-        recipeNotes: '20 قطعة برجر + 20 عيش كايزر + 1 كجم خضار = 20 سندوتش برجر',
+        recipeNotes: '[COUNTABLE_PIECE] 20 قطعة برجر + 20 عيش كايزر + 1 كجم خضار = 20 سندوتش برجر',
         additionalIngredients: extras
       }));
-      toast.success('تم تطبيق معادلة سندوتش البرجر (20 سندوتش)');
+      toast.success('تم تطبيق قالب سندوتش البرجر (مكون محدد بالقطعة)');
     } else if (type === 'STRIPS') {
       const extras = [];
       if (fino) extras.push({ rawMaterialId: fino.id, batchQuantity: 20, notes: '1 رغيف لكل سندوتش' });
@@ -131,13 +133,14 @@ const SandwichesPage = () => {
       setForm(prev => ({
         ...prev,
         name: 'سندوتش ستربس',
+        costingMode: 'MONTHLY_SETTLEMENT',
         baseRawMaterialId: strips ? strips.id : prev.baseRawMaterialId,
         basePiecesCount: 20,
         sellingPrice: 30,
-        recipeNotes: '20 قطعة ستربس + 20 عيش فينو + 1 كجم خضار = 20 سندوتش ستربس',
+        recipeNotes: '[MONTHLY_SETTLEMENT] سندوتش ستربس خامات فريزر مفتوحة بالوزن، يتم جردها وتسويتها شهرياً',
         additionalIngredients: extras
       }));
-      toast.success('تم تطبيق معادلة سندوتش الستربس (20 سندوتش)');
+      toast.success('تم تطبيق قالب سندوتش الستربس (خامات فريزر تسوية شهرية)');
     }
   };
 
@@ -172,6 +175,7 @@ const SandwichesPage = () => {
       barcode: '',
       sellingPrice: 35,
       recipeNotes: '',
+      costingMode: 'MONTHLY_SETTLEMENT',
       baseRawMaterialId: defaultBase ? defaultBase.id : '',
       basePiecesCount: 20,
       additionalIngredients: initialExtras
@@ -191,6 +195,9 @@ const SandwichesPage = () => {
     const baseIng = ings[0] || {};
     const extraIngs = ings.slice(1);
 
+    const isBulk = sandwich.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                   ings.some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
     setForm({
       id: sandwich.id,
       name: sandwich.name || '',
@@ -198,6 +205,7 @@ const SandwichesPage = () => {
       barcode: sandwich.barcode || '',
       sellingPrice: sandwich.sellingPrice || 35,
       recipeNotes: sandwich.recipeNotes || '',
+      costingMode: isBulk ? 'MONTHLY_SETTLEMENT' : 'COUNTABLE_PIECE',
       baseRawMaterialId: baseIng.rawMaterialId || '',
       basePiecesCount: yieldCount,
       additionalIngredients: extraIngs.map(ing => ({
@@ -306,13 +314,14 @@ const SandwichesPage = () => {
 
     setIsSaving(true);
     try {
-      // 1 base ingredient (1 piece per sandwich) + extras
+      const isBulk = form.costingMode === 'MONTHLY_SETTLEMENT';
+      // 1 base ingredient (1 piece or bulk freezer) + extras
       const allIngredients = [
         {
           rawMaterialId: Number(form.baseRawMaterialId),
-          quantityPerUnit: 1, // قطعة واحدة لكل سندوتش
+          quantityPerUnit: 1, // وحدة لكل سندوتش
           batchQuantity: baseCount,
-          notes: 'المكون الأساسي للسندوتش'
+          notes: isBulk ? 'خامة فريزر مفتوحة (تسوية شهرية)' : 'المكون الأساسي بالقطعة (خصم يومي)'
         },
         ...form.additionalIngredients.map(extra => ({
           rawMaterialId: Number(extra.rawMaterialId),
@@ -321,6 +330,10 @@ const SandwichesPage = () => {
           notes: extra.notes || null
         }))
       ];
+
+      const modeTag = isBulk ? '[MONTHLY_SETTLEMENT]' : '[COUNTABLE_PIECE]';
+      const cleanRecipeNotes = (form.recipeNotes || '').replace(/\[MONTHLY_SETTLEMENT\]|\[COUNTABLE_PIECE\]/g, '').trim();
+      const finalRecipeNotes = `${modeTag} ${cleanRecipeNotes || (isBulk ? 'سندوتش خامات فريزر مفتوحة بالوزن تسوية شهرية' : `معادلة ${baseCount} سندوتش بالقطعة الصريحة`)}`;
 
       const payload = {
         name: form.name.trim(),
@@ -332,7 +345,7 @@ const SandwichesPage = () => {
         activityType: 'SANDWICH',
         productType: 'RECIPE',
         recipeYield: baseCount,
-        recipeNotes: form.recipeNotes || `معادلة ${baseCount} سندوتش محسوبة على القطعة الأساسية`,
+        recipeNotes: finalRecipeNotes,
         ingredients: allIngredients
       };
 
@@ -487,13 +500,21 @@ const SandwichesPage = () => {
                     </span>
                   </div>
 
-                  {/* Base Ingredient Tag */}
+                  {/* Base Ingredient & Costing Mode Tag */}
                   {baseIng && (
                     <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center gap-2 text-xs">
-                      <span className="font-black text-emerald-950">المكون الأساسي:</span>
+                      <span className="font-black text-emerald-950">
+                        {sandwich.recipeNotes?.includes('MONTHLY_SETTLEMENT') || baseIng.notes?.includes('تسوية') ? 'خامة الفريزر:' : 'المكون الأساسي:'}
+                      </span>
                       <span className="font-bold text-emerald-900">{baseIng.rawMaterialName}</span>
-                      <span className="text-[10px] text-emerald-700 bg-white px-1.5 py-0.5 rounded border border-emerald-200 mr-auto font-mono">
-                        1 {baseIng.rawMaterialUnit}
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-black mr-auto ${
+                        sandwich.recipeNotes?.includes('MONTHLY_SETTLEMENT') || baseIng.notes?.includes('تسوية')
+                          ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                          : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      }`}>
+                        {sandwich.recipeNotes?.includes('MONTHLY_SETTLEMENT') || baseIng.notes?.includes('تسوية')
+                          ? '❄️ تسوية فريزر شهرية'
+                          : '🥩 خصم قطعة بالبيع'}
                       </span>
                     </div>
                   )}
@@ -687,25 +708,72 @@ const SandwichesPage = () => {
                 </div>
               </div>
 
-              {/* Step 2: The Base Ingredient (المكون الأساسي) */}
-              <div className="p-4 bg-emerald-50/70 rounded-2xl border-2 border-emerald-200 space-y-3">
+              {/* Step 2: The Base Ingredient & Costing Mode (المكون الأساسي ونظام التشغيل) */}
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border-2 border-emerald-200 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black">خطوة 1</span>
-                    <h4 className="text-sm font-black text-emerald-950">المكون الأساسي (يُخصم فورياً عند البيع):</h4>
+                    <span className="p-1.5 bg-emerald-600 text-white rounded-lg text-xs font-black">خطوة 2</span>
+                    <h4 className="text-sm font-black text-emerald-950">نظام التشغيل وحساب خامات السندوتش:</h4>
                   </div>
-                  <span className="text-[10px] font-black bg-emerald-200 text-emerald-950 px-2.5 py-0.5 rounded-full">
-                    ⚡ الخصم التلقائي المباشر بالكاشير
-                  </span>
                 </div>
-                <p className="text-xs text-emerald-800 font-bold">
-                  اختر المكون الرئيسي (مثل قطع البرجر أو الستربس) — وهو المكون الوحيد الذي يتم خصمه آلياً من المخزن عند كل فاتورة بيع بالسندوتش بالكاشير.
-                </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 2 Buttons to choose Costing Mode */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, costingMode: 'MONTHLY_SETTLEMENT' }))}
+                    className={`p-3.5 rounded-xl border-2 text-right transition-all cursor-pointer ${
+                      form.costingMode === 'MONTHLY_SETTLEMENT'
+                        ? 'border-emerald-600 bg-white shadow-md shadow-emerald-100 ring-2 ring-emerald-500/20'
+                        : 'border-gray-200 bg-white/60 hover:bg-white text-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-black text-xs text-emerald-950 flex items-center gap-1.5">
+                        <span>❄️ خامات فريزر مفتوحة بالوزن</span>
+                      </span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        form.costingMode === 'MONTHLY_SETTLEMENT' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        (كالاستربس، البانيه، الشاورما)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 font-bold leading-relaxed">
+                      تشتري خاماتها بالكيلو أو الأكياس. لا يتم خصم قطع بالكاشير يومياً، وتُجرد في الفريزر بنهاية الشهر لمعرفة المستهلك الحقيقي واحتساب أرباحه.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, costingMode: 'COUNTABLE_PIECE' }))}
+                    className={`p-3.5 rounded-xl border-2 text-right transition-all cursor-pointer ${
+                      form.costingMode === 'COUNTABLE_PIECE'
+                        ? 'border-emerald-600 bg-white shadow-md shadow-emerald-100 ring-2 ring-emerald-500/20'
+                        : 'border-gray-200 bg-white/60 hover:bg-white text-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-black text-xs text-emerald-950 flex items-center gap-1.5">
+                        <span>🥩 مكون محدد بالقطعة الصريحة</span>
+                      </span>
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        form.costingMode === 'COUNTABLE_PIECE' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        (كالبرجر، الهوت دوج)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 font-bold leading-relaxed">
+                      السندوتش يحتوي على قطعة واحدة محددة صراحة. تُخصم قطعة واحدة آلياً من رصيد المخزن مع كل عملية بيع بالسندوتش بالكاشير.
+                    </p>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div>
                     <label className="block mb-1 text-xs font-black text-emerald-900">
-                      اختر المكون الأساسي (خامة البرجر / الستربس):
+                      {form.costingMode === 'MONTHLY_SETTLEMENT' 
+                        ? 'خامة الفريزر الرئيسية (مثل ستربس الدجاج المجمد):' 
+                        : 'المكون الأساسي بالقطعة (مثل قطع البرجر):'}
                     </label>
                     <select
                       required
@@ -713,10 +781,10 @@ const SandwichesPage = () => {
                       value={form.baseRawMaterialId}
                       onChange={e => setForm({ ...form, baseRawMaterialId: e.target.value })}
                     >
-                      <option value="">-- اختر المكون الأساسي --</option>
+                      <option value="">-- اختر الخامة الرئيسية --</option>
                       {rawMaterials.map(rm => (
                         <option key={rm.id} value={rm.id}>
-                          {rm.name} (سعر القطعة/الوحدة: {Number(rm.purchasePrice).toFixed(2)} ج.م)
+                          {rm.name} (الوحدة: {rm.unit} | التكلفة: {Number(rm.purchasePrice).toFixed(2)} ج.م)
                         </option>
                       ))}
                     </select>
@@ -724,7 +792,9 @@ const SandwichesPage = () => {
 
                   <div>
                     <label className="block mb-1 text-xs font-black text-emerald-900">
-                      عدد القطع الأساسية المشتراة (حجم الدفعة):
+                      {form.costingMode === 'MONTHLY_SETTLEMENT' 
+                        ? 'حجم الدفعة الاسترشادية للتسعير (عدد السندوتشات):' 
+                        : 'عدد القطع الأساسية المشتراة (حجم الدفعة):'}
                     </label>
                     <div className="flex items-center gap-2">
                       <input
@@ -746,10 +816,12 @@ const SandwichesPage = () => {
                 {baseRaw && (
                   <div className="p-2.5 bg-white rounded-xl border border-emerald-200 flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>
-                      تكلفة القطع الأساسية للدفعة ({baseCount} قطعة): <span className="font-black text-purple-700 font-mono">{baseCostTotal.toFixed(2)} ج.م</span>
+                      الخامة المحددة: <span className="font-black text-gray-900">{baseRaw.name}</span>
                     </span>
                     <span className="bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-lg font-mono font-black">
-                      نصيب السندوتش الواحد = {baseCostPerSandwich.toFixed(2)} ج.م
+                      {form.costingMode === 'MONTHLY_SETTLEMENT' 
+                        ? '❄️ خامات فريزر: تُسوى شهرياً بالرصيد الفعلي (0 خصم يومي)' 
+                        : `🥩 قطعة صريحة: نصيب السندوتش = ${baseCostPerSandwich.toFixed(2)} ج.م (خصم فوري)`}
                     </span>
                   </div>
                 )}
