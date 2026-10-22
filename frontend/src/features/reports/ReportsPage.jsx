@@ -13,7 +13,8 @@ import {
   TrendingUp, TrendingDown, DollarSign, PackageOpen, Users, 
   ShoppingCart, Calendar, AlertTriangle, Download, Printer, 
   Filter, Clock, FileText, CheckCircle2, Truck, Wallet, ArrowUpRight,
-  ArrowDownRight, Layers, Sparkles, Store, Coffee, UtensilsCrossed, ChefHat, Package
+  ArrowDownRight, Layers, Sparkles, Store, Coffee, UtensilsCrossed, ChefHat, Package,
+  RotateCcw, Calculator, Check, RefreshCw
 } from 'lucide-react';
 
 const formatDate = (dateString) => {
@@ -114,6 +115,23 @@ const ReportsPage = () => {
 
   // Modal for inspecting any invoice
   const [inspectingInvoice, setInspectingInvoice] = useState(null);
+
+  // Kitchen Settlement State
+  const [kitchenActualCounts, setKitchenActualCounts] = useState({});
+  const [kitchenFilterMode, setKitchenFilterMode] = useState('AUXILIARY_ONLY'); // 'AUXILIARY_ONLY' or 'ALL'
+  const [kitchenNotes, setKitchenNotes] = useState('');
+  const [isSubmittingSettlement, setIsSubmittingSettlement] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  useEffect(() => {
+    if (detailedData?.reportType === 'KITCHEN_CLOSING' && detailedData.materials) {
+      const initialCounts = {};
+      detailedData.materials.forEach(m => {
+        initialCounts[m.id] = m.currentStock;
+      });
+      setKitchenActualCounts(initialCounts);
+    }
+  }, [detailedData]);
 
   useEffect(() => {
     fetchDashboard();
@@ -258,7 +276,7 @@ const ReportsPage = () => {
         generateReportForDates(newType, today, today);
         return;
       }
-    } else if (newType === 'MONTHLY_FINANCIAL') {
+    } else if (newType === 'MONTHLY_FINANCIAL' || newType === 'KITCHEN_CLOSING') {
       if (preset === 'TODAY' || preset === 'YESTERDAY') {
         setPreset('THIS_MONTH');
         const now = new Date();
@@ -271,6 +289,37 @@ const ReportsPage = () => {
       }
     }
     generateReportForDates(newType, startDate, endDate);
+  };
+
+  const handleCommitKitchenSettlement = async () => {
+    setIsSubmittingSettlement(true);
+    try {
+      const items = (detailedData?.materials || []).map(m => {
+        const act = kitchenActualCounts[m.id] !== undefined ? Number(kitchenActualCounts[m.id]) : m.currentStock;
+        return {
+          productId: m.id,
+          actualRemaining: act,
+          reason: kitchenNotes || `تسوية وتقفيل خامات المطبخ لشهر ${formatDate(startDate)} إلى ${formatDate(endDate)}`
+        };
+      });
+
+      const res = await client.post('/reports/kitchen-settlement', {
+        startDate: formatDateISO(startDate),
+        endDate: formatDateISO(endDate),
+        notes: kitchenNotes,
+        items
+      });
+
+      toast.success(res.data.message || 'تم اعتماد تقفيلة المطبخ وتسوية المخزن بنجاح!');
+      setShowConfirmModal(false);
+      // Re-fetch report to display updated stock and calculations
+      generateReportForDates('KITCHEN_CLOSING', startDate, endDate);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'حدث خطأ أثناء اعتماد التقفيلة');
+    } finally {
+      setIsSubmittingSettlement(false);
+    }
   };
 
   const handlePrint = () => {
@@ -521,6 +570,7 @@ const ReportsPage = () => {
                   <optgroup label="🌟 التقارير الإجمالية الشاملة">
                     <option value="DAILY_FINANCIAL">{isSingleDayMode ? 'التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)' : 'التقرير المالي الشامل للفترة (ملخص الإيرادات والمصروفات)'}</option>
                     <option value="MONTHLY_FINANCIAL">التقرير المالي الشهري الشامل (تقفيلة الشهر)</option>
+                    <option value="KITCHEN_CLOSING">🍔 تقفيل وجرد خامات المطبخ الفعلي (السندوتشات)</option>
                   </optgroup>
                   <optgroup label="📊 حركة المبيعات والمخزن">
                     <option value="SALES">تقرير المبيعات والأرباح حسب الأصناف</option>
@@ -796,6 +846,7 @@ const ReportsPage = () => {
                   {reportType === 'PATIENTS' && 'تقرير أرصدة وحسابات المرضى (النشطين فقط)'}
                   {reportType === 'INVENTORY' && 'تقرير تقييم المخزون الحالي'}
                   {reportType === 'LOW_STOCK' && 'تقرير نواقص المخزون واحتياجات الشراء'}
+                  {reportType === 'KITCHEN_CLOSING' && '🍔 تقفيل وجرد خامات المطبخ الفعلي (السندوتشات)'}
                 </h1>
 
                 <p className="text-sm font-bold text-gray-600">
@@ -970,6 +1021,15 @@ const ReportsPage = () => {
                             <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
                               <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
                               <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.SANDWICH?.cost || 0).toFixed(2)}</div>
+                              {Number(detailedData.summary.divisions.SANDWICH?.auxiliaryCost || 0) > 0 ? (
+                                <div className="text-[8px] text-emerald-700 font-bold font-sans truncate">
+                                  (لحوم: {Number(detailedData.summary.divisions.SANDWICH?.baseCost || 0).toFixed(0)} | تسوية: {Number(detailedData.summary.divisions.SANDWICH?.auxiliaryCost || 0).toFixed(0)})
+                                </div>
+                              ) : (
+                                <div className="text-[8px] text-amber-600 font-bold font-sans">
+                                  (لحوم فقط - بانتظار تقفيل الخامات)
+                                </div>
+                              )}
                             </div>
                             <div className="bg-emerald-100 p-2 rounded-xl border border-emerald-200">
                               <div className="text-[10px] text-emerald-900 font-bold font-sans">الربح الصافي</div>
@@ -977,6 +1037,14 @@ const ReportsPage = () => {
                               <div className="text-[9px] text-emerald-800 font-bold font-sans">({detailedData.summary.divisions.SANDWICH?.margin || 0}%)</div>
                             </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleReportTypeChange('KITCHEN_CLOSING')}
+                            className="w-full mt-1.5 py-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                          >
+                            <ChefHat size={15} />
+                            <span>تقفيل وجرد خامات المطبخ الفعلي ⚡</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1264,6 +1332,15 @@ const ReportsPage = () => {
                             <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
                               <div className="text-[10px] text-gray-500 font-bold font-sans">التكلفة</div>
                               <div className="font-black text-gray-700">{Number(detailedData.summary.divisions.SANDWICH?.cost || 0).toFixed(2)}</div>
+                              {Number(detailedData.summary.divisions.SANDWICH?.auxiliaryCost || 0) > 0 ? (
+                                <div className="text-[8px] text-emerald-700 font-bold font-sans truncate">
+                                  (لحوم: {Number(detailedData.summary.divisions.SANDWICH?.baseCost || 0).toFixed(0)} | تسوية: {Number(detailedData.summary.divisions.SANDWICH?.auxiliaryCost || 0).toFixed(0)})
+                                </div>
+                              ) : (
+                                <div className="text-[8px] text-amber-600 font-bold font-sans">
+                                  (لحوم فقط - بانتظار تقفيل الخامات)
+                                </div>
+                              )}
                             </div>
                             <div className="bg-emerald-100 p-2 rounded-xl border border-emerald-200">
                               <div className="text-[10px] text-emerald-900 font-bold font-sans">الربح الصافي</div>
@@ -1271,6 +1348,14 @@ const ReportsPage = () => {
                               <div className="text-[9px] text-emerald-800 font-bold font-sans">({detailedData.summary.divisions.SANDWICH?.margin || 0}%)</div>
                             </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleReportTypeChange('KITCHEN_CLOSING')}
+                            className="w-full mt-1.5 py-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                          >
+                            <ChefHat size={15} />
+                            <span>تقفيل وجرد خامات المطبخ الفعلي ⚡</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1408,6 +1493,531 @@ const ReportsPage = () => {
                 </div>
               )}
 
+              {/* ================= VIEW: KITCHEN MONTH-END CLOSING & SETTLEMENT ================= */}
+              {reportType === 'KITCHEN_CLOSING' && detailedData?.reportType === 'KITCHEN_CLOSING' && detailedData.summary && (() => {
+                const displayedMaterials = kitchenFilterMode === 'AUXILIARY_ONLY'
+                  ? (detailedData.auxiliaryMaterials || [])
+                  : (detailedData.materials || []);
+
+                const auxConsumedCost = (detailedData.auxiliaryMaterials || []).reduce((sum, m) => {
+                  const act = kitchenActualCounts[m.id] !== undefined ? Number(kitchenActualCounts[m.id] || 0) : m.currentStock;
+                  const diff = m.currentStock - act;
+                  return sum + (diff > 0 ? diff * m.unitCost : 0);
+                }, 0);
+
+                const auxSurplusCost = (detailedData.auxiliaryMaterials || []).reduce((sum, m) => {
+                  const act = kitchenActualCounts[m.id] !== undefined ? Number(kitchenActualCounts[m.id] || 0) : m.currentStock;
+                  const diff = act - m.currentStock;
+                  return sum + (diff > 0 ? diff * m.unitCost : 0);
+                }, 0);
+
+                const netConsumedAuxCost = Math.max(0, auxConsumedCost - auxSurplusCost);
+                const totalRev = Number(detailedData.summary.totalSandwichRevenue || 0);
+                const totalBaseCost = Number(detailedData.summary.totalBaseCost || 0);
+                const liveTotalCost = totalBaseCost + netConsumedAuxCost;
+                const liveNetProfit = totalRev - liveTotalCost;
+                const liveMargin = totalRev > 0 ? ((liveNetProfit / totalRev) * 100).toFixed(1) : 0;
+                const isProfitable = liveNetProfit >= 0;
+
+                return (
+                  <div className="space-y-6">
+                    {/* 1. Header Hero Card with Rules Explanation */}
+                    <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-indigo-950 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="bg-emerald-500/30 text-emerald-300 text-xs font-black px-3 py-1 rounded-full border border-emerald-400/30 flex items-center gap-1.5">
+                              <ChefHat size={14} />
+                              <span>إدارة وحوكمة مطبخ السندوتشات</span>
+                            </span>
+                            <span className="bg-white/10 text-gray-300 text-xs font-bold px-3 py-1 rounded-full">
+                              الفترة: {formatDate(startDate)} إلى {formatDate(endDate)}
+                            </span>
+                          </div>
+                          <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                            <span>🍔 تقفيل وجرد خامات المطبخ الشهري (السندوتشات)</span>
+                          </h2>
+                          <p className="text-gray-300 text-xs md:text-sm mt-2 max-w-3xl leading-relaxed">
+                            💡 <strong className="text-emerald-300">الآلية المعتمدة:</strong> عند بيع السندوتش بالكاشير، يتم خصم قطعة اللحم/الستربس الأساسية فقط تلقائياً. 
+                            هنا بنهاية الشهر تُسجل الكميات المتبقية فعلياً في المطبخ من الخامات المكملة (العيش، الخضار، التوابل، الصوصات) لاحتساب المستهلك الحقيقي، خصمه بضغطة زر بنظام FIFO، وإظهار الأرباح الصافية الدقيقة للمطبخ.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                          <button
+                            type="button"
+                            onClick={handlePrint}
+                            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 flex items-center gap-2 transition-all cursor-pointer"
+                          >
+                            <Printer size={16} />
+                            <span>طباعة كشف الجرد</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => generateReportForDates('KITCHEN_CLOSING', startDate, endDate)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+                          >
+                            <RefreshCw size={16} />
+                            <span>تحديث البيانات 🔄</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Key Metrics & Live Recalculating Financial Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {/* Metric 1: Sandwich Sales */}
+                      <div className="p-4 bg-sky-50 rounded-2xl border-2 border-sky-200 text-center shadow-sm">
+                        <div className="text-[11px] font-bold text-sky-800 mb-1 flex items-center justify-center gap-1">
+                          <UtensilsCrossed size={14} className="text-sky-600" />
+                          <span>مبيعات السندوتشات</span>
+                        </div>
+                        <div className="text-2xl font-black text-sky-950">{totalRev.toFixed(2)} ج.م</div>
+                        <div className="text-[11px] text-sky-700 font-bold mt-1">
+                          {detailedData.summary.totalSandwichesSold} سندوتش مباع
+                        </div>
+                      </div>
+
+                      {/* Metric 2: Base Meat/Chicken Cost */}
+                      <div className="p-4 bg-gray-50 rounded-2xl border-2 border-gray-200 text-center shadow-sm">
+                        <div className="text-[11px] font-bold text-gray-600 mb-1 flex items-center justify-center gap-1">
+                          <Package size={14} className="text-gray-500" />
+                          <span>تكلفة اللحوم والدجاج</span>
+                        </div>
+                        <div className="text-2xl font-black text-gray-800">{totalBaseCost.toFixed(2)} ج.م</div>
+                        <div className="text-[10px] text-gray-500 font-bold mt-1">
+                          مخصومة مسبقاً مع كل سندوتش
+                        </div>
+                      </div>
+
+                      {/* Metric 3: Month Purchases Cost */}
+                      <div className="p-4 bg-purple-50 rounded-2xl border-2 border-purple-200 text-center shadow-sm">
+                        <div className="text-[11px] font-bold text-purple-800 mb-1 flex items-center justify-center gap-1">
+                          <ShoppingCart size={14} className="text-purple-600" />
+                          <span>وارد مشتريات الشهر</span>
+                        </div>
+                        <div className="text-2xl font-black text-purple-950">{Number(detailedData.summary.totalPeriodPurchasesCost || 0).toFixed(2)} ج.م</div>
+                        <div className="text-[10px] text-purple-700 font-bold mt-1">
+                          فواتير الموردين لخامات المطبخ
+                        </div>
+                      </div>
+
+                      {/* Metric 4: Auxiliary Consumed Cost (LIVE) */}
+                      <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 text-center shadow-sm relative overflow-hidden">
+                        <div className="text-[11px] font-bold text-amber-900 mb-1 flex items-center justify-center gap-1">
+                          <Sparkles size={14} className="text-amber-600" />
+                          <span>تكلفة الخامات المستهلكة ⚡</span>
+                        </div>
+                        <div className="text-2xl font-black text-amber-950">{netConsumedAuxCost.toFixed(2)} ج.م</div>
+                        <div className="text-[10px] text-amber-800 font-bold mt-1">
+                          {detailedData.summary.totalAuxConsumedCostSettledSoFar > 0
+                            ? `(سابقاً: ${detailedData.summary.totalAuxConsumedCostSettledSoFar} ج.م)`
+                            : 'محسوبة حياً من الجرد الفعلي'}
+                        </div>
+                      </div>
+
+                      {/* Metric 5: Live Actual Net Profit */}
+                      <div className={`p-4 rounded-2xl border-2 text-center col-span-2 md:col-span-1 shadow-sm transition-all ${
+                        isProfitable ? 'bg-emerald-50 border-emerald-300' : 'bg-rose-50 border-rose-300'
+                      }`}>
+                        <div className={`text-[11px] font-black mb-1 flex items-center justify-center gap-1 ${
+                          isProfitable ? 'text-emerald-800' : 'text-rose-800'
+                        }`}>
+                          <span>الربح الفعلي لمطبخ السندوتشات</span>
+                        </div>
+                        <div className={`text-2xl font-black ${
+                          isProfitable ? 'text-emerald-700' : 'text-rose-600'
+                        }`}>
+                          {liveNetProfit.toFixed(2)} ج.م
+                        </div>
+                        <div className={`text-[11px] font-black mt-1 ${
+                          isProfitable ? 'text-emerald-600' : 'text-rose-500'
+                        }`}>
+                          هامش الربح: {liveMargin}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Filters & Quick Fill Tools Bar */}
+                    <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3">
+                      {/* Toggle View Mode */}
+                      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-full md:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setKitchenFilterMode('AUXILIARY_ONLY')}
+                          className={`flex-1 md:flex-initial px-4 py-2 rounded-lg font-black text-xs transition-all cursor-pointer ${
+                            kitchenFilterMode === 'AUXILIARY_ONLY'
+                              ? 'bg-emerald-600 text-white shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          🥗 الخامات المكملة فقط ({detailedData.auxiliaryMaterials?.length || 0}) — مطلوب جردها
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setKitchenFilterMode('ALL')}
+                          className={`flex-1 md:flex-initial px-4 py-2 rounded-lg font-black text-xs transition-all cursor-pointer ${
+                            kitchenFilterMode === 'ALL'
+                              ? 'bg-gray-800 text-white shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          📦 كل خامات المطبخ ({detailedData.materials?.length || 0})
+                        </button>
+                      </div>
+
+                      {/* Quick Fill Helpers */}
+                      <div className="flex flex-wrap items-center gap-2 justify-end w-full md:w-auto">
+                        <span className="text-xs text-gray-500 font-bold hidden lg:inline">إجراءات تعبئة سريعة:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const resetCounts = {};
+                            (detailedData.materials || []).forEach(m => {
+                              resetCounts[m.id] = m.currentStock;
+                            });
+                            setKitchenActualCounts(resetCounts);
+                            toast.success('تمت مطابقة الكل مع رصيد النظام (استهلاك = 0)');
+                          }}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 font-bold text-xs rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <RotateCcw size={14} />
+                          <span>مطابقة الكل مع النظام</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const theoreticalCounts = {};
+                            (detailedData.materials || []).forEach(m => {
+                              theoreticalCounts[m.id] = Math.max(0, Number((m.currentStock - m.theoreticalUsage).toFixed(3)));
+                            });
+                            setKitchenActualCounts(theoreticalCounts);
+                            toast.success('تم تطبيق كميات الاستهلاك النظري للسندوتشات المباعة');
+                          }}
+                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 font-bold text-xs rounded-xl border border-amber-200 flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Calculator size={14} />
+                          <span>تطبيق الاستهلاك النظري ⚡</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const zeroCounts = {};
+                            (detailedData.materials || []).forEach(m => {
+                              zeroCounts[m.id] = 0;
+                            });
+                            setKitchenActualCounts(zeroCounts);
+                            toast('تم تصفير المتبقي (استهلاك كامل الكمية)', { icon: '⚠️' });
+                          }}
+                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <span>تصفير المتبقي (0)</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4. Interactive Inventory Count Table */}
+                    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm overflow-hidden">
+                      <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Layers size={18} className="text-emerald-700" />
+                          <h3 className="font-black text-gray-900 text-sm">
+                            جدول جرد وتسوية الخامات المكملة لشهر {formatDate(startDate)} إلى {formatDate(endDate)}
+                          </h3>
+                        </div>
+                        <span className="text-xs text-gray-500 font-bold">
+                          عدد الأصناف المعروضة: <strong className="text-emerald-700 font-mono">{displayedMaterials.length}</strong>
+                        </span>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-right text-xs">
+                          <thead className="bg-gray-100/80 text-gray-700 font-bold border-b border-gray-200">
+                            <tr>
+                              <th className="p-3 w-10 text-center">#</th>
+                              <th className="p-3">اسم الخامة / الصنف</th>
+                              <th className="p-3">الوحدة</th>
+                              <th className="p-3">سعر الشراء (ج.م)</th>
+                              <th className="p-3">وارد المشتريات</th>
+                              <th className="p-3 bg-gray-200/50">رصيد النظام حالياً</th>
+                              <th className="p-3 bg-emerald-100/60 text-emerald-950 font-black min-w-[170px]">
+                                المتبقي الفعلي بالمطبخ الآن ✍️
+                              </th>
+                              <th className="p-3">الاستهلاك الفعلي</th>
+                              <th className="p-3">تكلفة الاستهلاك (ج.م)</th>
+                              <th className="p-3">الاستهلاك النظري (دليل)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 font-bold">
+                            {displayedMaterials.map((m, idx) => {
+                              const actualVal = kitchenActualCounts[m.id] !== undefined 
+                                ? kitchenActualCounts[m.id] 
+                                : m.currentStock;
+                              const actualNum = Number(actualVal || 0);
+                              const diff = Number((m.currentStock - actualNum).toFixed(3)); // > 0 consumed, < 0 surplus
+                              const cost = Number((diff * m.unitCost).toFixed(2));
+
+                              return (
+                                <tr key={m.id} className="hover:bg-gray-50/80 transition-colors">
+                                  <td className="p-3 text-center text-gray-400 font-mono">{idx + 1}</td>
+                                  <td className="p-3">
+                                    <div className="font-black text-gray-900 text-sm">{m.name}</div>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-[10px] text-gray-400 font-mono">{m.code}</span>
+                                      {m.isBase ? (
+                                        <span className="text-[9px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-black">
+                                          مكون أساسي (لحوم)
+                                        </span>
+                                      ) : (
+                                        <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-black">
+                                          خامة مكملة (تسوية)
+                                        </span>
+                                      )}
+                                      {m.usedInSandwiches?.length > 0 && (
+                                        <span className="text-[9px] text-gray-500 font-normal">
+                                          مستخدم في: {m.usedInSandwiches.join('، ')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="p-3 text-gray-600 font-mono">{m.unit}</td>
+                                  <td className="p-3 font-mono font-black text-gray-900">{m.unitCost.toFixed(2)}</td>
+                                  <td className="p-3 font-mono">
+                                    {m.purchasedQty > 0 ? (
+                                      <div>
+                                        <div className="text-gray-900 font-black">+{m.purchasedQty} {m.unit}</div>
+                                        <div className="text-[10px] text-purple-700">({m.purchasedCost} ج.م)</div>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400 font-normal">لا مشتريات</span>
+                                    )}
+                                  </td>
+                                  <td className="p-3 bg-gray-100/50 font-mono text-sm font-black text-gray-800">
+                                    {m.currentStock} {m.unit}
+                                  </td>
+
+                                  {/* Actual Physical Count Editable Input */}
+                                  <td className="p-3 bg-emerald-50/40">
+                                    <div className="relative flex items-center gap-1.5">
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        value={actualVal}
+                                        onChange={(e) => {
+                                          const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                          setKitchenActualCounts(prev => ({
+                                            ...prev,
+                                            [m.id]: val
+                                          }));
+                                        }}
+                                        className="w-28 p-2 border-2 border-emerald-400 rounded-xl font-mono font-black text-sm text-center text-emerald-950 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-600 outline-none shadow-sm"
+                                        placeholder="0"
+                                      />
+                                      <span className="text-xs font-bold text-gray-500 font-mono">{m.unit}</span>
+                                    </div>
+                                  </td>
+
+                                  {/* Consumed Quantity with Difference Tag */}
+                                  <td className="p-3 font-mono text-sm">
+                                    {diff > 0 ? (
+                                      <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 px-2 py-1 rounded-lg font-black">
+                                        <span>-{diff}</span>
+                                        <span className="text-[10px] font-sans font-bold">مستهلك</span>
+                                      </span>
+                                    ) : diff < 0 ? (
+                                      <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-900 px-2 py-1 rounded-lg font-black">
+                                        <span>+{Math.abs(diff)}</span>
+                                        <span className="text-[10px] font-sans font-bold">فائض</span>
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold text-xs">
+                                        <Check size={13} className="text-emerald-600" />
+                                        <span>مطابق</span>
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Consumed Cost */}
+                                  <td className="p-3 font-mono font-black">
+                                    {diff > 0 ? (
+                                      <span className="text-amber-900 font-black">{cost.toFixed(2)} ج.م</span>
+                                    ) : diff < 0 ? (
+                                      <span className="text-blue-700 font-bold">{cost.toFixed(2)} ج.م (فائض)</span>
+                                    ) : (
+                                      <span className="text-gray-400 font-normal">0.00 ج.م</span>
+                                    )}
+                                  </td>
+
+                                  {/* Theoretical usage guidance */}
+                                  <td className="p-3 text-gray-500 text-[11px] font-mono">
+                                    {m.theoreticalUsage > 0 ? (
+                                      <div>
+                                        <span className="text-gray-800 font-bold">{m.theoreticalUsage} {m.unit}</span>
+                                        <span className="text-gray-400 block text-[10px]">({m.theoreticalCost} ج.م)</span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-gray-400">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+
+                            {displayedMaterials.length === 0 && (
+                              <tr>
+                                <td colSpan="10" className="p-8 text-center text-gray-400 font-bold">
+                                  لا توجد خامات مطبخ مسجلة حالياً
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                          {displayedMaterials.length > 0 && (
+                            <tfoot className="bg-gray-100 font-black text-gray-900 border-t-2 border-gray-200">
+                              <tr>
+                                <td colSpan="4" className="p-3 text-gray-800 font-black text-sm">
+                                  إجمالي الجرد ({displayedMaterials.length} خامة)
+                                </td>
+                                <td className="p-3 font-mono text-purple-900">
+                                  {displayedMaterials.reduce((sum, m) => sum + Number(m.purchasedCost || 0), 0).toFixed(2)} ج.م
+                                </td>
+                                <td className="p-3 font-mono text-gray-700">—</td>
+                                <td className="p-3 font-mono text-emerald-900">—</td>
+                                <td className="p-3 font-mono text-gray-800">—</td>
+                                <td className="p-3 font-mono text-amber-900 text-sm font-black">
+                                  {netConsumedAuxCost.toFixed(2)} ج.م
+                                </td>
+                                <td className="p-3 font-mono text-gray-600">
+                                  {displayedMaterials.reduce((sum, m) => sum + Number(m.theoreticalCost || 0), 0).toFixed(2)} ج.م
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* 5. Sticky Action Bar to Commit Settlement */}
+                    <div className="bg-gradient-to-r from-gray-900 to-indigo-950 p-5 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-indigo-800/40">
+                      <div className="space-y-1 text-center md:text-right">
+                        <div className="text-xs font-bold text-gray-300 flex items-center gap-2 justify-center md:justify-start">
+                          <ChefHat size={16} className="text-emerald-400" />
+                          <span>ملخص اعتماد تقفيلة المطبخ الشهرية:</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 text-xs font-bold pt-1">
+                          <span>
+                            إجمالي خامات مستهلكة: <strong className="text-amber-400 font-mono text-sm">{netConsumedAuxCost.toFixed(2)} ج.م</strong>
+                          </span>
+                          <span>|</span>
+                          <span>
+                            تكلفة اللحوم: <strong className="text-gray-300 font-mono">{totalBaseCost.toFixed(2)} ج.م</strong>
+                          </span>
+                          <span>|</span>
+                          <span>
+                            صافي أرباح السندوتشات النهائي: <strong className="text-emerald-400 font-mono text-base font-black">+{liveNetProfit.toFixed(2)} ج.م</strong> ({liveMargin}%)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 w-full md:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmModal(true)}
+                          disabled={isSubmittingSettlement}
+                          className="w-full md:w-auto px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 disabled:bg-gray-600 text-gray-950 font-black text-sm rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                        >
+                          <CheckCircle2 size={18} className="text-emerald-950" />
+                          <span>اعتماد تقفيلة المطبخ وتسوية المخزن بالرصيد الفعلي 💾</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 6. Confirmation Modal */}
+                    {showConfirmModal && (
+                      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                            <div className="p-3 bg-amber-100 text-amber-800 rounded-2xl">
+                              <AlertTriangle size={24} />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-black text-gray-900">تأكيد اعتماد تقفيلة وجرد المطبخ</h3>
+                              <p className="text-xs text-gray-500 font-bold">تسوية أرصدة الخامات المكملة واعتماد صافي أرباح الشهر</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3 bg-gray-50 p-4 rounded-2xl text-xs font-bold border border-gray-200">
+                            <div className="flex justify-between items-center text-gray-700">
+                              <span>الفترة:</span>
+                              <span className="font-mono font-black text-gray-900">{formatDate(startDate)} إلى {formatDate(endDate)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-gray-700">
+                              <span>إجمالي مبيعات السندوتشات:</span>
+                              <span className="font-mono font-black text-sky-800">{totalRev.toFixed(2)} ج.م</span>
+                            </div>
+                            <div className="flex justify-between items-center text-gray-700">
+                              <span>تكلفة المادة الأساسية (اللحوم):</span>
+                              <span className="font-mono font-black text-gray-800">{totalBaseCost.toFixed(2)} ج.م</span>
+                            </div>
+                            <div className="flex justify-between items-center text-amber-900 pt-1 border-t border-gray-200">
+                              <span>تكلفة الخامات المكملة المستهلكة بالجرد:</span>
+                              <span className="font-mono font-black text-sm text-amber-700">{netConsumedAuxCost.toFixed(2)} ج.م</span>
+                            </div>
+                            <div className="flex justify-between items-center text-emerald-950 pt-1 border-t border-gray-200 text-sm">
+                              <span>صافي الربح الفعلي المعتمد للمطبخ:</span>
+                              <span className="font-mono font-black text-base text-emerald-700">+{liveNetProfit.toFixed(2)} ج.م</span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5">ملاحظات التقفيل (اختياري):</label>
+                            <input
+                              type="text"
+                              value={kitchenNotes}
+                              onChange={(e) => setKitchenNotes(e.target.value)}
+                              placeholder="مثال: تقفيلة وجرد مطبخ الكانتين لشهر أكتوبر"
+                              className="w-full p-3 border-2 border-gray-200 rounded-xl font-bold text-xs text-gray-800 focus:border-emerald-600 outline-none"
+                            />
+                          </div>
+
+                          <p className="text-[11px] text-gray-500 font-bold bg-amber-50 p-3 rounded-xl border border-amber-100 leading-relaxed">
+                            ⚠️ عند الضغط على تأكيد: سيتم خصم كميات الخامات المستهلكة من دفعات المخزن بنظام FIFO وتعيين الأرصدة الجديدة كأرصدة بداية للشهر القادم، وتثبيت التكلفة في تقفيلة الشهر.
+                          </p>
+
+                          <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmModal(false)}
+                              disabled={isSubmittingSettlement}
+                              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black text-xs rounded-xl transition-all cursor-pointer"
+                            >
+                              إلغاء وتعديل الأرقام
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCommitKitchenSettlement}
+                              disabled={isSubmittingSettlement}
+                              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+                            >
+                              {isSubmittingSettlement ? (
+                                <span>جاري الاعتماد والتسوية...</span>
+                              ) : (
+                                <>
+                                  <CheckCircle2 size={16} />
+                                  <span>تأكيد التسوية والاعتماد 💾</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* ================= VIEW 3: SHIFTS REPORT ================= */}
               {reportType === 'SHIFTS' && detailedData?.reportType === 'SHIFTS' && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
@@ -1541,7 +2151,7 @@ const ReportsPage = () => {
               )}
 
               {/* ================= VIEW 5: GENERAL REPORTS (SALES, PURCHASES, EXPENSES, INVENTORY, LOW_STOCK, PATIENTS) ================= */}
-              {!['DAILY_FINANCIAL', 'MONTHLY_FINANCIAL', 'SHIFTS', 'SUPPLIERS'].includes(reportType) && detailedData?.reportType === reportType && Array.isArray(detailedData.data) && (
+              {!['DAILY_FINANCIAL', 'MONTHLY_FINANCIAL', 'KITCHEN_CLOSING', 'SHIFTS', 'SUPPLIERS'].includes(reportType) && detailedData?.reportType === reportType && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   {/* Summary Cards */}
                   {detailedData.summary && (

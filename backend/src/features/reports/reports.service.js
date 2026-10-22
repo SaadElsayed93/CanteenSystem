@@ -1,11 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const calculateDivisionBreakdown = (invoices) => {
+const calculateDivisionBreakdown = (invoices, kitchenSettlementCost = 0) => {
   const divisions = {
     CANTEEN: { name: 'الكانتين (معلبات وسناكس)', activityType: 'CANTEEN', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
     BUFFET: { name: 'البوفيه والمشروبات', activityType: 'BUFFET', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
-    SANDWICH: { name: 'السندوتشات والمطبخ', activityType: 'SANDWICH', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 }
+    SANDWICH: { name: 'السندوتشات والمطبخ', activityType: 'SANDWICH', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0, auxiliaryCost: 0, baseCost: 0 }
   };
 
   invoices.forEach(inv => {
@@ -24,6 +24,13 @@ const calculateDivisionBreakdown = (invoices) => {
       divisions[act].count += qty;
     });
   });
+
+  if (divisions.SANDWICH) {
+    divisions.SANDWICH.baseCost = divisions.SANDWICH.cost;
+    divisions.SANDWICH.auxiliaryCost = Number(Number(kitchenSettlementCost || 0).toFixed(2));
+    divisions.SANDWICH.cost = Number((divisions.SANDWICH.baseCost + Number(kitchenSettlementCost || 0)).toFixed(2));
+    divisions.SANDWICH.profit = Number((divisions.SANDWICH.revenue - divisions.SANDWICH.cost).toFixed(2));
+  }
 
   Object.keys(divisions).forEach(k => {
     const d = divisions[k];
@@ -415,7 +422,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       });
     });
 
-    const grossProfit = Number((totalSales - costOfGoodsSold).toFixed(2));
+    let grossProfit = Number((totalSales - costOfGoodsSold).toFixed(2));
 
     // B. Month Expenses
     const expenses = await prisma.expense.findMany({
@@ -445,7 +452,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
     });
 
     // Net Profit is purely trading profit from canteen sales (Sales - COGS); expenses do not deduct from trading profit
-    const netProfit = grossProfit;
+    let netProfit = grossProfit;
 
     // C. Month Purchases
     const purchases = await prisma.supplierPurchase.findMany({
@@ -514,7 +521,28 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         profit: Number(Number(p.profit || 0).toFixed(2))
       }));
 
-    const divisions = calculateDivisionBreakdown(invoices);
+    // G. Kitchen Settlement Cost (if any auxiliary materials settled in month)
+    const kitchenSettlementMovements = await prisma.inventoryMovement.findMany({
+      where: {
+        createdAt: { gte: startDate, lte: endDate },
+        referenceType: 'KITCHEN_SETTLEMENT'
+      },
+      include: { product: true }
+    });
+
+    let totalKitchenSettlementCost = 0;
+    kitchenSettlementMovements.forEach(m => {
+      const qty = Number(m.quantity || 0);
+      const unitCost = Number(m.product?.purchasePrice || 0);
+      if (m.type === 'OUT') totalKitchenSettlementCost += qty * unitCost;
+      else if (m.type === 'IN') totalKitchenSettlementCost -= qty * unitCost;
+    });
+    totalKitchenSettlementCost = Math.max(0, Number(totalKitchenSettlementCost.toFixed(2)));
+
+    const divisions = calculateDivisionBreakdown(invoices, totalKitchenSettlementCost);
+    const totalCOGS = Number((costOfGoodsSold + totalKitchenSettlementCost).toFixed(2));
+    grossProfit = Number((totalSales - totalCOGS).toFixed(2));
+    netProfit = grossProfit;
 
     return {
       reportType: 'MONTHLY_FINANCIAL',
@@ -524,7 +552,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         cashSales,
         creditSales,
         invoiceCount: invoices.length,
-        costOfGoodsSold,
+        costOfGoodsSold: totalCOGS,
+        baseCostOfGoodsSold: costOfGoodsSold,
+        kitchenSettlementCost: totalKitchenSettlementCost,
         grossProfit,
         totalExpenses,
         canteenExpenses,
@@ -1209,12 +1239,410 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
     };
   }
 
+  // ================= 11. KITCHEN CLOSING & SETTLEMENT REPORT =================
+  if (type === 'KITCHEN_CLOSING') {
+    return await getKitchenClosingStatus(startDate, endDate);
+  }
+
   throw new Error('نوع التقرير غير مدعوم');
+};
+
+/**
+ * حالة تقفيل وجرد خامات المطبخ والسندوتشات للشهر
+ */
+const getKitchenClosingStatus = async (startDate, endDate) => {
+  // 1. مبيعات السندوتشات خلال الفترة
+  const invoices = await prisma.invoice.findMany({
+    where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              ingredients: {
+                include: { rawMaterial: true }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  let totalSandwichesSold = 0;
+  let totalSandwichRevenue = 0;
+  let totalBaseCost = 0;
+  const sandwichMap = {};
+  const theoreticalUsageMap = {};
+
+  invoices.forEach(inv => {
+    inv.items.forEach(item => {
+      if (item.product?.activityType === 'SANDWICH') {
+        const qty = Number(item.quantity || 0);
+        const rev = Number(item.subtotal || 0);
+        const pid = item.productId;
+
+        const ingredients = item.product.ingredients || [];
+        const baseIng = ingredients.find(i => i.notes?.includes('الأساسي')) || ingredients[0];
+        const baseUnitCost = baseIng 
+          ? Number(baseIng.quantityPerUnit || 1) * Number(baseIng.rawMaterial?.purchasePrice || 0) 
+          : Number(item.product.purchasePrice || 0);
+        const itemBaseCost = qty * baseUnitCost;
+
+        totalSandwichesSold += qty;
+        totalSandwichRevenue += rev;
+        totalBaseCost += itemBaseCost;
+
+        if (!sandwichMap[pid]) {
+          sandwichMap[pid] = {
+            id: pid,
+            name: item.product.name,
+            quantity: 0,
+            revenue: 0,
+            baseCost: 0
+          };
+        }
+        sandwichMap[pid].quantity += qty;
+        sandwichMap[pid].revenue += rev;
+        sandwichMap[pid].baseCost += itemBaseCost;
+
+        ingredients.forEach(ing => {
+          const rawId = ing.rawMaterialId;
+          const required = qty * Number(ing.quantityPerUnit || 0);
+          theoreticalUsageMap[rawId] = (theoreticalUsageMap[rawId] || 0) + required;
+        });
+      }
+    });
+  });
+
+  // 2. تجميع الخامات المكملة والأساسية الخاصة بالمطبخ وقسم السندوتشات
+  const sandwichRecipes = await prisma.product.findMany({
+    where: { activityType: 'SANDWICH', productType: 'RECIPE' },
+    include: {
+      ingredients: {
+        include: { rawMaterial: true }
+      }
+    }
+  });
+
+  const baseRawMaterialIds = new Set();
+  const allSandwichRawMaterialIds = new Set();
+  const auxiliaryRecipeNamesMap = {};
+
+  sandwichRecipes.forEach(recipe => {
+    const ingredients = recipe.ingredients || [];
+    const baseIng = ingredients.find(i => i.notes?.includes('الأساسي')) || ingredients[0];
+    if (baseIng) baseRawMaterialIds.add(baseIng.rawMaterialId);
+    ingredients.forEach(ing => {
+      allSandwichRawMaterialIds.add(ing.rawMaterialId);
+      if (!auxiliaryRecipeNamesMap[ing.rawMaterialId]) {
+        auxiliaryRecipeNamesMap[ing.rawMaterialId] = new Set();
+      }
+      auxiliaryRecipeNamesMap[ing.rawMaterialId].add(recipe.name);
+    });
+  });
+
+  const explicitRaw = await prisma.product.findMany({
+    where: { activityType: 'SANDWICH', productType: 'RAW_MATERIAL' }
+  });
+  explicitRaw.forEach(r => allSandwichRawMaterialIds.add(r.id));
+
+  const allRawMaterials = await prisma.product.findMany({
+    where: { id: { in: Array.from(allSandwichRawMaterialIds) } },
+    include: {
+      batches: true,
+      inventoryMovements: {
+        where: {
+          createdAt: { gte: startDate, lte: endDate },
+          referenceType: 'KITCHEN_SETTLEMENT'
+        }
+      }
+    },
+    orderBy: { name: 'asc' }
+  });
+
+  // مشتريات هذه المواد خلال الفترة
+  const purchases = await prisma.purchaseItem.findMany({
+    where: {
+      productId: { in: Array.from(allSandwichRawMaterialIds) },
+      purchase: { createdAt: { gte: startDate, lte: endDate } }
+    },
+    include: { purchase: true }
+  });
+
+  const purchaseMap = {};
+  purchases.forEach(p => {
+    const pid = p.productId;
+    if (!purchaseMap[pid]) {
+      purchaseMap[pid] = { quantity: 0, totalCost: 0 };
+    }
+    purchaseMap[pid].quantity += Number(p.quantity || 0);
+    purchaseMap[pid].totalCost += Number(p.subtotal || (Number(p.quantity) * Number(p.unitCost)) || 0);
+  });
+
+  let totalAuxConsumedCostSettledSoFar = 0;
+  let totalPeriodPurchasesCost = 0;
+
+  const materialsList = allRawMaterials.map(m => {
+    const currentStock = m.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+    const purch = purchaseMap[m.id] || { quantity: 0, totalCost: 0 };
+    totalPeriodPurchasesCost += purch.totalCost;
+    const unitCost = Number(m.purchasePrice || 0);
+
+    let settledOut = 0;
+    let settledIn = 0;
+    m.inventoryMovements.forEach(mov => {
+      if (mov.type === 'OUT') settledOut += Number(mov.quantity || 0);
+      else if (mov.type === 'IN') settledIn += Number(mov.quantity || 0);
+    });
+    const netSettledThisPeriod = settledOut - settledIn;
+    const netSettledCost = netSettledThisPeriod * unitCost;
+    totalAuxConsumedCostSettledSoFar += netSettledCost;
+
+    const isBase = baseRawMaterialIds.has(m.id);
+    const theoreticalQty = theoreticalUsageMap[m.id] || 0;
+    const recipeNames = auxiliaryRecipeNamesMap[m.id] ? Array.from(auxiliaryRecipeNamesMap[m.id]) : [];
+
+    return {
+      id: m.id,
+      name: m.name,
+      code: m.internalCode || `#${m.id}`,
+      unit: m.unit || 'قطعة',
+      unitCost,
+      currentStock: Number(currentStock.toFixed(3)),
+      purchasedQty: Number(purch.quantity.toFixed(3)),
+      purchasedCost: Number(purch.totalCost.toFixed(2)),
+      isBase,
+      categoryType: isBase ? 'مكون أساسي (لحوم/دجاج)' : 'خامة مكملة (مطبخ/تسوية)',
+      theoreticalUsage: Number(theoreticalQty.toFixed(3)),
+      theoreticalCost: Number((theoreticalQty * unitCost).toFixed(2)),
+      settledInPeriod: Number(netSettledThisPeriod.toFixed(3)),
+      settledCostInPeriod: Number(netSettledCost.toFixed(2)),
+      actualRemaining: Number(currentStock.toFixed(3)),
+      usedInSandwiches: recipeNames
+    };
+  });
+
+  const auxiliaryMaterials = materialsList.filter(m => !m.isBase);
+  const baseMaterials = materialsList.filter(m => m.isBase);
+
+  return {
+    reportType: 'KITCHEN_CLOSING',
+    period: { startDate, endDate },
+    summary: {
+      totalSandwichesSold,
+      totalSandwichRevenue: Number(totalSandwichRevenue.toFixed(2)),
+      totalBaseCost: Number(totalBaseCost.toFixed(2)),
+      sandwichGrossProfit: Number((totalSandwichRevenue - totalBaseCost).toFixed(2)),
+      totalPeriodPurchasesCost: Number(totalPeriodPurchasesCost.toFixed(2)),
+      totalAuxConsumedCostSettledSoFar: Number(totalAuxConsumedCostSettledSoFar.toFixed(2)),
+      actualNetProfitSoFar: Number((totalSandwichRevenue - totalBaseCost - totalAuxConsumedCostSettledSoFar).toFixed(2)),
+      materialsCount: materialsList.length,
+      auxiliaryCount: auxiliaryMaterials.length
+    },
+    sandwichesBreakdown: Object.values(sandwichMap),
+    materials: materialsList,
+    auxiliaryMaterials,
+    baseMaterials,
+    data: auxiliaryMaterials
+  };
+};
+
+/**
+ * اعتماد تقفيلة المطبخ الشهرية وتسوية المخزن بالرصيد الفعلي
+ */
+const settleKitchenMonth = async (data, userId) => {
+  const { startDate, endDate, notes, items } = data;
+
+  const result = await prisma.$transaction(async (tx) => {
+    let totalSettledCostConsumed = 0;
+    const settledItems = [];
+
+    for (const item of items) {
+      const productId = Number(item.productId);
+      const actualRemaining = Number(item.actualRemaining);
+      const reason = item.reason || notes || 'تقفيل خامات المطبخ الشهرية واعتماد الجرد الفعلي';
+
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+        include: {
+          batches: {
+            where: { quantityRemaining: { not: 0 } },
+            orderBy: { receivedAt: 'asc' }
+          }
+        }
+      });
+
+      if (!product) continue;
+
+      const currentStock = product.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      const difference = currentStock - actualRemaining; // > 0 means consumed, < 0 means surplus
+      const unitCost = Number(product.purchasePrice || 0);
+
+      if (Math.abs(difference) > 0.0001) {
+        if (difference > 0) {
+          // استهلاك: خصم الفرق من الباتشات بنظام FIFO
+          let remainingToReduce = difference;
+          const positiveBatches = product.batches.filter(b => Number(b.quantityRemaining) > 0);
+
+          for (const batch of positiveBatches) {
+            if (remainingToReduce <= 0) break;
+            const avail = Number(batch.quantityRemaining);
+            const reduce = Math.min(avail, remainingToReduce);
+
+            await tx.batch.update({
+              where: { id: batch.id },
+              data: { quantityRemaining: avail - reduce }
+            });
+            remainingToReduce -= reduce;
+          }
+
+          if (remainingToReduce > 0) {
+            await tx.batch.create({
+              data: {
+                productId,
+                quantityRemaining: -remainingToReduce,
+                unitCost
+              }
+            });
+          }
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId,
+              type: 'OUT',
+              quantity: difference,
+              balanceAfter: actualRemaining,
+              referenceType: 'KITCHEN_SETTLEMENT',
+              createdBy: userId
+            }
+          });
+
+          await tx.inventoryCount.create({
+            data: {
+              productId,
+              systemQuantity: currentStock,
+              actualQuantity: actualRemaining,
+              difference: -difference,
+              reason,
+              createdBy: userId
+            }
+          });
+
+          const consumedCost = Number((difference * unitCost).toFixed(2));
+          totalSettledCostConsumed += consumedCost;
+
+          settledItems.push({
+            productId,
+            name: product.name,
+            currentStock,
+            actualRemaining,
+            difference: -difference,
+            type: 'CONSUMED',
+            consumedCost
+          });
+        } else {
+          // فائض: الفعلي أكبر من رصيد السيستم
+          const surplus = Math.abs(difference);
+          await tx.batch.create({
+            data: {
+              productId,
+              quantityRemaining: surplus,
+              unitCost
+            }
+          });
+
+          await tx.inventoryMovement.create({
+            data: {
+              productId,
+              type: 'IN',
+              quantity: surplus,
+              balanceAfter: actualRemaining,
+              referenceType: 'KITCHEN_SETTLEMENT',
+              createdBy: userId
+            }
+          });
+
+          await tx.inventoryCount.create({
+            data: {
+              productId,
+              systemQuantity: currentStock,
+              actualQuantity: actualRemaining,
+              difference: surplus,
+              reason: item.reason || notes || 'فائض جرد خامات المطبخ بنهاية الشهر',
+              createdBy: userId
+            }
+          });
+
+          const surplusCost = Number((surplus * unitCost).toFixed(2));
+          totalSettledCostConsumed -= surplusCost;
+
+          settledItems.push({
+            productId,
+            name: product.name,
+            currentStock,
+            actualRemaining,
+            difference: surplus,
+            type: 'SURPLUS',
+            consumedCost: -surplusCost
+          });
+        }
+      } else {
+        // مطابقة تامة
+        await tx.inventoryCount.create({
+          data: {
+            productId,
+            systemQuantity: currentStock,
+            actualQuantity: actualRemaining,
+            difference: 0,
+            reason: reason || 'مطابقة الرصيد الفعلي للمخزن (بدون فروق)',
+            createdBy: userId
+          }
+        });
+
+        settledItems.push({
+          productId,
+          name: product.name,
+          currentStock,
+          actualRemaining,
+          difference: 0,
+          type: 'MATCHED',
+          consumedCost: 0
+        });
+      }
+    }
+
+    // تسجيل في AuditLog
+    await tx.auditLog.create({
+      data: {
+        action: 'KITCHEN_SETTLEMENT',
+        entityType: 'INVENTORY_SETTLEMENT',
+        entityId: null,
+        oldValues: JSON.stringify({ itemsCount: items.length }),
+        newValues: JSON.stringify({
+          totalSettledCostConsumed,
+          settledItemsCount: settledItems.length,
+          settledItems
+        }),
+        userId
+      }
+    });
+
+    return {
+      totalSettledCostConsumed: Number(totalSettledCostConsumed.toFixed(2)),
+      settledItems
+    };
+  });
+
+  return result;
 };
 
 module.exports = { 
   getDashboardMetrics, 
   getSalesChartData, 
   getTopProducts, 
-  getDetailedReport 
+  getDetailedReport,
+  getKitchenClosingStatus,
+  settleKitchenMonth,
+  calculateDivisionBreakdown
 };

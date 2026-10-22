@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const router = express.Router();
 const reportsController = require('./reports.controller');
 const { authMiddleware } = require('../../common/middleware/auth');
@@ -10,5 +10,9 @@ router.use(authMiddleware);
 router.get('/dashboard', checkPermission('VIEW_REPORTS'), reportsController.getDashboard);
 
 router.get('/detailed', checkPermission('VIEW_REPORTS'), reportsController.getDetailedReport);
+
+// تقفيل وجرد خامات المطبخ والسندوتشات الشهرية
+router.get('/kitchen-closing', checkPermission('VIEW_REPORTS'), reportsController.getKitchenClosingStatus);
+router.post('/kitchen-settlement', checkPermission('VIEW_REPORTS'), reportsController.settleKitchenMonth);
 
 module.exports = router;

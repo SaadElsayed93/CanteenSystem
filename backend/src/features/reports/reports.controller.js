@@ -1,4 +1,4 @@
-﻿const reportsService = require('./reports.service');
+const reportsService = require('./reports.service');
 
 const getDashboard = async (req, res, next) => {
   try {
@@ -31,4 +31,40 @@ const getDetailedReport = async (req, res, next) => {
   }
 };
 
-module.exports = { getDashboard, getDetailedReport };
+const getKitchenClosingStatus = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const sDate = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const eDate = endDate ? new Date(endDate) : new Date();
+    eDate.setHours(23, 59, 59, 999);
+
+    const data = await reportsService.getKitchenClosingStatus(sDate, eDate);
+    res.json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const settleKitchenMonth = async (req, res, next) => {
+  try {
+    const { startDate, endDate, notes, items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'يرجى تقديم بيانات الأصناف المراد تسويتها' });
+    }
+    const result = await reportsService.settleKitchenMonth({ startDate, endDate, notes, items }, req.user.id);
+    res.json({ 
+      success: true, 
+      data: result, 
+      message: 'تم اعتماد تقفيلة المطبخ وتسوية المخزن بنجاح' 
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { 
+  getDashboard, 
+  getDetailedReport,
+  getKitchenClosingStatus,
+  settleKitchenMonth
+};
