@@ -53,6 +53,37 @@ const formatDateTime = (dateString) => {
   return `${day}/${month}/${year} - ${hours}:${minutes} ${ampm}`;
 };
 
+const resolveActivityType = (product) => {
+  if (product?.activityType === 'CANTEEN' || product?.activityType === 'BUFFET' || product?.activityType === 'SANDWICH') {
+    return product.activityType;
+  }
+  const name = (product?.name || '').toLowerCase();
+  if (
+    name.includes('شاي') || name.includes('قهوة') || name.includes('نسكافيه') || 
+    name.includes('كوفي') || name.includes('مشروب') || name.includes('سحلب') || 
+    name.includes('كركديه') || name.includes('ينسون') || name.includes('نعناع') || 
+    name.includes('مشروبات') || name.includes('كابتشينو') || name.includes('اسبريسو')
+  ) {
+    return 'BUFFET';
+  }
+  if (
+    name.includes('برجر') || name.includes('ستربس') || name.includes('سندوتش') || 
+    name.includes('ساندوتش') || name.includes('بانيه') || name.includes('كفتة') || 
+    name.includes('فراخ') || name.includes('حواوشي') || name.includes('عيش') || 
+    name.includes('وجبة') || name.includes('مطبخ') || name.includes('سجق')
+  ) {
+    return 'SANDWICH';
+  }
+  return 'CANTEEN';
+};
+
+const getActivityLabel = (type) => {
+  if (type === 'CANTEEN') return 'قسم الكانتين (سناكس ومعلبات)';
+  if (type === 'BUFFET') return 'قسم البوفيه (مشروبات)';
+  if (type === 'SANDWICH') return 'قسم السندوتشات والمطبخ';
+  return 'عام';
+};
+
 const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel, onClick, clickableText }) => (
   <div 
     onClick={onClick}
@@ -129,6 +160,9 @@ const ReportsPage = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isKitchenEditMode, setIsKitchenEditMode] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+
+  // Sales Division Breakdown Filter ('ALL' | 'CANTEEN' | 'BUFFET' | 'SANDWICH')
+  const [salesDivisionFilter, setSalesDivisionFilter] = useState('ALL');
 
   useEffect(() => {
     if (detailedData?.reportType === 'KITCHEN_CLOSING' && detailedData.materials) {
@@ -345,6 +379,305 @@ const ReportsPage = () => {
     }
   };
 
+  const renderDivisionSegmentedProductsTable = (productsList, title = 'حركة مبيعات الأصناف') => {
+    const list = Array.isArray(productsList) ? productsList : [];
+
+    // Group items by division using resolveActivityType
+    const canteenList = list.filter(p => resolveActivityType(p) === 'CANTEEN');
+    const buffetList = list.filter(p => resolveActivityType(p) === 'BUFFET');
+    const sandwichList = list.filter(p => resolveActivityType(p) === 'SANDWICH');
+
+    const getDivisionStats = (items) => {
+      const count = items.length;
+      const totalQty = items.reduce((sum, p) => sum + Number(p.quantity || 0), 0);
+      const totalCost = items.reduce((sum, p) => sum + Number(p.cost || 0), 0);
+      const totalRevenue = items.reduce((sum, p) => sum + Number(p.revenue || 0), 0);
+      const totalProfit = items.reduce((sum, p) => sum + Number(p.profit !== undefined ? p.profit : ((p.revenue || 0) - (p.cost || 0))), 0);
+      const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+      return { count, totalQty, totalCost, totalRevenue, totalProfit, margin };
+    };
+
+    const canteenStats = getDivisionStats(canteenList);
+    const buffetStats = getDivisionStats(buffetList);
+    const sandwichStats = getDivisionStats(sandwichList);
+    const grandStats = getDivisionStats(list);
+
+    const divisions = [
+      {
+        key: 'CANTEEN',
+        title: 'قسم الكانتين (المعلبات والحلويات والسناكس)',
+        shortTitle: 'الكانتين',
+        icon: Store,
+        iconColor: 'text-blue-600',
+        badgeBg: 'bg-blue-100 text-blue-800 border-blue-200',
+        headerBg: 'bg-blue-50/80 text-blue-900 border-blue-200',
+        subtotalBg: 'bg-blue-50/90 text-blue-950 border-t-2 border-blue-300',
+        items: canteenList,
+        stats: canteenStats
+      },
+      {
+        key: 'BUFFET',
+        title: 'قسم البوفيه (المشروبات الساخنة والباردة)',
+        shortTitle: 'البوفيه والمشروبات',
+        icon: Coffee,
+        iconColor: 'text-amber-600',
+        badgeBg: 'bg-amber-100 text-amber-800 border-amber-200',
+        headerBg: 'bg-amber-50/80 text-amber-900 border-amber-200',
+        subtotalBg: 'bg-amber-50/90 text-amber-950 border-t-2 border-amber-300',
+        items: buffetList,
+        stats: buffetStats
+      },
+      {
+        key: 'SANDWICH',
+        title: 'قسم السندوتشات والمطبخ',
+        shortTitle: 'السندوتشات والمطبخ',
+        icon: UtensilsCrossed,
+        iconColor: 'text-emerald-600',
+        badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        headerBg: 'bg-emerald-50/80 text-emerald-900 border-emerald-200',
+        subtotalBg: 'bg-emerald-50/90 text-emerald-950 border-t-2 border-emerald-300',
+        items: sandwichList,
+        stats: sandwichStats
+      }
+    ];
+
+    const activeDivisions = salesDivisionFilter === 'ALL' 
+      ? divisions 
+      : divisions.filter(d => d.key === salesDivisionFilter);
+
+    return (
+      <div className="space-y-4">
+        {/* Header with Title and Division Filter Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
+          <div>
+            <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+              <span className="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
+              <span>{title} ({list.length} صنف)</span>
+            </h3>
+            <p className="text-xs text-gray-500 font-bold mt-0.5">
+              مقسمة حسب الأنشطة: الكانتين، البوفيه، ومطبخ السندوتشات
+            </p>
+          </div>
+
+          {/* Division Filter Buttons (Hidden during print) */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-100 rounded-xl print:hidden">
+            <button
+              type="button"
+              onClick={() => setSalesDivisionFilter('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                salesDivisionFilter === 'ALL'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <span>الكل</span>
+              <span className="bg-gray-200 text-gray-700 text-[10px] px-1.5 py-0.2 rounded-full">
+                {list.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSalesDivisionFilter('CANTEEN')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                salesDivisionFilter === 'CANTEEN'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-blue-700'
+              }`}
+            >
+              <Store size={13} />
+              <span>الكانتين</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesDivisionFilter === 'CANTEEN' ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                {canteenList.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSalesDivisionFilter('BUFFET')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                salesDivisionFilter === 'BUFFET'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-amber-700'
+              }`}
+            >
+              <Coffee size={13} />
+              <span>البوفيه</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesDivisionFilter === 'BUFFET' ? 'bg-amber-700 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                {buffetList.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSalesDivisionFilter('SANDWICH')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                salesDivisionFilter === 'SANDWICH'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-emerald-700'
+              }`}
+            >
+              <UtensilsCrossed size={13} />
+              <span>السندوتشات</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${salesDivisionFilter === 'SANDWICH' ? 'bg-emerald-700 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                {sandwichList.length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Division Tables */}
+        {activeDivisions.map((div) => {
+          const DivIcon = div.icon;
+          return (
+            <div key={div.key} className="space-y-2 rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-xs">
+              {/* Section Sub-Header */}
+              <div className={`p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 ${div.headerBg}`}>
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-white rounded-lg shadow-2xs">
+                    <DivIcon className={div.iconColor} size={18} />
+                  </div>
+                  <span className="font-black text-sm text-gray-900">{div.title}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${div.badgeBg}`}>
+                    {div.stats.count} صنف
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-bold text-gray-700">
+                  <div>
+                    القطع: <span className="text-indigo-700 font-black">{div.stats.totalQty}</span>
+                  </div>
+                  <div>
+                    الإيراد: <span className="text-emerald-700 font-black">{div.stats.totalRevenue.toFixed(2)} ج.م</span>
+                  </div>
+                  <div>
+                    الربح: <span className="text-indigo-900 font-black">{div.stats.totalProfit.toFixed(2)} ج.م</span>
+                  </div>
+                  <div className="bg-white/80 px-2 py-0.5 rounded-md border border-gray-200 text-[11px]">
+                    هامش: <span className="text-indigo-800 font-black">{div.stats.margin}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs font-bold">
+                  <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
+                    <tr>
+                      <th className="p-3 w-10 text-center">#</th>
+                      <th className="p-3">اسم الصنف</th>
+                      <th className="p-3">الكمية المباعة</th>
+                      <th className="p-3">إجمالي التكلفة</th>
+                      <th className="p-3">إجمالي الإيراد</th>
+                      <th className="p-3">صافي الربح</th>
+                      <th className="p-3">نسبة الربح (الهامش)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {div.items.map((p, idx) => {
+                      const cost = Number(p.cost || 0);
+                      const rev = Number(p.revenue || 0);
+                      const profit = p.profit !== undefined ? Number(p.profit) : (rev - cost);
+                      const margin = rev > 0 ? ((profit / rev) * 100).toFixed(1) : '0.0';
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="p-3 text-center text-gray-400 font-normal">{idx + 1}</td>
+                          <td className="p-3 text-gray-900 flex items-center gap-2">
+                            <span>{p.name}</span>
+                            {p.internalCode && (
+                              <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono font-normal">
+                                {p.internalCode}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-indigo-700 font-black">{p.quantity}</td>
+                          <td className="p-3 text-gray-600">{cost.toFixed(2)} ج.م</td>
+                          <td className="p-3 text-emerald-700 font-black">{rev.toFixed(2)} ج.م</td>
+                          <td className={`p-3 font-black ${profit >= 0 ? 'text-indigo-900' : 'text-red-600'}`}>
+                            {profit.toFixed(2)} ج.م
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                              Number(margin) >= 30 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                              Number(margin) >= 15 ? 'bg-indigo-50 text-indigo-800 border border-indigo-200' :
+                              Number(margin) > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' :
+                              'bg-red-50 text-red-800 border border-red-200'
+                            }`}>
+                              {margin}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {div.items.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="p-6 text-center text-gray-400 font-bold">
+                          لا توجد مبيعات أصناف مسجلة في {div.shortTitle} خلال هذه الفترة.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {div.items.length > 0 && (
+                    <tfoot className={`font-black ${div.subtotalBg}`}>
+                      <tr>
+                        <td colSpan="2" className="p-3">
+                          مجموع {div.shortTitle} ({div.stats.count} صنف)
+                        </td>
+                        <td className="p-3 text-indigo-800">{div.stats.totalQty} قطعة</td>
+                        <td className="p-3 text-gray-800">{div.stats.totalCost.toFixed(2)} ج.م</td>
+                        <td className="p-3 text-emerald-800">{div.stats.totalRevenue.toFixed(2)} ج.م</td>
+                        <td className="p-3 text-indigo-950">{div.stats.totalProfit.toFixed(2)} ج.م</td>
+                        <td className="p-3 text-indigo-900">{div.stats.margin}%</td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Grand Total Summary Banner (shown when 'ALL' is selected and there are items) */}
+        {salesDivisionFilter === 'ALL' && list.length > 0 && (
+          <div className="p-4 bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 text-white rounded-2xl shadow-md border border-gray-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs uppercase tracking-wider text-indigo-300 font-bold">
+                  ملخص كافة الأقسام مجمعة
+                </span>
+                <h4 className="text-lg font-black text-white">
+                  الإجمالي العام لحركة مبيعات الأصناف
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+                <div className="bg-white/10 p-2.5 rounded-xl">
+                  <div className="text-[11px] text-gray-300 font-bold mb-0.5">عدد الأصناف</div>
+                  <div className="text-base font-black text-white">{grandStats.count} صنف</div>
+                </div>
+                <div className="bg-white/10 p-2.5 rounded-xl">
+                  <div className="text-[11px] text-gray-300 font-bold mb-0.5">الكمية المباعة</div>
+                  <div className="text-base font-black text-indigo-300">{grandStats.totalQty} قطعة</div>
+                </div>
+                <div className="bg-white/10 p-2.5 rounded-xl">
+                  <div className="text-[11px] text-gray-300 font-bold mb-0.5">إجمالي التكلفة</div>
+                  <div className="text-base font-black text-gray-200">{grandStats.totalCost.toFixed(2)} ج</div>
+                </div>
+                <div className="bg-white/10 p-2.5 rounded-xl">
+                  <div className="text-[11px] text-emerald-300 font-bold mb-0.5">إجمالي الإيراد</div>
+                  <div className="text-base font-black text-emerald-300">{grandStats.totalRevenue.toFixed(2)} ج</div>
+                </div>
+                <div className="bg-white/10 p-2.5 rounded-xl col-span-2 sm:col-span-1">
+                  <div className="text-[11px] text-yellow-300 font-bold mb-0.5">صافي الربح ({grandStats.margin}%)</div>
+                  <div className="text-base font-black text-yellow-300">{grandStats.totalProfit.toFixed(2)} ج</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -436,6 +769,21 @@ const ReportsPage = () => {
           { name: 'ملخص اليومية', data: summaryData },
           { name: 'طرق التحصيل والخزينة', data: paymentsData }
         ];
+
+        if (Array.isArray(detailedData.products) && detailedData.products.length > 0) {
+          const prodSheet = detailedData.products.map((p, idx) => ({
+            'م': idx + 1,
+            'القسم': getActivityLabel(resolveActivityType(p)),
+            'اسم الصنف': p.name,
+            'الكمية المباعة': p.quantity || 0,
+            'إجمالي التكلفة (ج.م)': Number((p.cost || 0).toFixed(2)),
+            'إجمالي الإيراد (ج.م)': Number((p.revenue || 0).toFixed(2)),
+            'صافي الربح (ج.م)': Number((p.profit || 0).toFixed(2)),
+            'نسبة الربح': `${(p.revenue > 0 ? ((p.profit / p.revenue) * 100).toFixed(1) : 0)}%`
+          }));
+          sheets.push({ name: 'مبيعات الأصناف بالأقسام', data: prodSheet });
+        }
+
         if (expensesData.length > 0) {
           sheets.push({ name: 'كشف المصروفات', data: expensesData });
         }
@@ -461,6 +809,21 @@ const ReportsPage = () => {
         sheets = [
           { name: 'الملخص المالي العام', data: summaryData }
         ];
+
+        const monthlyProds = detailedData.products || detailedData.topProducts;
+        if (Array.isArray(monthlyProds) && monthlyProds.length > 0) {
+          const prodSheet = monthlyProds.map((p, idx) => ({
+            'م': idx + 1,
+            'القسم': getActivityLabel(resolveActivityType(p)),
+            'اسم الصنف': p.name,
+            'الكمية المباعة': p.quantity || 0,
+            'إجمالي التكلفة (ج.م)': Number((p.cost || 0).toFixed(2)),
+            'إجمالي الإيراد (ج.م)': Number((p.revenue || 0).toFixed(2)),
+            'صافي الربح (ج.م)': Number((p.profit || 0).toFixed(2)),
+            'نسبة الربح': `${(p.revenue > 0 ? ((p.profit / p.revenue) * 100).toFixed(1) : 0)}%`
+          }));
+          sheets.push({ name: 'مبيعات الأصناف بالأقسام', data: prodSheet });
+        }
 
         if (Array.isArray(detailedData.expenses) && detailedData.expenses.length > 0) {
           const expSheet = detailedData.expenses.map((e, idx) => ({
@@ -510,6 +873,7 @@ const ReportsPage = () => {
             filename = `تقرير_المبيعات_${dateRangeStr}`;
             return {
               'م': idx + 1,
+              'القسم': getActivityLabel(resolveActivityType(row)),
               'اسم الصنف': row.name,
               'الكمية المباعة': row.quantity ?? 0,
               'تكلفة الشراء (ج.م)': Number(row.cost || 0).toFixed(2),
@@ -1423,41 +1787,11 @@ const ReportsPage = () => {
                     </div>
                   </div>
 
-                  {/* Section B: Sold Products Breakdown */}
-                  <div className="space-y-3">
-                    <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
-                      <span>2. حركة مبيعات الأصناف {isSingleDayMode ? 'لليوم' : 'خلال الفترة'} ({detailedData.products?.length || 0} صنف)</span>
-                    </h3>
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
-                      <table className="w-full text-right text-xs">
-                        <thead className="bg-gray-100 text-gray-700 font-bold">
-                          <tr>
-                            <th className="p-3">الصنف</th>
-                            <th className="p-3">الكمية المباعة</th>
-                            <th className="p-3">إجمالي التكلفة</th>
-                            <th className="p-3">إجمالي الإيراد</th>
-                            <th className="p-3">صافي الربح</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 font-bold">
-                          {detailedData.products?.map((p, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50">
-                              <td className="p-3 text-gray-900">{p.name}</td>
-                              <td className="p-3 text-indigo-600">{p.quantity}</td>
-                              <td className="p-3 text-gray-600">{(p.cost || 0).toFixed(2)} ج.م</td>
-                              <td className="p-3 text-emerald-700">{(p.revenue || 0).toFixed(2)} ج.م</td>
-                              <td className="p-3 text-indigo-800">{(p.profit || 0).toFixed(2)} ج.م</td>
-                            </tr>
-                          ))}
-                          {(!detailedData.products || detailedData.products.length === 0) && (
-                            <tr>
-                              <td colSpan="5" className="p-6 text-center text-gray-400">لا توجد مبيعات أصناف في {isSingleDayMode ? 'هذا اليوم' : 'هذه الفترة'}</td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  {/* Section B: Sold Products Breakdown (Segmented by Divisions) */}
+                  {renderDivisionSegmentedProductsTable(
+                    detailedData.products,
+                    `2. حركة مبيعات الأصناف ${isSingleDayMode ? 'لليوم' : 'خلال الفترة'}`
+                  )}
 
                   {/* Section C: Expenses List */}
                   {detailedData.expenses && detailedData.expenses.length > 0 && (
@@ -1749,77 +2083,12 @@ const ReportsPage = () => {
                     </div>
                   )}
 
-                  {/* Section: All Sold Products */}
-                  {detailedData.topProducts && (
-                    <div className="space-y-3">
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
-                          <span>3. بيان كافة الأصناف المباعة وربحيتها خلال الشهر</span>
-                          <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">
-                            {detailedData.topProducts.length} صنف مباع
-                          </span>
-                        </h3>
-                        <div className="text-xs text-gray-500 font-bold">
-                          إجمالي القطع المباعة: <span className="font-black text-indigo-700">{detailedData.topProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0)}</span> قطعة
-                        </div>
-                      </div>
-                      <div className="overflow-x-auto rounded-xl border border-gray-200 print:overflow-visible print:border-none">
-                        <table className="w-full text-right text-xs font-bold">
-                          <thead className="bg-gray-100 text-gray-700">
-                            <tr>
-                              <th className="p-3">#</th>
-                              <th className="p-3">الصنف</th>
-                              <th className="p-3">الكمية المباعة</th>
-                              <th className="p-3">إجمالي الإيراد</th>
-                              <th className="p-3">تكلفة البضاعة (سعر الشراء)</th>
-                              <th className="p-3">صافي الربح المحقق</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-100">
-                            {detailedData.topProducts.map((p, idx) => (
-                              <tr key={idx} className="hover:bg-gray-50">
-                                <td className="p-3 text-gray-400">{idx + 1}</td>
-                                <td className="p-3 text-gray-900">{p.name}</td>
-                                <td className="p-3 text-indigo-600">{p.quantity}</td>
-                                <td className="p-3 text-emerald-700">{Number(p.revenue || 0).toFixed(2)} ج.م</td>
-                                <td className="p-3 text-gray-700">{Number(p.cost || 0).toFixed(2)} ج.م</td>
-                                <td className={`p-3 ${Number(p.profit || 0) >= 0 ? 'text-indigo-900' : 'text-red-600'}`}>
-                                  {Number(p.profit || 0).toFixed(2)} ج.م
-                                </td>
-                              </tr>
-                            ))}
-                            {detailedData.topProducts.length === 0 && (
-                              <tr>
-                                <td colSpan="6" className="p-6 text-center text-gray-400 font-bold">
-                                  لا توجد مبيعات أصناف مسجلة خلال هذا الشهر.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                          {detailedData.topProducts.length > 0 && (
-                            <tfoot className="bg-gray-50 font-black text-gray-900 border-t-2 border-gray-200">
-                              <tr>
-                                <td colSpan="2" className="p-3 text-gray-800">
-                                  الإجمالي ({detailedData.topProducts.length} صنف)
-                                </td>
-                                <td className="p-3 text-indigo-700">
-                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.quantity || 0), 0)} قطعة
-                                </td>
-                                <td className="p-3 text-emerald-700">
-                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.revenue || 0), 0).toFixed(2)} ج.م
-                                </td>
-                                <td className="p-3 text-gray-800">
-                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.cost || 0), 0).toFixed(2)} ج.م
-                                </td>
-                                <td className="p-3 text-indigo-900">
-                                  {detailedData.topProducts.reduce((sum, p) => sum + Number(p.profit || 0), 0).toFixed(2)} ج.م
-                                </td>
-                              </tr>
-                            </tfoot>
-                          )}
-                        </table>
-                      </div>
-                    </div>
+                  {/* Section 3: All Sold Products (Segmented by Divisions) */}
+                  {(detailedData.products || detailedData.topProducts) && (
+                    renderDivisionSegmentedProductsTable(
+                      detailedData.products || detailedData.topProducts,
+                      '3. حركة مبيعات الأصناف وربحيتها خلال الشهر'
+                    )
                   )}
 
                   {/* Section 4: Kitchen Month-End Closing & Auxiliary Inventory Details */}
@@ -2953,88 +3222,73 @@ const ReportsPage = () => {
                     </>
                   )}
 
-                  {/* Standard Table */}
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
-                    <table className="w-full text-right text-xs font-bold border-collapse">
-                      <thead className="bg-gray-100 text-gray-700">
-                        <tr>
-                          {reportType === 'SALES' && (
-                            <>
-                              <th className="p-3">الصنف</th>
-                              <th className="p-3">الكمية المباعة</th>
-                              <th className="p-3">تكلفة الشراء</th>
-                              <th className="p-3">إجمالي الإيراد</th>
-                              <th className="p-3">صافي الربح</th>
-                            </>
-                          )}
-                          {reportType === 'PURCHASES' && (
-                            <>
-                              <th className="p-3">رقم الفاتورة</th>
-                              <th className="p-3">التاريخ والوقت</th>
-                              <th className="p-3">المورد</th>
-                              <th className="p-3 w-1/4">الأصناف</th>
-                              <th className="p-3">الإجمالي</th>
-                              <th className="p-3">المدفوع</th>
-                              <th className="p-3">المتبقي</th>
-                              <th className="p-3">الحالة</th>
-                              <th className="p-3">معاينة</th>
-                            </>
-                          )}
-                          {reportType === 'EXPENSES' && (
-                            <>
-                              <th className="p-3">التاريخ والوقت</th>
-                              <th className="p-3">نوع المصروف (إلى)</th>
-                              <th className="p-3 w-1/3">البيان والتفاصيل</th>
-                              <th className="p-3">من (القناة المالية)</th>
-                              <th className="p-3">المسؤول</th>
-                              <th className="p-3">المبلغ</th>
-                            </>
-                          )}
-                          {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
-                            <>
-                              <th className="p-3">الصنف</th>
-                              <th className="p-3">الوحدة</th>
-                              <th className="p-3">الكمية الحالية</th>
-                              <th className="p-3">سعر الشراء (التكلفة)</th>
-                              <th className="p-3">القيمة الإجمالية</th>
-                            </>
-                          )}
-                          {reportType === 'PATIENTS' && (
-                            <>
-                              <th className="p-3">رقم الملف</th>
-                              <th className="p-3">اسم المريض</th>
-                              <th className="p-3">الرقم الداخلي / الغرفة</th>
-                              <th className="p-3">نوع الحساب</th>
-                              <th className="p-3">الرصيد المالي</th>
-                              <th className="p-3">الحالة</th>
-                              <th className="p-3">ملاحظات</th>
-                            </>
-                          )}
-                          {reportType === 'RAW_MATERIALS' && (
-                            <>
-                              <th className="p-3">المادة الخام والكود</th>
-                              <th className="p-3">سعر التكلفة للوحدة</th>
-                              <th className="p-3">الرصيد المتبقي بالمخزن</th>
-                              <th className="p-3">المستهلك المباشر (بالبيع)</th>
-                              <th className="p-3">الاستهلاك التقديري (للسندوتشات)</th>
-                              <th className="p-3">إجمالي قيمة المستهلك</th>
-                            </>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {detailedData.data.map((row, i) => (
-                          <tr key={i} className="hover:bg-gray-50">
-                            {reportType === 'SALES' && (
+                  {reportType === 'SALES' ? (
+                    renderDivisionSegmentedProductsTable(detailedData.data, 'تقرير حركة مبيعات الأصناف بالأقسام')
+                  ) : (
+                    /* Standard Table for Other Reports */
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
+                      <table className="w-full text-right text-xs font-bold border-collapse">
+                        <thead className="bg-gray-100 text-gray-700">
+                          <tr>
+                            {reportType === 'PURCHASES' && (
                               <>
-                                <td className="p-3 text-gray-900 font-black">{row.name}</td>
-                                <td className="p-3 text-indigo-600">{row.quantity ?? 0}</td>
-                                <td className="p-3 text-gray-600">{Number(row.cost || 0).toFixed(2)} ج</td>
-                                <td className="p-3 text-emerald-700">{Number(row.revenue || 0).toFixed(2)} ج</td>
-                                <td className="p-3 text-indigo-900">{Number(row.profit || 0).toFixed(2)} ج</td>
+                                <th className="p-3">رقم الفاتورة</th>
+                                <th className="p-3">التاريخ والوقت</th>
+                                <th className="p-3">المورد</th>
+                                <th className="p-3 w-1/4">الأصناف</th>
+                                <th className="p-3">الإجمالي</th>
+                                <th className="p-3">المدفوع</th>
+                                <th className="p-3">المتبقي</th>
+                                <th className="p-3">الحالة</th>
+                                <th className="p-3">معاينة</th>
                               </>
                             )}
-                            {reportType === 'PURCHASES' && (
+                            {reportType === 'EXPENSES' && (
+                              <>
+                                <th className="p-3">التاريخ والوقت</th>
+                                <th className="p-3">نوع المصروف (إلى)</th>
+                                <th className="p-3 w-1/3">البيان والتفاصيل</th>
+                                <th className="p-3">من (القناة المالية)</th>
+                                <th className="p-3">المسؤول</th>
+                                <th className="p-3">المبلغ</th>
+                              </>
+                            )}
+                            {(reportType === 'INVENTORY' || reportType === 'LOW_STOCK') && (
+                              <>
+                                <th className="p-3">الصنف</th>
+                                <th className="p-3">الوحدة</th>
+                                <th className="p-3">الكمية الحالية</th>
+                                <th className="p-3">سعر الشراء (التكلفة)</th>
+                                <th className="p-3">القيمة الإجمالية</th>
+                              </>
+                            )}
+                            {reportType === 'PATIENTS' && (
+                              <>
+                                <th className="p-3">رقم الملف</th>
+                                <th className="p-3">اسم المريض</th>
+                                <th className="p-3">الرقم الداخلي / الغرفة</th>
+                                <th className="p-3">نوع الحساب</th>
+                                <th className="p-3">الرصيد المالي</th>
+                                <th className="p-3">الحالة</th>
+                                <th className="p-3">ملاحظات</th>
+                              </>
+                            )}
+                            {reportType === 'RAW_MATERIALS' && (
+                              <>
+                                <th className="p-3">المادة الخام والكود</th>
+                                <th className="p-3">سعر التكلفة للوحدة</th>
+                                <th className="p-3">الرصيد المتبقي بالمخزن</th>
+                                <th className="p-3">المستهلك المباشر (بالبيع)</th>
+                                <th className="p-3">الاستهلاك التقديري (للسندوتشات)</th>
+                                <th className="p-3">إجمالي قيمة المستهلك</th>
+                              </>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {detailedData.data.map((row, i) => (
+                            <tr key={i} className="hover:bg-gray-50">
+                              {reportType === 'PURCHASES' && (
                               <>
                                 <td className="p-3 font-mono font-black text-indigo-700">{row.id}</td>
                                 <td className="p-3 font-mono" dir="ltr">{formatDateTime(row.date)}</td>
@@ -3174,6 +3428,7 @@ const ReportsPage = () => {
                       </tbody>
                     </table>
                   </div>
+                )}
                 </div>
               )}
 

@@ -240,6 +240,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
           productMap[pid] = {
             id: pid,
             name: item.product?.name || item.productName || 'صنف',
+            activityType: item.product?.activityType || 'CANTEEN',
             quantity: 0,
             revenue: 0,
             cost: 0,
@@ -410,6 +411,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
           productMap[pid] = {
             id: pid,
             name: item.product?.name || item.productName || 'صنف',
+            activityType: item.product?.activityType || 'CANTEEN',
             quantity: 0,
             revenue: 0,
             cost: 0,
@@ -606,6 +608,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       expensesByCategory: Object.values(categoryMap),
       treasuryBalances,
       topProducts: allSoldProducts,
+      products: allSoldProducts,
       suppliers: suppliersList,
       data: allSoldProducts
     };
@@ -720,7 +723,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         }
       },
       include: {
-        product: { select: { id: true, name: true, purchasePrice: true } },
+        product: { select: { id: true, name: true, purchasePrice: true, activityType: true, internalCode: true } },
         invoice: { select: { paymentType: true, totalAmount: true } }
       }
     });
@@ -747,6 +750,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         productMap[pid] = {
           id: pid,
           name: item.product?.name || item.productName || 'صنف',
+          activityType: item.product?.activityType || 'CANTEEN',
+          internalCode: item.product?.internalCode || '',
           quantity: 0,
           revenue: 0,
           cost: 0
