@@ -208,9 +208,6 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isAdmin) {
-      return toast.error('عذراً، تعديل أسعار أو وصفات مشروبات البوفيه مقتصر على الأدمن فقط');
-    }
     if (!form.name || form.name.trim() === '') {
       return toast.error('يرجى كتابة اسم المشروب');
     }
@@ -331,13 +328,6 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
             </button>
           </div>
         </div>
-
-        {!isAdmin && (
-          <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-800 font-bold text-xs flex items-center gap-2">
-            <AlertTriangle size={18} className="shrink-0 text-rose-600" />
-            <span>تنبيه: تعديل أسعار أو مكونات مشروبات البوفيه مقتصر على حساب الأدمن/المدير فقط (العرض الحالي للقراءة فقط).</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           
@@ -582,11 +572,11 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
             </button>
             <button
               type="submit"
-              disabled={isSaving || !isAdmin}
+              disabled={isSaving}
               className="px-6 py-2.5 rounded-xl font-black bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-amber-200 disabled:opacity-50 transition-colors flex items-center gap-2"
             >
               <CheckCircle2 size={18} />
-              <span>{isSaving ? 'جاري الحفظ...' : !isAdmin ? 'مقتصر على الأدمن' : form.id ? 'تحديث المشروب' : 'حفظ المشروب والوصفة'}</span>
+              <span>{isSaving ? 'جاري الحفظ...' : form.id ? 'تحديث المشروب' : 'حفظ المشروب والوصفة'}</span>
             </button>
           </div>
 

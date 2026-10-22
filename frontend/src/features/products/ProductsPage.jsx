@@ -157,8 +157,8 @@ const ProductsPage = () => {
   };
 
   const handleOpenQuickPrice = (product) => {
-    if ((product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') && !isAdmin) {
-      return toast.error('عذراً، تعديل أسعار أصناف البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    if (product.activityType === 'SANDWICH' && !isAdmin) {
+      return toast.error('عذراً، تعديل أسعار أصناف السندوتشات مقتصر على الأدمن فقط');
     }
     setQuickPriceModal(product);
     setNewSellingPrice(String(product.sellingPrice));
@@ -212,8 +212,8 @@ const ProductsPage = () => {
   };
 
   const openEditModal = (product) => {
-    if ((product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') && !isAdmin) {
-      return toast.error('عذراً، تعديل أصناف وأسعار البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    if (product.activityType === 'SANDWICH' && !isAdmin) {
+      return toast.error('عذراً، تعديل أصناف وأسعار السندوتشات مقتصر على الأدمن فقط');
     }
     if (product.activityType === 'BUFFET' && product.productType === 'RECIPE') {
       return openHotDrinkModal(product);
@@ -267,8 +267,8 @@ const ProductsPage = () => {
       return toast.error('يرجى تحديد سعر البيع للمريض');
     }
 
-    if ((form.activityType === 'BUFFET' || form.activityType === 'SANDWICH') && !isAdmin) {
-      return toast.error('عذراً، إضافة وتعديل أصناف البوفيه والسندوتشات مقتصر على الأدمن فقط');
+    if (form.activityType === 'SANDWICH' && !isAdmin) {
+      return toast.error('عذراً، إضافة وتعديل أصناف السندوتشات مقتصر على الأدمن فقط');
     }
 
     const payload = {
@@ -666,8 +666,8 @@ const ProductsPage = () => {
                             <span className="font-black text-emerald-600 font-mono text-sm">
                               {Number(p.sellingPrice || 0).toFixed(2)} ج.م
                             </span>
-                            {/* تعديل سعر البيع: للبوفيه والسندوتشات متاح للأدمن فقط */}
-                            {((p.activityType === 'BUFFET' || p.activityType === 'SANDWICH') ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
+                            {/* تعديل سعر البيع: السندوتشات فقط مقتصرة على الأدمن، البوفيه والكانتين متاح للجميع بصلاحية المنتجات */}
+                            {(p.activityType === 'SANDWICH' ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
                               <button
                                 type="button"
                                 onClick={() => handleOpenQuickPrice(p)}
@@ -756,7 +756,7 @@ const ProductsPage = () => {
                             الوصفة
                           </button>
                         )}
-                        {((p.activityType === 'BUFFET' || p.activityType === 'SANDWICH') ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
+                        {(p.activityType === 'SANDWICH' ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
                           <button 
                             onClick={() => openEditModal(p)} 
                             className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"

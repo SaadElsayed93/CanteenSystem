@@ -243,11 +243,11 @@ const createProduct = async (data, userId) => {
   const effectiveActivityType = activityType || 'CANTEEN';
   const isRaw = effectiveProductType === 'RAW_MATERIAL';
 
-  // تعديلات وإضافات البوفيه والسندوتشات للأدمن فقط
-  if (effectiveActivityType === 'BUFFET' || effectiveActivityType === 'SANDWICH') {
+  // تعديلات وإضافات السندوتشات فقط مقتصرة على الأدمن (البوفيه والكانتين متاح للجميع بصلاحية المنتجات)
+  if (effectiveActivityType === 'SANDWICH') {
     const isAdmin = await checkUserIsAdmin(userId);
     if (!isAdmin) {
-      throw new Error(`عذراً، إضافة أصناف في قسم (${effectiveActivityType === 'BUFFET' ? 'البوفيه' : 'السندوتشات'}) مقتصر على الأدمن/المدير فقط.`);
+      throw new Error(`عذراً، إضافة أصناف في قسم السندوتشات والمطبخ مقتصر على الأدمن/المدير فقط.`);
     }
   }
 
@@ -347,12 +347,12 @@ const updateProduct = async (id, data, userId) => {
     activityType, productType, recipeYield, recipeNotes, ingredients
   } = data;
 
-  // تعديلات أسعار أو مكونات البوفيه والسندوتشات للأدمن فقط
+  // تعديلات أسعار أو مكونات السندوتشات فقط مقتصرة على الأدمن (البوفيه والكانتين متاح للجميع)
   const targetActivity = activityType !== undefined ? activityType : product.activityType;
-  if (targetActivity === 'BUFFET' || targetActivity === 'SANDWICH' || product.activityType === 'BUFFET' || product.activityType === 'SANDWICH') {
+  if (targetActivity === 'SANDWICH' || product.activityType === 'SANDWICH') {
     const isAdmin = await checkUserIsAdmin(userId);
     if (!isAdmin) {
-      throw new Error(`عذراً، تعديل أسعار أو مكونات أصناف قسم (${targetActivity === 'BUFFET' ? 'البوفيه' : 'السندوتشات'}) مقتصر على الأدمن/المدير فقط.`);
+      throw new Error(`عذراً، تعديل أسعار أو مكونات أصناف قسم السندوتشات مقتصر على الأدمن/المدير فقط.`);
     }
   }
   

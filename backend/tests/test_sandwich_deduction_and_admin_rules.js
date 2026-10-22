@@ -60,6 +60,16 @@ async function runTests() {
     const adminUpdate = await productsService.updateProduct(burgerSandwich.id, { sellingPrice: 35 }, admin.id);
     console.log('✅ Admin successfully updated sandwich price to:', adminUpdate.sellingPrice);
 
+    // Verify Buffet item CAN be updated by non-admin
+    console.log('\n--- Test 1.b: Buffet is Open for Both Admin and Non-Admin ---');
+    const buffetItem = await prisma.product.findFirst({
+      where: { activityType: 'BUFFET' }
+    });
+    if (buffetItem) {
+      const nonAdminBuffetUpdate = await productsService.updateProduct(buffetItem.id, { alertThreshold: 15 }, cashier.id);
+      console.log(`✅ Non-admin successfully updated Buffet item (${buffetItem.name}): alertThreshold = ${nonAdminBuffetUpdate.alertThreshold}`);
+    }
+
     // 3. Test Rule 3: Raw Materials have sellingPrice === 0
     console.log('\n--- Test 2: Raw Material Selling Price is 0 ---');
     // Ensure all raw materials have sellingPrice 0
