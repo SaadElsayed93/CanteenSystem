@@ -3296,6 +3296,7 @@ const ReportsPage = () => {
                     <th className="p-3">الصنف</th>
                     <th className="p-3 text-center">الكمية</th>
                     <th className="p-3 text-center">سعر الشراء</th>
+                    <th className="p-3 text-center">تاريخ الصلاحية</th>
                     <th className="p-3 text-left">الإجمالي</th>
                   </tr>
                 </thead>
@@ -3307,12 +3308,21 @@ const ReportsPage = () => {
                         <td className="p-3 font-black text-gray-800">{item.productName}</td>
                         <td className="p-3 text-center font-bold text-indigo-600">{item.quantity}</td>
                         <td className="p-3 text-center font-mono">{Number(item.unitPrice || 0).toFixed(2)} ج</td>
+                        <td className="p-3 text-center">
+                          {item.expiryDate ? (
+                            <span className="font-mono text-gray-700 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded text-xs font-bold inline-block" dir="ltr">
+                              {new Date(item.expiryDate).toLocaleDateString('ar-EG')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 font-normal text-xs">— بدون —</span>
+                          )}
+                        </td>
                         <td className="p-3 text-left font-black text-gray-900 font-mono">{Number(item.subtotal || 0).toFixed(2)} ج</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">
+                      <td colSpan="6" className="p-6 text-center text-gray-400 font-bold">
                         لا توجد تفاصيل للأصناف
                       </td>
                     </tr>

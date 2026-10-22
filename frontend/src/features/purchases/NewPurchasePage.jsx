@@ -32,6 +32,7 @@ const NewPurchasePage = () => {
     buyInPackage: false, 
     quantity: '', 
     unitCost: '', 
+    expiryDate: ''
   });
   const [selectedProductInfo, setSelectedProductInfo] = useState(null);
 
@@ -120,9 +121,12 @@ const NewPurchasePage = () => {
   };
 
   // Add a product directly to the items table
-  const addItemDirectly = (prod, qtyToAdd = 1, costOverride = null) => {
+  const addItemDirectly = (prod, qtyToAdd = 1, costOverride = null, expiryOverride = null) => {
     const existingIndex = items.findIndex(it => it.productId === prod.id && !it.isPackage);
     const unitCost = costOverride !== null ? Number(costOverride) : Number(prod.purchasePrice);
+    const initialExpiry = expiryOverride !== null 
+      ? expiryOverride 
+      : (prod.expiryDate ? prod.expiryDate.split('T')[0] : '');
 
     if (existingIndex > -1) {
       // Increment quantity
@@ -131,6 +135,9 @@ const NewPurchasePage = () => {
       updated[existingIndex].displayQty = newQty;
       updated[existingIndex].baseQuantity = newQty;
       updated[existingIndex].subtotal = newQty * Number(updated[existingIndex].displayCost);
+      if (initialExpiry && !updated[existingIndex].expiryDate) {
+        updated[existingIndex].expiryDate = initialExpiry;
+      }
       setItems(updated);
     } else {
       // Add new row
@@ -144,7 +151,7 @@ const NewPurchasePage = () => {
         baseQuantity: qtyToAdd,
         baseUnitCost: unitCost,
         subtotal: qtyToAdd * unitCost,
-        expiryDate: prod.expiryDate,
+        expiryDate: initialExpiry,
         isExpired: prod.isExpired,
         isExpiringSoon: prod.isExpiringSoon
       }]);
@@ -263,11 +270,12 @@ const NewPurchasePage = () => {
         productId: pid,
         buyInPackage: false,
         unitCost: prod.purchasePrice,
-        quantity: '1'
+        quantity: '1',
+        expiryDate: prod.expiryDate ? prod.expiryDate.split('T')[0] : ''
       });
     } else {
       setSelectedProductInfo(null);
-      setCurrentItem({ ...currentItem, productId: '', unitCost: '', quantity: '' });
+      setCurrentItem({ ...currentItem, productId: '', unitCost: '', quantity: '', expiryDate: '' });
     }
   };
 
@@ -312,14 +320,25 @@ const NewPurchasePage = () => {
       baseQuantity: finalBaseQuantity,
       baseUnitCost: finalBaseUnitCost,
       subtotal: Number(currentItem.quantity) * Number(currentItem.unitCost),
-      expiryDate: selectedProductInfo.expiryDate,
+      expiryDate: currentItem.expiryDate ? currentItem.expiryDate.split('T')[0] : (selectedProductInfo.expiryDate ? selectedProductInfo.expiryDate.split('T')[0] : ''),
       isExpired: selectedProductInfo.isExpired,
       isExpiringSoon: selectedProductInfo.isExpiringSoon
     }]);
     
-    setCurrentItem({ productId: '', buyInPackage: false, quantity: '', unitCost: '' });
+    setCurrentItem({ productId: '', buyInPackage: false, quantity: '', unitCost: '', expiryDate: '' });
     setSelectedProductInfo(null);
     toast.success('تمت إضافة الصنف للفاتورة');
+  };
+
+  const updateItemExpiryDate = (index, newDate) => {
+    setItems(prev => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        expiryDate: newDate
+      };
+      return updated;
+    });
   };
 
   const removeItem = (index) => {
@@ -364,7 +383,8 @@ const NewPurchasePage = () => {
         items: items.map(i => ({ 
           productId: i.productId, 
           quantity: i.baseQuantity, 
-          unitCost: i.baseUnitCost 
+          unitCost: i.baseUnitCost,
+          expiryDate: i.expiryDate ? i.expiryDate : null
         }))
       });
 
@@ -513,8 +533,8 @@ const NewPurchasePage = () => {
           </button>
         </div>
 
-        <form onSubmit={handleManualAddItem} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-          <div className="md:col-span-2">
+        <form onSubmit={handleManualAddItem} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div className="md:col-span-4">
             <label className="block mb-1.5 font-bold text-gray-700 text-xs">الصنف:</label>
             <select 
               className="w-full border-2 border-indigo-200 rounded-2xl p-3 outline-none focus:border-indigo-600 bg-white font-bold text-sm text-gray-800" 
@@ -531,7 +551,7 @@ const NewPurchasePage = () => {
           </div>
 
           {selectedProductInfo && selectedProductInfo.packageUnit && (
-            <div className="md:col-span-4 flex gap-3 items-center bg-white p-2.5 rounded-2xl border border-indigo-200">
+            <div className="md:col-span-12 flex gap-3 items-center bg-white p-2.5 rounded-2xl border border-indigo-200">
               <span className="text-xs font-black text-gray-600 ml-1">الوحدة:</span>
               <button 
                 type="button" 
@@ -565,7 +585,7 @@ const NewPurchasePage = () => {
             />
           </div>
 
-          <div className="md:col-span-1">
+          <div className="md:col-span-2">
             <label className="block mb-1.5 font-bold text-gray-700 text-xs">سعر الشراء:</label>
             <input 
               type="number" 
@@ -578,12 +598,25 @@ const NewPurchasePage = () => {
             />
           </div>
 
-          <div className="md:col-span-1">
+          <div className="md:col-span-2">
+            <label className="block mb-1.5 font-bold text-gray-700 text-xs flex items-center justify-between">
+              <span>تاريخ الصلاحية:</span>
+              <span className="text-[10px] text-gray-400 font-normal">(اختياري)</span>
+            </label>
+            <input 
+              type="date" 
+              className="w-full border-2 border-indigo-200 rounded-2xl p-2.5 outline-none focus:border-indigo-600 font-bold bg-white text-gray-800 text-xs shadow-sm" 
+              value={currentItem.expiryDate || ''} 
+              onChange={e => setCurrentItem({ ...currentItem, expiryDate: e.target.value })}
+            />
+          </div>
+
+          <div className="md:col-span-2">
             <button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl p-3.5 transition-all shadow-md flex items-center justify-center gap-1.5"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl p-3.5 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>+ إضافة</span>
+              <span>+ إضافة للفاتورة</span>
             </button>
           </div>
         </form>
@@ -593,7 +626,7 @@ const NewPurchasePage = () => {
       <div className="bg-white rounded-3xl shadow-sm border-2 border-gray-100 overflow-hidden">
         <div className="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
           <h4 className="font-black text-gray-800 text-sm">أصناف الفاتورة ({items.length} صنف)</h4>
-          <span className="text-xs font-bold text-gray-500">يمكنك تعديل بيانات أي صنف مباشرة بالنقر على أيقونة التعديل</span>
+          <span className="text-xs font-bold text-gray-500">يمكنك تحديد تاريخ صلاحية مخصص لكل صنف بشكل مستقل</span>
         </div>
         <table className="w-full text-right border-collapse">
           <thead className="bg-gray-50/50 text-gray-700 text-xs font-black border-b border-gray-100">
@@ -601,6 +634,7 @@ const NewPurchasePage = () => {
               <th className="p-4">الصنف</th>
               <th className="p-4">الكمية</th>
               <th className="p-4">سعر الشراء</th>
+              <th className="p-4">تاريخ الصلاحية (اختياري لكل صنف)</th>
               <th className="p-4">الإجمالي</th>
               <th className="p-4 text-center">الإجراءات</th>
             </tr>
@@ -616,22 +650,11 @@ const NewPurchasePage = () => {
                         type="button"
                         onClick={() => handleOpenEditProduct(item.productId)}
                         className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                        title="تعديل بيانات الصنف والباركود وتاريخ الصلاحية"
+                        title="تعديل بيانات الصنف والباركود"
                       >
                         <Edit3 size={15} />
                       </button>
                     </div>
-                    {item.expiryDate && (
-                      <span className="text-[11px] font-bold text-gray-500 mt-0.5">
-                        صلاحية: {new Date(item.expiryDate).toLocaleDateString('ar-EG')}
-                        {item.isExpired && (
-                          <span className="text-red-600 mr-1.5 font-black bg-red-50 px-1.5 py-0.5 rounded">منتهي!</span>
-                        )}
-                        {item.isExpiringSoon && !item.isExpired && (
-                          <span className="text-amber-600 mr-1.5 font-black bg-amber-50 px-1.5 py-0.5 rounded">أوشك على الانتهاء</span>
-                        )}
-                      </span>
-                    )}
                   </div>
                 </td>
                 <td className="p-4 font-bold text-gray-700">
@@ -641,6 +664,29 @@ const NewPurchasePage = () => {
                   )}
                 </td>
                 <td className="p-4 font-black text-gray-700">{Number(item.displayCost).toFixed(2)} ج.م</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={item.expiryDate ? item.expiryDate.split('T')[0] : ''}
+                      onChange={e => updateItemExpiryDate(idx, e.target.value)}
+                      className="border-2 border-gray-200 rounded-xl px-3 py-2 text-xs font-black bg-white focus:border-indigo-600 outline-none w-40 text-gray-800 shadow-sm transition-all"
+                      title="حدد تاريخ انتهاء الصلاحية الخاص بهذا الصنف في هذه الفاتورة"
+                    />
+                    {item.expiryDate ? (
+                      <button
+                        type="button"
+                        onClick={() => updateItemExpiryDate(idx, '')}
+                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors text-xs font-black"
+                        title="إلغاء تاريخ الصلاحية لهذا الصنف"
+                      >
+                        ✕
+                      </button>
+                    ) : (
+                      <span className="text-[11px] text-gray-400 font-normal italic">بدون تاريخ</span>
+                    )}
+                  </div>
+                </td>
                 <td className="p-4 font-black text-indigo-700 text-base">{Number(item.subtotal).toFixed(2)} ج.م</td>
                 <td className="p-4 text-center">
                   <button 
@@ -655,7 +701,7 @@ const NewPurchasePage = () => {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan="5" className="p-10 text-center text-gray-400 font-bold">
+                <td colSpan="6" className="p-10 text-center text-gray-400 font-bold">
                   لم يتم إضافة أصناف بعد — استخدم قارئ الباركود بالأعلى أو الإضافة اليدوية
                 </td>
               </tr>
@@ -663,7 +709,7 @@ const NewPurchasePage = () => {
           </tbody>
           <tfoot className="bg-gray-50 font-black text-lg border-t-2 border-gray-100">
             <tr>
-              <td colSpan="3" className="p-5 text-gray-700 text-left">إجمالي قيمة الفاتورة:</td>
+              <td colSpan="4" className="p-5 text-gray-700 text-left">إجمالي قيمة الفاتورة:</td>
               <td colSpan="2" className="p-5 text-indigo-700 font-black text-2xl">{totalInvoice.toFixed(2)} ج.م</td>
             </tr>
           </tfoot>

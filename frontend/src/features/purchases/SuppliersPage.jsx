@@ -775,6 +775,7 @@ const SuppliersPage = () => {
                     <th className="p-3">الصنف</th>
                     <th className="p-3">الكمية</th>
                     <th className="p-3">سعر الشراء (التكلفة)</th>
+                    <th className="p-3">تاريخ الصلاحية</th>
                     <th className="p-3">الإجمالي</th>
                   </tr>
                 </thead>
@@ -785,12 +786,21 @@ const SuppliersPage = () => {
                       <td className="p-3 text-gray-900">{it.product?.name || it.productName || 'صنف مسجل'}</td>
                       <td className="p-3 text-indigo-700">{it.quantity} {it.product?.unit || 'قطعة'}</td>
                       <td className="p-3 text-gray-700">{Number(it.unitCost).toFixed(2)} ج.م</td>
+                      <td className="p-3">
+                        {it.expiryDate || it.batches?.[0]?.expiryDate ? (
+                          <span className="font-mono text-gray-700 bg-gray-100 border border-gray-200 px-2.5 py-0.5 rounded-lg text-xs font-bold inline-block" dir="ltr">
+                            {new Date(it.expiryDate || it.batches[0].expiryDate).toLocaleDateString('ar-EG')}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 font-normal text-xs">— بدون —</span>
+                        )}
+                      </td>
                       <td className="p-3 font-black text-gray-900">{Number(it.subtotal).toFixed(2)} ج.م</td>
                     </tr>
                   ))}
                   {(!selectedPurchase.items || selectedPurchase.items.length === 0) && (
                     <tr>
-                      <td colSpan="5" className="p-6 text-center text-gray-400 font-bold">لا توجد أصناف مسجلة في الفاتورة</td>
+                      <td colSpan="6" className="p-6 text-center text-gray-400 font-bold">لا توجد أصناف مسجلة في الفاتورة</td>
                     </tr>
                   )}
                 </tbody>

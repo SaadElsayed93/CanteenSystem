@@ -1,4 +1,4 @@
-﻿const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // === Suppliers ===
@@ -55,7 +55,10 @@ const getSupplierStatement = async (supplierId) => {
       purchases: {
         include: {
           items: {
-            include: { product: { select: { name: true, unit: true } } }
+            include: {
+              product: { select: { name: true, unit: true } },
+              batches: { select: { expiryDate: true } }
+            }
           },
           user: { select: { fullName: true } }
         },
@@ -97,7 +100,8 @@ const getSupplierStatement = async (supplierId) => {
         quantity: Number(it.quantity),
         unitName: it.product?.unit || 'قطعة',
         unitCost: Number(it.unitCost),
-        subtotal: Number(it.subtotal)
+        subtotal: Number(it.subtotal),
+        expiryDate: it.batches?.[0]?.expiryDate || null
       }))
     });
   }
@@ -215,7 +219,10 @@ const createPurchase = async (data, userId) => {
       // 3. Update Product Purchase Price & Create Batch
       await tx.product.update({
         where: { id: item.productId },
-        data: { purchasePrice: Number(item.unitCost) }
+        data: { 
+          purchasePrice: Number(item.unitCost),
+          ...(item.expiryDate ? { expiryDate: new Date(item.expiryDate) } : {})
+        }
       });
 
       const batch = await tx.batch.create({
@@ -398,13 +405,25 @@ const getPurchaseById = async (id) => {
   const purchase = await prisma.supplierPurchase.findUnique({
     where: { id: Number(id) },
     include: {
-      items: { include: { product: true } },
+      items: { 
+        include: { 
+          product: true,
+          batches: { select: { expiryDate: true } }
+        } 
+      },
       supplier: true,
       user: { select: { fullName: true } }
     }
   });
   if (!purchase) throw new Error('الفاتورة غير موجودة');
-  return purchase;
+
+  return {
+    ...purchase,
+    items: purchase.items.map(it => ({
+      ...it,
+      expiryDate: it.batches?.[0]?.expiryDate || null
+    }))
+  };
 };
 
 module.exports = { 

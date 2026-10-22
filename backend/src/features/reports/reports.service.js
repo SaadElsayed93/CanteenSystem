@@ -796,7 +796,12 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
       where,
       include: {
         supplier: true,
-        items: { include: { product: true } }
+        items: { 
+          include: { 
+            product: true,
+            batches: { select: { expiryDate: true } }
+          } 
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -824,8 +829,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         items: pur.items.map(i => ({
           productName: i.product?.name || i.productName || 'صنف',
           quantity: Number(i.quantity),
-          unitPrice: Number(i.unitPrice),
-          subtotal: Number(i.subtotal)
+          unitPrice: Number(i.unitPrice || i.unitCost),
+          subtotal: Number(i.subtotal),
+          expiryDate: i.batches?.[0]?.expiryDate || null
         })),
         itemsSummary: pur.items.map(i => `${i.quantity}x ${i.product?.name || 'صنف'}`).join('، ')
       };
