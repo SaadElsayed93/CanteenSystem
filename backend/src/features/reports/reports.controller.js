@@ -33,12 +33,12 @@ const getDetailedReport = async (req, res, next) => {
 
 const getKitchenClosingStatus = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, editMode } = req.query;
     const sDate = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const eDate = endDate ? new Date(endDate) : new Date();
     eDate.setHours(23, 59, 59, 999);
 
-    const data = await reportsService.getKitchenClosingStatus(sDate, eDate);
+    const data = await reportsService.getKitchenClosingStatus(sDate, eDate, { editMode });
     res.json({ success: true, data });
   } catch (error) {
     next(error);
@@ -47,15 +47,17 @@ const getKitchenClosingStatus = async (req, res, next) => {
 
 const settleKitchenMonth = async (req, res, next) => {
   try {
-    const { startDate, endDate, notes, items } = req.body;
+    const { startDate, endDate, notes, items, isUpdate } = req.body;
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'يرجى تقديم بيانات الأصناف المراد تسويتها' });
     }
-    const result = await reportsService.settleKitchenMonth({ startDate, endDate, notes, items }, req.user.id);
+    const result = await reportsService.settleKitchenMonth({ startDate, endDate, notes, items, isUpdate }, req.user.id);
     res.json({ 
       success: true, 
       data: result, 
-      message: 'تم اعتماد تقفيلة المطبخ وتسوية المخزن بنجاح' 
+      message: isUpdate 
+        ? 'تم تحديث واعتماد تعديل تقفيلة المطبخ بنجاح' 
+        : 'تم إغلاق واعتماد تقفيلة المطبخ الشهرية بنجاح' 
     });
   } catch (error) {
     next(error);

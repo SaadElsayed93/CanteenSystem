@@ -14,8 +14,9 @@ import {
   ShoppingCart, Calendar, AlertTriangle, Download, Printer, 
   Filter, Clock, FileText, CheckCircle2, Truck, Wallet, ArrowUpRight,
   ArrowDownRight, Layers, Sparkles, Store, Coffee, UtensilsCrossed, ChefHat, Package,
-  RotateCcw, Calculator, Check, RefreshCw
+  RotateCcw, Calculator, Check, RefreshCw, Lock, Unlock, Edit3, ShieldAlert
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
@@ -87,6 +88,9 @@ const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel, onClick
 );
 
 const ReportsPage = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.name === 'ADMIN' || user?.role?.permissions?.includes('ALL');
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('DETAILED'); // Default to detailed reports as requested
@@ -122,14 +126,30 @@ const ReportsPage = () => {
   const [kitchenNotes, setKitchenNotes] = useState('');
   const [isSubmittingSettlement, setIsSubmittingSettlement] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isKitchenEditMode, setIsKitchenEditMode] = useState(false);
+  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
 
   useEffect(() => {
     if (detailedData?.reportType === 'KITCHEN_CLOSING' && detailedData.materials) {
-      const initialCounts = {};
-      detailedData.materials.forEach(m => {
-        initialCounts[m.id] = m.currentStock;
-      });
-      setKitchenActualCounts(initialCounts);
+      if (detailedData.isClosed) {
+        // Closed/locked snapshot mode
+        setIsKitchenEditMode(false);
+        const approvedCounts = {};
+        detailedData.materials.forEach(m => {
+          approvedCounts[m.id] = m.actualRemaining !== undefined ? m.actualRemaining : m.currentStock;
+        });
+        setKitchenActualCounts(approvedCounts);
+        setKitchenNotes(detailedData.notes || '');
+      } else {
+        // Not closed yet: initial editable mode
+        setIsKitchenEditMode(true);
+        const initialCounts = {};
+        detailedData.materials.forEach(m => {
+          initialCounts[m.id] = m.currentStock;
+        });
+        setKitchenActualCounts(initialCounts);
+        setKitchenNotes('');
+      }
     }
   }, [detailedData]);
 
@@ -307,12 +327,14 @@ const ReportsPage = () => {
         startDate: formatDateISO(startDate),
         endDate: formatDateISO(endDate),
         notes: kitchenNotes,
-        items
+        items,
+        isUpdate: Boolean(detailedData?.isClosed)
       });
 
       toast.success(res.data.message || 'تم اعتماد تقفيلة المطبخ وتسوية المخزن بنجاح!');
       setShowConfirmModal(false);
-      // Re-fetch report to display updated stock and calculations
+      setIsKitchenEditMode(false);
+      // Re-fetch report to display updated locked snapshot
       generateReportForDates('KITCHEN_CLOSING', startDate, endDate);
     } catch (err) {
       console.error(err);
@@ -1009,9 +1031,21 @@ const ReportsPage = () => {
                               <UtensilsCrossed size={18} className="text-emerald-600" />
                               <span>أرباح السندوتشات والمطبخ</span>
                             </span>
-                            <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
-                              {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {detailedData.isKitchenClosed ? (
+                                <span className="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                                  <Lock size={10} />
+                                  <span>معتمدة ومقفولة</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <span>⚠️ بانتظار التقفيل</span>
+                                </span>
+                              )}
+                              <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                                {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
+                              </span>
+                            </div>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
                             <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
@@ -1043,7 +1077,7 @@ const ReportsPage = () => {
                             className="w-full mt-1.5 py-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
                           >
                             <ChefHat size={15} />
-                            <span>تقفيل وجرد خامات المطبخ الفعلي ⚡</span>
+                            <span>{detailedData.isKitchenClosed ? 'عرض تفاصيل تقفيلة المطبخ المعتمدة ↗️' : 'تقفيل وجرد خامات المطبخ الفعلي ⚡'}</span>
                           </button>
                         </div>
                       </div>
@@ -1320,9 +1354,21 @@ const ReportsPage = () => {
                               <UtensilsCrossed size={18} className="text-emerald-600" />
                               <span>أرباح السندوتشات والمطبخ</span>
                             </span>
-                            <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
-                              {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {detailedData.isKitchenClosed ? (
+                                <span className="text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                                  <Lock size={10} />
+                                  <span>معتمدة ومقفولة</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <span>⚠️ بانتظار التقفيل</span>
+                                </span>
+                              )}
+                              <span className="text-xs bg-emerald-100 text-emerald-900 font-black px-2 py-0.5 rounded-lg font-mono">
+                                {detailedData.summary.divisions.SANDWICH?.count || 0} سندوتش
+                              </span>
+                            </div>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center text-xs pt-1 font-mono">
                             <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
@@ -1354,7 +1400,7 @@ const ReportsPage = () => {
                             className="w-full mt-1.5 py-1.5 px-3 bg-emerald-700 hover:bg-emerald-800 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-sm"
                           >
                             <ChefHat size={15} />
-                            <span>تقفيل وجرد خامات المطبخ الفعلي ⚡</span>
+                            <span>{detailedData.isKitchenClosed ? 'عرض تفاصيل تقفيلة المطبخ المعتمدة ↗️' : 'تقفيل وجرد خامات المطبخ الفعلي ⚡'}</span>
                           </button>
                         </div>
                       </div>
@@ -1490,6 +1536,162 @@ const ReportsPage = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Section 4: Kitchen Month-End Closing & Auxiliary Inventory Details */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                      <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-emerald-600 pr-3">
+                        <ChefHat className="text-emerald-600" size={20} />
+                        <span>4. تفاصيل تقفيلة مطبخ السندوتشات الشهرية</span>
+                        {detailedData.isKitchenClosed ? (
+                          <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-black flex items-center gap-1 border border-emerald-300">
+                            <Lock size={12} />
+                            <span>معتمدة ومغلقة</span>
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-black flex items-center gap-1 border border-amber-300">
+                            <AlertTriangle size={12} />
+                            <span>بانتظار التقفيل الفعلي</span>
+                          </span>
+                        )}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => handleReportTypeChange('KITCHEN_CLOSING')}
+                        className="text-xs font-black text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                      >
+                        <span>{detailedData.isKitchenClosed ? 'فتح كشف جرد المطبخ الكامل ↗️' : 'الانتقال لتقفيل المطبخ والجرد الفعلي ⚡'}</span>
+                      </button>
+                    </div>
+
+                    {detailedData.isKitchenClosed && detailedData.kitchenClosing ? (
+                      <div className="bg-white rounded-2xl border-2 border-emerald-200 p-5 shadow-sm space-y-4">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-100">
+                          <div className="flex items-center gap-2 text-xs font-bold text-emerald-950">
+                            <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                            <span>
+                              تم إغلاق واعتماد تقفيلة المطبخ لشهر <strong className="font-mono text-emerald-900">{detailedData.monthKey}</strong> بتاريخ <span className="font-mono">{formatDateTime(detailedData.kitchenClosing.closedAt)}</span> بواسطة <strong className="text-emerald-900">{detailedData.kitchenClosing.closedBy?.fullName || 'الإدارة'}</strong>
+                              {detailedData.kitchenClosing.updatedAt && (
+                                <span className="text-amber-700 block sm:inline sm:mr-2"> (آخر تعديل: {formatDateTime(detailedData.kitchenClosing.updatedAt)} بواسطة {detailedData.kitchenClosing.updatedBy?.fullName})</span>
+                              )}
+                            </span>
+                          </div>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleReportTypeChange('KITCHEN_CLOSING');
+                                setShowEditConfirmModal(true);
+                              }}
+                              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                            >
+                              <Edit3 size={14} />
+                              <span>تعديل التقفيلة ✏️</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* 4 Cards Summary of Kitchen */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                          <div className="p-3 bg-sky-50 rounded-xl border border-sky-200">
+                            <div className="text-[11px] font-bold text-sky-800">إيراد السندوتشات</div>
+                            <div className="text-lg font-black text-sky-950 mt-0.5">
+                              {Number(detailedData.kitchenClosing.summary?.totalSandwichRevenue || 0).toFixed(2)} ج.م
+                            </div>
+                            <div className="text-[10px] text-sky-700 font-bold">({detailedData.kitchenClosing.summary?.totalSandwichesSold || 0} سندوتش)</div>
+                          </div>
+
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <div className="text-[11px] font-bold text-gray-600">تكلفة اللحوم الأساسية</div>
+                            <div className="text-lg font-black text-gray-900 mt-0.5">
+                              {Number(detailedData.kitchenClosing.summary?.totalBaseCost || 0).toFixed(2)} ج.م
+                            </div>
+                            <div className="text-[10px] text-gray-500 font-bold">خصم فوري بالبيع</div>
+                          </div>
+
+                          <div className="p-3 bg-amber-50 rounded-xl border border-amber-300">
+                            <div className="text-[11px] font-bold text-amber-900">تكلفة الخامات المكملة (الجرد)</div>
+                            <div className="text-lg font-black text-amber-950 mt-0.5">
+                              {Number(detailedData.kitchenClosing.summary?.totalAuxConsumedCost || 0).toFixed(2)} ج.م
+                            </div>
+                            <div className="text-[10px] text-amber-800 font-bold">معتمدة ومغلقة</div>
+                          </div>
+
+                          <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-300">
+                            <div className="text-[11px] font-bold text-emerald-800">صافي ربح المطبخ النهائي</div>
+                            <div className="text-lg font-black text-emerald-700 mt-0.5">
+                              +{Number(detailedData.kitchenClosing.summary?.netKitchenProfit || 0).toFixed(2)} ج.م
+                            </div>
+                            <div className="text-[10px] text-emerald-600 font-black">
+                              هامش الربح: {detailedData.kitchenClosing.summary?.profitMargin || 0}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Approved Materials Table Preview */}
+                        {detailedData.kitchenClosing.materials && detailedData.kitchenClosing.materials.length > 0 && (
+                          <div className="overflow-x-auto rounded-xl border border-gray-200">
+                            <table className="w-full text-right text-xs">
+                              <thead className="bg-gray-100 text-gray-700 font-bold">
+                                <tr>
+                                  <th className="p-2.5">الخامة المكملة</th>
+                                  <th className="p-2.5">الوحدة</th>
+                                  <th className="p-2.5">سعر الشراء</th>
+                                  <th className="p-2.5 bg-emerald-50/80 text-emerald-950 font-black">الرصيد الفعلي المعتمد</th>
+                                  <th className="p-2.5">المستهلك المعتمد</th>
+                                  <th className="p-2.5 text-amber-900 font-black">تكلفة الاستهلاك المعتمدة</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100 font-bold">
+                                {detailedData.kitchenClosing.materials.filter(m => !m.isBase).map((m, idx) => (
+                                  <tr key={idx} className="hover:bg-gray-50">
+                                    <td className="p-2.5 text-gray-900 flex items-center gap-1.5">
+                                      <span>{m.name}</span>
+                                      <span className="text-[10px] text-gray-400 font-mono">({m.code})</span>
+                                    </td>
+                                    <td className="p-2.5 text-gray-600 font-mono">{m.unit}</td>
+                                    <td className="p-2.5 font-mono">{Number(m.unitCost || 0).toFixed(2)} ج.م</td>
+                                    <td className="p-2.5 bg-emerald-50/50 font-mono font-black text-emerald-950">
+                                      {m.actualRemaining} {m.unit}
+                                    </td>
+                                    <td className="p-2.5 font-mono text-gray-700">
+                                      {m.consumedQty > 0 ? `-${m.consumedQty}` : m.consumedQty < 0 ? `+${Math.abs(m.consumedQty)} (فائض)` : 'مطابق'}
+                                    </td>
+                                    <td className="p-2.5 font-mono font-black text-amber-900">
+                                      {Number(m.consumedCost || 0).toFixed(2)} ج.م
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="p-2.5 bg-amber-100 text-amber-800 rounded-xl mt-0.5">
+                            <AlertTriangle size={22} />
+                          </div>
+                          <div>
+                            <h4 className="font-black text-amber-950 text-sm">تقفيلة وجرد مطبخ السندوتشات لهذا الشهر لم تُعتمد بعد!</h4>
+                            <p className="text-xs text-amber-800 font-bold mt-1 leading-relaxed">
+                              صافي أرباح السندوتشات المعروضة في التقرير أعلاه أولية، ولا تتضمن تكلفة الخامات المكملة المستهلكة (العيش، الاستربس المفتوح، الخضار، التوابل، الصوصات).
+                              اضغط على زر التقفيل لإدخال المتبقي الفعلي واعتماد الأرباح الدقيقة وتثبيتها بشكل رسمي.
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleReportTypeChange('KITCHEN_CLOSING')}
+                          className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer shrink-0"
+                        >
+                          <ChefHat size={16} />
+                          <span>جرد واعتماد تقفيلة المطبخ الآن ⚡</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1526,7 +1728,7 @@ const ReportsPage = () => {
                       <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
                         <div>
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
                             <span className="bg-emerald-500/30 text-emerald-300 text-xs font-black px-3 py-1 rounded-full border border-emerald-400/30 flex items-center gap-1.5">
                               <ChefHat size={14} />
                               <span>إدارة وحوكمة مطبخ السندوتشات</span>
@@ -1534,16 +1736,35 @@ const ReportsPage = () => {
                             <span className="bg-white/10 text-gray-300 text-xs font-bold px-3 py-1 rounded-full">
                               الفترة: {formatDate(startDate)} إلى {formatDate(endDate)}
                             </span>
+                            {detailedData.isClosed && (
+                              <span className="bg-emerald-500 text-gray-950 text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                                <Lock size={12} />
+                                <span>معتمدة ومغلقة رسمياً</span>
+                              </span>
+                            )}
                           </div>
                           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                            <span>🍔 تقفيل وجرد خامات المطبخ الشهري (السندوتشات)</span>
+                            <span>
+                              {detailedData.isClosed 
+                                ? `🍔 تقفيل وجرد خامات المطبخ لشهر ${detailedData.monthKey || ''} (معتمد ومغلق 🔒)`
+                                : '🍔 تقفيل وجرد خامات المطبخ الشهري (السندوتشات)'}
+                            </span>
                           </h2>
-                          <p className="text-gray-300 text-xs md:text-sm mt-2 max-w-3xl leading-relaxed">
-                            💡 <strong className="text-emerald-300">الآلية المعتمدة:</strong> عند بيع السندوتش بالكاشير، يتم خصم قطعة اللحم/الستربس الأساسية فقط تلقائياً. 
-                            هنا بنهاية الشهر تُسجل الكميات المتبقية فعلياً في المطبخ من الخامات المكملة (العيش، الخضار، التوابل، الصوصات) لاحتساب المستهلك الحقيقي، خصمه بضغطة زر بنظام FIFO، وإظهار الأرباح الصافية الدقيقة للمطبخ.
-                          </p>
+                          {detailedData.isClosed ? (
+                            <p className="text-gray-200 text-xs md:text-sm mt-2 max-w-3xl leading-relaxed">
+                              🔒 <strong className="text-emerald-300">تقفيلة معتمدة ومقفولة:</strong> تم إغلاق واعتماد جرد خامات المطبخ لهذا الشهر بتاريخ <span className="font-mono text-white font-bold">{formatDateTime(detailedData.closedAt)}</span> بواسطة <strong className="text-white font-black">{detailedData.closedBy?.fullName || 'الإدارة'}</strong>. تم ترحيل كافة التفاصيل للتقرير المالي الشهري وتثبيت الأرباح لمنع أي تغيير غير مقصود.
+                              {detailedData.updatedAt && (
+                                <span className="text-amber-300 block font-bold mt-1">✏️ آخر تعديل مسجل بتاريخ: {formatDateTime(detailedData.updatedAt)} بواسطة {detailedData.updatedBy?.fullName || 'الإدارة'}</span>
+                              )}
+                            </p>
+                          ) : (
+                            <p className="text-gray-300 text-xs md:text-sm mt-2 max-w-3xl leading-relaxed">
+                              💡 <strong className="text-emerald-300">الآلية المعتمدة:</strong> عند بيع السندوتش بالكاشير، يتم خصم قطعة اللحم/الستربس الأساسية فقط تلقائياً. 
+                              هنا بنهاية الشهر تُسجل الكميات المتبقية فعلياً في المطبخ من الخامات المكملة (العيش، الخضار، التوابل، الصوصات) لاحتساب المستهلك الحقيقي، خصمه بضغطة زر بنظام FIFO، وإظهار الأرباح الصافية الدقيقة للمطبخ.
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 self-stretch md:self-auto justify-end">
+                        <div className="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
                           <button
                             type="button"
                             onClick={handlePrint}
@@ -1555,14 +1776,54 @@ const ReportsPage = () => {
                           <button
                             type="button"
                             onClick={() => generateReportForDates('KITCHEN_CLOSING', startDate, endDate)}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+                            className="px-4 py-2.5 bg-white/15 hover:bg-white/25 active:scale-95 text-white font-black text-xs rounded-xl border border-white/20 flex items-center gap-2 transition-all cursor-pointer"
                           >
                             <RefreshCw size={16} />
-                            <span>تحديث البيانات 🔄</span>
+                            <span>تحديث 🔄</span>
                           </button>
+                          {detailedData.isClosed && !isKitchenEditMode && isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => setShowEditConfirmModal(true)}
+                              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-gray-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Edit3 size={15} />
+                              <span>تعديل التقفيلة ✏️</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
+
+                    {/* Edit Mode Banner when Reopened */}
+                    {detailedData.isClosed && isKitchenEditMode && (
+                      <div className="bg-gradient-to-r from-amber-900/60 to-orange-950/60 border-2 border-amber-500/60 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-white">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2 bg-amber-500 text-gray-950 rounded-xl">
+                            <Edit3 size={18} />
+                          </div>
+                          <div>
+                            <div className="font-black text-amber-300 text-sm">أنت الآن في وضع تعديل تقفيلة معتمدة لشهر {detailedData.monthKey}</div>
+                            <div className="text-xs text-gray-300 font-bold mt-0.5">تم الاحتفاظ بالأرقام المسجلة مسبقاً لتعديل ما يلزم فقط دون البدء من جديد.</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsKitchenEditMode(false);
+                            const approvedCounts = {};
+                            (detailedData.materials || []).forEach(m => {
+                              approvedCounts[m.id] = m.actualRemaining !== undefined ? m.actualRemaining : m.currentStock;
+                            });
+                            setKitchenActualCounts(approvedCounts);
+                            toast('تم إلغاء التعديل والعودة للتقفيلة المعتمدة', { icon: '↩️' });
+                          }}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 active:scale-95 text-white font-bold text-xs rounded-xl border border-white/20 transition-all cursor-pointer self-stretch sm:self-auto text-center"
+                        >
+                          إلغاء التعديل والعودة ↩️
+                        </button>
+                      </div>
+                    )}
 
                     {/* 2. Key Metrics & Live Recalculating Financial Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -1667,55 +1928,64 @@ const ReportsPage = () => {
                       </div>
 
                       {/* Quick Fill Helpers */}
-                      <div className="flex flex-wrap items-center gap-2 justify-end w-full md:w-auto">
-                        <span className="text-xs text-gray-500 font-bold hidden lg:inline">إجراءات تعبئة سريعة:</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const resetCounts = {};
-                            (detailedData.materials || []).forEach(m => {
-                              resetCounts[m.id] = m.currentStock;
-                            });
-                            setKitchenActualCounts(resetCounts);
-                            toast.success('تمت مطابقة الكل مع رصيد النظام (استهلاك = 0)');
-                          }}
-                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 font-bold text-xs rounded-xl flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <RotateCcw size={14} />
-                          <span>مطابقة الكل مع النظام</span>
-                        </button>
+                      {detailedData.isClosed && !isKitchenEditMode ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-300 flex items-center gap-1.5 shadow-xs">
+                            <Lock size={13} />
+                            <span>الأرصدة معتمدة ومقفولة رسمياً — للعرض فقط</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-2 justify-end w-full md:w-auto">
+                          <span className="text-xs text-gray-500 font-bold hidden lg:inline">إجراءات تعبئة سريعة:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const resetCounts = {};
+                              (detailedData.materials || []).forEach(m => {
+                                resetCounts[m.id] = m.currentStock;
+                              });
+                              setKitchenActualCounts(resetCounts);
+                              toast.success('تمت مطابقة الكل مع رصيد النظام (استهلاك = 0)');
+                            }}
+                            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 font-bold text-xs rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <RotateCcw size={14} />
+                            <span>مطابقة الكل مع النظام</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const theoreticalCounts = {};
-                            (detailedData.materials || []).forEach(m => {
-                              theoreticalCounts[m.id] = Math.max(0, Number((m.currentStock - m.theoreticalUsage).toFixed(3)));
-                            });
-                            setKitchenActualCounts(theoreticalCounts);
-                            toast.success('تم تطبيق كميات الاستهلاك النظري للسندوتشات المباعة');
-                          }}
-                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 font-bold text-xs rounded-xl border border-amber-200 flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <Calculator size={14} />
-                          <span>تطبيق الاستهلاك النظري ⚡</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const theoreticalCounts = {};
+                              (detailedData.materials || []).forEach(m => {
+                                theoreticalCounts[m.id] = Math.max(0, Number((m.currentStock - m.theoreticalUsage).toFixed(3)));
+                              });
+                              setKitchenActualCounts(theoreticalCounts);
+                              toast.success('تم تطبيق كميات الاستهلاك النظري للسندوتشات المباعة');
+                            }}
+                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 font-bold text-xs rounded-xl border border-amber-200 flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <Calculator size={14} />
+                            <span>تطبيق الاستهلاك النظري ⚡</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const zeroCounts = {};
-                            (detailedData.materials || []).forEach(m => {
-                              zeroCounts[m.id] = 0;
-                            });
-                            setKitchenActualCounts(zeroCounts);
-                            toast('تم تصفير المتبقي (استهلاك كامل الكمية)', { icon: '⚠️' });
-                          }}
-                          className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-all cursor-pointer"
-                        >
-                          <span>تصفير المتبقي (0)</span>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const zeroCounts = {};
+                              (detailedData.materials || []).forEach(m => {
+                                zeroCounts[m.id] = 0;
+                              });
+                              setKitchenActualCounts(zeroCounts);
+                              toast('تم تصفير المتبقي (استهلاك كامل الكمية)', { icon: '⚠️' });
+                            }}
+                            className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 flex items-center gap-1 transition-all cursor-pointer"
+                          >
+                            <span>تصفير المتبقي (0)</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* 4. Interactive Inventory Count Table */}
@@ -1800,24 +2070,35 @@ const ReportsPage = () => {
 
                                   {/* Actual Physical Count Editable Input */}
                                   <td className="p-3 bg-emerald-50/40">
-                                    <div className="relative flex items-center gap-1.5">
-                                      <input
-                                        type="number"
-                                        step="any"
-                                        min="0"
-                                        value={actualVal}
-                                        onChange={(e) => {
-                                          const val = e.target.value === '' ? '' : parseFloat(e.target.value);
-                                          setKitchenActualCounts(prev => ({
-                                            ...prev,
-                                            [m.id]: val
-                                          }));
-                                        }}
-                                        className="w-28 p-2 border-2 border-emerald-400 rounded-xl font-mono font-black text-sm text-center text-emerald-950 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-600 outline-none shadow-sm"
-                                        placeholder="0"
-                                      />
-                                      <span className="text-xs font-bold text-gray-500 font-mono">{m.unit}</span>
-                                    </div>
+                                    {detailedData.isClosed && !isKitchenEditMode ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-mono font-black text-sm text-emerald-950 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 inline-block shadow-xs">
+                                          {actualVal} {m.unit}
+                                        </span>
+                                        <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                          معتمد
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="relative flex items-center gap-1.5">
+                                        <input
+                                          type="number"
+                                          step="any"
+                                          min="0"
+                                          value={actualVal}
+                                          onChange={(e) => {
+                                            const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                            setKitchenActualCounts(prev => ({
+                                              ...prev,
+                                              [m.id]: val
+                                            }));
+                                          }}
+                                          className="w-28 p-2 border-2 border-emerald-400 rounded-xl font-mono font-black text-sm text-center text-emerald-950 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-600 outline-none shadow-sm"
+                                          placeholder="0"
+                                        />
+                                        <span className="text-xs font-bold text-gray-500 font-mono">{m.unit}</span>
+                                      </div>
+                                    )}
                                   </td>
 
                                   {/* Consumed Quantity with Difference Tag */}
@@ -1922,19 +2203,103 @@ const ReportsPage = () => {
                       </div>
 
                       <div className="flex items-center gap-3 w-full md:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmModal(true)}
-                          disabled={isSubmittingSettlement}
-                          className="w-full md:w-auto px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 disabled:bg-gray-600 text-gray-950 font-black text-sm rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
-                        >
-                          <CheckCircle2 size={18} className="text-emerald-950" />
-                          <span>اعتماد تقفيلة المطبخ وتسوية المخزن بالرصيد الفعلي 💾</span>
-                        </button>
+                        {detailedData.isClosed && !isKitchenEditMode ? (
+                          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleReportTypeChange('MONTHLY_FINANCIAL')}
+                              className="w-full sm:w-auto px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                            >
+                              <FileText size={16} />
+                              <span>الانتقال للتقرير المالي الشهري (تقفيلة الشهر) 📊</span>
+                            </button>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => setShowEditConfirmModal(true)}
+                                className="w-full sm:w-auto px-5 py-3.5 bg-amber-500 hover:bg-amber-400 active:scale-95 text-gray-950 font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                              >
+                                <Edit3 size={16} />
+                                <span>تعديل التقفيلة المعتمدة ✏️</span>
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                            {detailedData.isClosed && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsKitchenEditMode(false);
+                                  const approvedCounts = {};
+                                  (detailedData.materials || []).forEach(m => {
+                                    approvedCounts[m.id] = m.actualRemaining !== undefined ? m.actualRemaining : m.currentStock;
+                                  });
+                                  setKitchenActualCounts(approvedCounts);
+                                }}
+                                className="w-full sm:w-auto px-5 py-3.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold text-xs rounded-xl border border-gray-700 transition-all cursor-pointer"
+                              >
+                                إلغاء التعديل ↩️
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmModal(true)}
+                              disabled={isSubmittingSettlement}
+                              className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 disabled:bg-gray-600 text-gray-950 font-black text-sm rounded-xl shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+                            >
+                              <CheckCircle2 size={18} className="text-emerald-950" />
+                              <span>{detailedData.isClosed ? 'حفظ واعتماد التعديل في تقفيلة الشهر 💾' : 'اعتماد تقفيلة المطبخ وتسوية المخزن بالرصيد الفعلي 💾'}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* 6. Confirmation Modal */}
+                    {/* 6. Edit Confirmation Modal */}
+                    {showEditConfirmModal && (
+                      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                          <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                            <div className="p-3 bg-amber-100 text-amber-800 rounded-2xl">
+                              <AlertTriangle size={24} />
+                            </div>
+                            <div>
+                              <h3 className="text-base font-black text-gray-900">فتح تعديل تقفيلة المطبخ المعتمدة</h3>
+                              <p className="text-xs text-gray-500 font-bold">شهر {detailedData.monthKey || ''}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600 font-bold leading-relaxed bg-amber-50 p-3.5 rounded-2xl border border-amber-200">
+                            هل أنت متأكد من فتح تعديل تقفيلة المطبخ المعتمدة؟
+                            <br/><br/>
+                            💡 <strong className="text-amber-900">ملاحظة هامة:</strong> سيتم فتح الحقول بنفس الأرقام المسجلة مسبقاً لتعديل ما تريده فقط دون الحاجة لإعادة كتابة كل شيء من جديد.
+                          </p>
+                          <div className="flex items-center justify-end gap-3 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => setShowEditConfirmModal(false)}
+                              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                            >
+                              إلغاء
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowEditConfirmModal(false);
+                                setIsKitchenEditMode(true);
+                                toast.success('تم فتح وضع التعديل مع الاحتفاظ بالأرقام المسجلة');
+                              }}
+                              className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black text-xs rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Edit3 size={15} />
+                              <span>تأكيد وفتح التعديل</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 7. Commitment Confirmation Modal */}
                     {showConfirmModal && (
                       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
@@ -2006,7 +2371,7 @@ const ReportsPage = () => {
                               ) : (
                                 <>
                                   <CheckCircle2 size={16} />
-                                  <span>تأكيد التسوية والاعتماد 💾</span>
+                                  <span>{detailedData?.isClosed ? 'تأكيد وحفظ التعديل 💾' : 'تأكيد التسوية والاعتماد 💾'}</span>
                                 </>
                               )}
                             </button>

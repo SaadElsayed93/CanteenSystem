@@ -1,11 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const calculateDivisionBreakdown = (invoices, kitchenSettlementCost = 0) => {
+const calculateDivisionBreakdown = (invoices, kitchenSettlementCost = 0, isKitchenClosed = false) => {
   const divisions = {
     CANTEEN: { name: 'الكانتين (معلبات وسناكس)', activityType: 'CANTEEN', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
     BUFFET: { name: 'البوفيه والمشروبات', activityType: 'BUFFET', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0 },
-    SANDWICH: { name: 'السندوتشات والمطبخ', activityType: 'SANDWICH', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0, auxiliaryCost: 0, baseCost: 0 }
+    SANDWICH: { name: 'السندوتشات والمطبخ', activityType: 'SANDWICH', revenue: 0, cost: 0, profit: 0, count: 0, margin: 0, auxiliaryCost: 0, baseCost: 0, isKitchenClosed: false }
   };
 
   invoices.forEach(inv => {
@@ -30,6 +30,7 @@ const calculateDivisionBreakdown = (invoices, kitchenSettlementCost = 0) => {
     divisions.SANDWICH.auxiliaryCost = Number(Number(kitchenSettlementCost || 0).toFixed(2));
     divisions.SANDWICH.cost = Number((divisions.SANDWICH.baseCost + Number(kitchenSettlementCost || 0)).toFixed(2));
     divisions.SANDWICH.profit = Number((divisions.SANDWICH.revenue - divisions.SANDWICH.cost).toFixed(2));
+    divisions.SANDWICH.isKitchenClosed = isKitchenClosed;
   }
 
   Object.keys(divisions).forEach(k => {
@@ -521,25 +522,49 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         profit: Number(Number(p.profit || 0).toFixed(2))
       }));
 
-    // G. Kitchen Settlement Cost (if any auxiliary materials settled in month)
-    const kitchenSettlementMovements = await prisma.inventoryMovement.findMany({
-      where: {
-        createdAt: { gte: startDate, lte: endDate },
-        referenceType: 'KITCHEN_SETTLEMENT'
-      },
-      include: { product: true }
+    // G. Kitchen Settlement Cost & Approved Monthly Kitchen Closing
+    const sDateObj = new Date(startDate);
+    const monthKey = `${sDateObj.getFullYear()}-${String(sDateObj.getMonth() + 1).padStart(2, '0')}`;
+    const closingSetting = await prisma.setting.findUnique({
+      where: { key: `KITCHEN_CLOSING_${monthKey}` }
     });
 
+    let kitchenClosing = null;
+    let isKitchenClosed = false;
     let totalKitchenSettlementCost = 0;
-    kitchenSettlementMovements.forEach(m => {
-      const qty = Number(m.quantity || 0);
-      const unitCost = Number(m.product?.purchasePrice || 0);
-      if (m.type === 'OUT') totalKitchenSettlementCost += qty * unitCost;
-      else if (m.type === 'IN') totalKitchenSettlementCost -= qty * unitCost;
-    });
-    totalKitchenSettlementCost = Math.max(0, Number(totalKitchenSettlementCost.toFixed(2)));
 
-    const divisions = calculateDivisionBreakdown(invoices, totalKitchenSettlementCost);
+    if (closingSetting && closingSetting.value) {
+      try {
+        kitchenClosing = JSON.parse(closingSetting.value);
+        isKitchenClosed = true;
+        if (kitchenClosing.summary?.totalAuxConsumedCost !== undefined) {
+          totalKitchenSettlementCost = Number(kitchenClosing.summary.totalAuxConsumedCost);
+        }
+      } catch (e) {
+        console.error('Error parsing kitchen closing setting in monthly report:', e);
+      }
+    }
+
+    if (!isKitchenClosed) {
+      // If not yet closed, check any raw movements recorded so far
+      const kitchenSettlementMovements = await prisma.inventoryMovement.findMany({
+        where: {
+          createdAt: { gte: startDate, lte: endDate },
+          referenceType: 'KITCHEN_SETTLEMENT'
+        },
+        include: { product: true }
+      });
+
+      kitchenSettlementMovements.forEach(m => {
+        const qty = Number(m.quantity || 0);
+        const unitCost = Number(m.product?.purchasePrice || 0);
+        if (m.type === 'OUT') totalKitchenSettlementCost += qty * unitCost;
+        else if (m.type === 'IN') totalKitchenSettlementCost -= qty * unitCost;
+      });
+      totalKitchenSettlementCost = Math.max(0, Number(totalKitchenSettlementCost.toFixed(2)));
+    }
+
+    const divisions = calculateDivisionBreakdown(invoices, totalKitchenSettlementCost, isKitchenClosed);
     const totalCOGS = Number((costOfGoodsSold + totalKitchenSettlementCost).toFixed(2));
     grossProfit = Number((totalSales - totalCOGS).toFixed(2));
     netProfit = grossProfit;
@@ -547,6 +572,9 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
     return {
       reportType: 'MONTHLY_FINANCIAL',
       period: { startDate, endDate },
+      monthKey,
+      isKitchenClosed,
+      kitchenClosing,
       summary: {
         totalSales,
         cashSales,
@@ -555,6 +583,8 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
         costOfGoodsSold: totalCOGS,
         baseCostOfGoodsSold: costOfGoodsSold,
         kitchenSettlementCost: totalKitchenSettlementCost,
+        isKitchenClosed,
+        kitchenClosing,
         grossProfit,
         totalExpenses,
         canteenExpenses,
@@ -1241,7 +1271,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
 
   // ================= 11. KITCHEN CLOSING & SETTLEMENT REPORT =================
   if (type === 'KITCHEN_CLOSING') {
-    return await getKitchenClosingStatus(startDate, endDate);
+    return await getKitchenClosingStatus(startDate, endDate, query);
   }
 
   throw new Error('نوع التقرير غير مدعوم');
@@ -1250,7 +1280,36 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
 /**
  * حالة تقفيل وجرد خامات المطبخ والسندوتشات للشهر
  */
-const getKitchenClosingStatus = async (startDate, endDate) => {
+const getKitchenClosingStatus = async (startDate, endDate, options = {}) => {
+  const sDate = new Date(startDate);
+  const monthKey = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}`;
+  const settingKey = `KITCHEN_CLOSING_${monthKey}`;
+
+  // Check if a saved closed snapshot exists for this month
+  const existingClosing = await prisma.setting.findUnique({
+    where: { key: settingKey }
+  });
+
+  if (existingClosing && existingClosing.value) {
+    try {
+      const closedData = JSON.parse(existingClosing.value);
+      if (options?.editMode === 'true' || options?.editMode === true) {
+        return {
+          ...closedData,
+          isClosed: true,
+          isEditMode: true
+        };
+      }
+      return {
+        ...closedData,
+        isClosed: true,
+        isEditMode: false
+      };
+    } catch (e) {
+      console.error('Error parsing kitchen closing snapshot:', e);
+    }
+  }
+
   // 1. مبيعات السندوتشات خلال الفترة
   const invoices = await prisma.invoice.findMany({
     where: { createdAt: { gte: startDate, lte: endDate }, status: 'COMPLETED' },
@@ -1444,6 +1503,9 @@ const getKitchenClosingStatus = async (startDate, endDate) => {
 
   return {
     reportType: 'KITCHEN_CLOSING',
+    monthKey,
+    isClosed: false,
+    isEditMode: true,
     period: { startDate, endDate },
     summary: {
       totalSandwichesSold,
@@ -1465,10 +1527,29 @@ const getKitchenClosingStatus = async (startDate, endDate) => {
 };
 
 /**
- * اعتماد تقفيلة المطبخ الشهرية وتسوية المخزن بالرصيد الفعلي
+ * اعتماد تقفيلة المطبخ الشهرية وتسوية المخزن بالرصيد الفعلي وحفظ إغلاق الشهر
  */
 const settleKitchenMonth = async (data, userId) => {
-  const { startDate, endDate, notes, items } = data;
+  const { startDate, endDate, notes, items, isUpdate } = data;
+  const sDate = new Date(startDate);
+  const monthKey = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}`;
+  const settingKey = `KITCHEN_CLOSING_${monthKey}`;
+
+  // Check if an existing snapshot exists
+  const existingSetting = await prisma.setting.findUnique({ where: { key: settingKey } });
+  let existingSnapshot = null;
+  if (existingSetting && existingSetting.value) {
+    try {
+      existingSnapshot = JSON.parse(existingSetting.value);
+    } catch (e) {
+      console.error('Failed to parse existing closing snapshot:', e);
+    }
+  }
+
+  const committingUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, fullName: true, username: true }
+  });
 
   const result = await prisma.$transaction(async (tx) => {
     let totalSettledCostConsumed = 0;
@@ -1477,7 +1558,9 @@ const settleKitchenMonth = async (data, userId) => {
     for (const item of items) {
       const productId = Number(item.productId);
       const actualRemaining = Number(item.actualRemaining);
-      const reason = item.reason || notes || 'تقفيل خامات المطبخ الشهرية واعتماد الجرد الفعلي';
+      const reason = item.reason || notes || (isUpdate 
+        ? `تعديل تقفيلة وجرد خامات المطبخ الشهرية لشهر ${monthKey}` 
+        : `تقفيل خامات المطبخ الشهرية واعتماد الجرد الفعلي لشهر ${monthKey}`);
 
       const product = await tx.product.findUnique({
         where: { id: productId },
@@ -1628,26 +1711,265 @@ const settleKitchenMonth = async (data, userId) => {
       }
     }
 
-    // تسجيل في AuditLog
+    // GATHER ALL PERIOD DATA FOR SNAPSHOT
+    const invoices = await tx.invoice.findMany({
+      where: { createdAt: { gte: new Date(startDate), lte: new Date(endDate) }, status: 'COMPLETED' },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                ingredients: { include: { rawMaterial: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    let totalSandwichesSold = 0;
+    let totalSandwichRevenue = 0;
+    let totalBaseCost = 0;
+    const sandwichMap = {};
+    const theoreticalUsageMap = {};
+
+    invoices.forEach(inv => {
+      inv.items.forEach(item => {
+        if (item.product?.activityType === 'SANDWICH') {
+          const qty = Number(item.quantity || 0);
+          const rev = Number(item.subtotal || 0);
+          const pid = item.productId;
+
+          const isBulkSettlement = item.product?.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                                   (item.product?.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
+          const ingredients = item.product?.ingredients || [];
+          let itemBaseCost = 0;
+          if (!isBulkSettlement) {
+            const baseIng = ingredients.find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية') && !i.notes?.includes('مفتوح')) || ingredients[0];
+            const baseUnitCost = baseIng 
+              ? Number(baseIng.quantityPerUnit || 1) * Number(baseIng.rawMaterial?.purchasePrice || 0) 
+              : Number(item.product?.purchasePrice || 0);
+            itemBaseCost = qty * baseUnitCost;
+          }
+
+          totalSandwichesSold += qty;
+          totalSandwichRevenue += rev;
+          totalBaseCost += itemBaseCost;
+
+          if (!sandwichMap[pid]) {
+            sandwichMap[pid] = {
+              id: pid,
+              name: item.product.name,
+              quantity: 0,
+              revenue: 0,
+              baseCost: 0
+            };
+          }
+          sandwichMap[pid].quantity += qty;
+          sandwichMap[pid].revenue += rev;
+          sandwichMap[pid].baseCost += itemBaseCost;
+
+          ingredients.forEach(ing => {
+            const rawId = ing.rawMaterialId;
+            const required = qty * Number(ing.quantityPerUnit || 0);
+            theoreticalUsageMap[rawId] = (theoreticalUsageMap[rawId] || 0) + required;
+          });
+        }
+      });
+    });
+
+    const sandwichRecipes = await tx.product.findMany({
+      where: { activityType: 'SANDWICH', productType: 'RECIPE' },
+      include: {
+        ingredients: { include: { rawMaterial: true } }
+      }
+    });
+
+    const baseRawMaterialIds = new Set();
+    const allSandwichRawMaterialIds = new Set();
+    const auxiliaryRecipeNamesMap = {};
+
+    sandwichRecipes.forEach(recipe => {
+      const isBulkSettlement = recipe.recipeNotes?.includes('MONTHLY_SETTLEMENT') || 
+                               (recipe.ingredients || []).some(i => i.notes?.includes('تسوية') || i.notes?.includes('مفتوح'));
+
+      const ingredients = recipe.ingredients || [];
+      if (!isBulkSettlement) {
+        const baseIng = ingredients.find(i => i.notes?.includes('الأساسي') && !i.notes?.includes('تسوية')) || ingredients[0];
+        if (baseIng) baseRawMaterialIds.add(baseIng.rawMaterialId);
+      }
+
+      ingredients.forEach(ing => {
+        allSandwichRawMaterialIds.add(ing.rawMaterialId);
+        if (!auxiliaryRecipeNamesMap[ing.rawMaterialId]) {
+          auxiliaryRecipeNamesMap[ing.rawMaterialId] = new Set();
+        }
+        auxiliaryRecipeNamesMap[ing.rawMaterialId].add(recipe.name);
+      });
+    });
+
+    const explicitRaw = await tx.product.findMany({
+      where: { activityType: 'SANDWICH', productType: 'RAW_MATERIAL' }
+    });
+    explicitRaw.forEach(r => allSandwichRawMaterialIds.add(r.id));
+
+    const allRawMaterials = await tx.product.findMany({
+      where: { id: { in: Array.from(allSandwichRawMaterialIds) } },
+      include: {
+        batches: true,
+        inventoryMovements: {
+          where: {
+            createdAt: { gte: new Date(startDate), lte: new Date(endDate) },
+            referenceType: 'KITCHEN_SETTLEMENT'
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const purchases = await tx.purchaseItem.findMany({
+      where: {
+        productId: { in: Array.from(allSandwichRawMaterialIds) },
+        purchase: { createdAt: { gte: new Date(startDate), lte: new Date(endDate) } }
+      },
+      include: { purchase: true }
+    });
+
+    const purchaseMap = {};
+    purchases.forEach(p => {
+      const pid = p.productId;
+      if (!purchaseMap[pid]) {
+        purchaseMap[pid] = { quantity: 0, totalCost: 0 };
+      }
+      purchaseMap[pid].quantity += Number(p.quantity || 0);
+      purchaseMap[pid].totalCost += Number(p.subtotal || (Number(p.quantity) * Number(p.unitCost)) || 0);
+    });
+
+    let totalPeriodPurchasesCost = 0;
+    const itemsMap = {};
+    items.forEach(i => { itemsMap[Number(i.productId)] = Number(i.actualRemaining); });
+
+    let finalTotalAuxConsumedCost = 0;
+
+    const materialsSnapshot = allRawMaterials.map(m => {
+      const currentStock = m.batches.reduce((sum, b) => sum + Number(b.quantityRemaining || 0), 0);
+      const purch = purchaseMap[m.id] || { quantity: 0, totalCost: 0 };
+      totalPeriodPurchasesCost += purch.totalCost;
+      const unitCost = Number(m.purchasePrice || 0);
+
+      const isBase = baseRawMaterialIds.has(m.id);
+      const theoreticalQty = theoreticalUsageMap[m.id] || 0;
+      const recipeNames = auxiliaryRecipeNamesMap[m.id] ? Array.from(auxiliaryRecipeNamesMap[m.id]) : [];
+
+      const actualRemaining = itemsMap[m.id] !== undefined ? itemsMap[m.id] : Number(currentStock.toFixed(3));
+
+      let settledOut = 0;
+      let settledIn = 0;
+      m.inventoryMovements.forEach(mov => {
+        if (mov.type === 'OUT') settledOut += Number(mov.quantity || 0);
+        else if (mov.type === 'IN') settledIn += Number(mov.quantity || 0);
+      });
+      const netSettledThisPeriod = settledOut - settledIn;
+      const netSettledCost = Number((netSettledThisPeriod * unitCost).toFixed(2));
+
+      if (!isBase) {
+        finalTotalAuxConsumedCost += netSettledCost;
+      }
+
+      return {
+        id: m.id,
+        name: m.name,
+        code: m.internalCode || `#${m.id}`,
+        unit: m.unit || 'قطعة',
+        unitCost,
+        currentStock: Number(currentStock.toFixed(3)),
+        actualRemaining,
+        consumedQty: Number(netSettledThisPeriod.toFixed(3)),
+        consumedCost: netSettledCost,
+        purchasedQty: Number(purch.quantity.toFixed(3)),
+        purchasedCost: Number(purch.totalCost.toFixed(2)),
+        isBase,
+        categoryType: isBase 
+          ? 'مكون أساسي بالقطعة (لحوم/دجاج)' 
+          : (recipeNames.some(name => name.includes('ستربس') || name.includes('كبدة') || name.includes('بانيه') || name.includes('شاورما') || name.includes('سجق'))
+              ? 'خامة فريزر رئيسية (تسوية بالوزن والجرد)'
+              : 'خامة مكملة (مطبخ/تسوية)'),
+        theoreticalUsage: Number(theoreticalQty.toFixed(3)),
+        theoreticalCost: Number((theoreticalQty * unitCost).toFixed(2)),
+        settledInPeriod: Number(netSettledThisPeriod.toFixed(3)),
+        settledCostInPeriod: netSettledCost,
+        usedInSandwiches: recipeNames
+      };
+    });
+
+    finalTotalAuxConsumedCost = Math.max(0, Number(finalTotalAuxConsumedCost.toFixed(2)));
+    const sandwichGrossProfit = Number((totalSandwichRevenue - totalBaseCost).toFixed(2));
+    const netKitchenProfit = Number((sandwichGrossProfit - finalTotalAuxConsumedCost).toFixed(2));
+    const profitMargin = totalSandwichRevenue > 0 ? Number(((netKitchenProfit / totalSandwichRevenue) * 100).toFixed(1)) : 0;
+
+    const closingSnapshot = {
+      reportType: 'KITCHEN_CLOSING',
+      monthKey,
+      isClosed: true,
+      status: 'CLOSED',
+      closedAt: isUpdate && existingSnapshot?.closedAt ? existingSnapshot.closedAt : new Date().toISOString(),
+      closedBy: isUpdate && existingSnapshot?.closedBy ? existingSnapshot.closedBy : { id: committingUser?.id, fullName: committingUser?.fullName || 'الإدارة' },
+      updatedAt: isUpdate ? new Date().toISOString() : undefined,
+      updatedBy: isUpdate ? { id: committingUser?.id, fullName: committingUser?.fullName || 'الإدارة' } : undefined,
+      notes: notes || 'تقفيل وجرد خامات المطبخ الشهرية واعتماد الأرباح',
+      period: { startDate, endDate },
+      summary: {
+        totalSandwichesSold,
+        totalSandwichRevenue: Number(totalSandwichRevenue.toFixed(2)),
+        totalBaseCost: Number(totalBaseCost.toFixed(2)),
+        sandwichGrossProfit,
+        totalAuxConsumedCost: finalTotalAuxConsumedCost,
+        totalSettledCostConsumed: finalTotalAuxConsumedCost,
+        netKitchenProfit,
+        profitMargin,
+        totalPeriodPurchasesCost: Number(totalPeriodPurchasesCost.toFixed(2)),
+        materialsCount: materialsSnapshot.length,
+        auxiliaryCount: materialsSnapshot.filter(m => !m.isBase).length
+      },
+      sandwichesBreakdown: Object.values(sandwichMap),
+      materials: materialsSnapshot,
+      auxiliaryMaterials: materialsSnapshot.filter(m => !m.isBase),
+      baseMaterials: materialsSnapshot.filter(m => m.isBase),
+      settledItems
+    };
+
+    // Save persistent snapshot to Setting
+    await tx.setting.upsert({
+      where: { key: settingKey },
+      update: {
+        value: JSON.stringify(closingSnapshot),
+        description: `تقفيلة وجرد مطبخ السندوتشات لشهر ${monthKey}`
+      },
+      create: {
+        key: settingKey,
+        value: JSON.stringify(closingSnapshot),
+        description: `تقفيلة وجرد مطبخ السندوتشات لشهر ${monthKey}`
+      }
+    });
+
+    // AuditLog
     await tx.auditLog.create({
       data: {
-        action: 'KITCHEN_SETTLEMENT',
+        action: isUpdate ? 'KITCHEN_CLOSING_UPDATED' : 'KITCHEN_CLOSING_COMMITTED',
         entityType: 'INVENTORY_SETTLEMENT',
         entityId: null,
-        oldValues: JSON.stringify({ itemsCount: items.length }),
+        oldValues: existingSnapshot ? JSON.stringify({ summary: existingSnapshot.summary }) : null,
         newValues: JSON.stringify({
-          totalSettledCostConsumed,
-          settledItemsCount: settledItems.length,
-          settledItems
+          monthKey,
+          summary: closingSnapshot.summary,
+          itemsCount: items.length
         }),
         userId
       }
     });
 
-    return {
-      totalSettledCostConsumed: Number(totalSettledCostConsumed.toFixed(2)),
-      settledItems
-    };
+    return closingSnapshot;
   });
 
   return result;
