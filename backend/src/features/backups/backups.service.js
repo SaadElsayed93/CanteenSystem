@@ -589,7 +589,7 @@ exports.initAutoBackupEngine = () => {
 };
 
 exports.openInExplorer = (targetPath) => {
-  const { spawn } = require('child_process');
+  const { exec } = require('child_process');
   const safeTarget = sanitizePath(targetPath);
   if (!safeTarget || !fs.existsSync(safeTarget)) {
     throw new Error('المسار المحدد غير موجود على الجهاز');
@@ -597,16 +597,19 @@ exports.openInExplorer = (targetPath) => {
   const resolved = path.resolve(safeTarget);
   const isFile = fs.statSync(resolved).isFile();
 
-  try {
-    const args = isFile ? [`/select,${resolved}`] : [resolved];
-    const child = spawn('explorer.exe', args, {
-      detached: true,
-      stdio: 'ignore'
-    });
-    child.unref();
-  } catch (err) {
-    console.warn('[OpenInExplorer Spawn Error]:', err.message);
-  }
+  // Escape single quotes for PowerShell
+  const escaped = resolved.replace(/'/g, "''");
+  const psCmd = isFile
+    ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
+    : `powershell -NoProfile -Command "Invoke-Item -LiteralPath '${escaped}'"`;
+
+  exec(psCmd, (err) => {
+    if (err) {
+      console.warn('[OpenInExplorer Warning]:', err.message);
+      // Fallback
+      exec(`start "" "${resolved}"`, () => {});
+    }
+  });
 
   return {
     success: true,

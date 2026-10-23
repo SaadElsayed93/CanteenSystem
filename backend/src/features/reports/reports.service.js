@@ -1282,7 +1282,7 @@ const getDetailedReport = async (type, startDateStr, endDateStr, options = {}) =
 
   // ================= 11. KITCHEN CLOSING & SETTLEMENT REPORT =================
   if (type === 'KITCHEN_CLOSING') {
-    return await getKitchenClosingStatus(startDate, endDate, query);
+    return await getKitchenClosingStatus(startDate, endDate, options);
   }
 
   throw new Error('نوع التقرير غير مدعوم');
