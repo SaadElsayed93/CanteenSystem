@@ -762,7 +762,7 @@ const POSPage = () => {
               type="button"
               disabled={isSubmitting || cart.length === 0}
               onClick={() => handleCheckout()}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-3 rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center justify-center gap-2 text-base"
+              className="w-full bg-[#007507] hover:bg-[#003607] disabled:opacity-50 text-white font-black py-3.5 rounded-xl transition-all shadow-md shadow-emerald-950/20 flex items-center justify-center gap-2 text-base cursor-pointer"
             >
               <CheckCircle2 size={20} />
               <span>{isSubmitting ? 'جاري التسجيل...' : 'إتمام ودفع الفاتورة'}</span>
@@ -780,8 +780,10 @@ const POSPage = () => {
             {/* The Print Container */}
             <div id="thermal-receipt" className="text-black bg-white p-2">
               <div className="text-center space-y-1 mb-3">
-                <div className="font-black text-sm font-sans">المستشفى العسكري ق.م بالإسماعيلية</div>
-                <div className="font-bold text-xs text-gray-700 font-sans">إدارة الكانتين والبوفيه والمطبخ</div>
+                <img src="/logo.png" alt="المركز الوطني" className="w-16 h-16 mx-auto mb-1.5 object-contain" />
+                <div className="font-black text-sm font-sans">المركز الوطني لعلاج الإدمان</div>
+                <div className="font-bold text-[11px] text-gray-600 font-sans">المستشفى العسكري ق.م بالإسماعيلية</div>
+                <div className="font-black text-xs text-[#007507] font-sans">إدارة الكانتين والبوفيه</div>
                 <div className="border-b-2 border-dashed border-gray-300 my-2"></div>
                 <div className="text-xs text-gray-600 space-y-1 text-right font-sans font-bold">
                   <div>رقم الفاتورة: <span className="font-mono font-black">{completedReceipt.invoiceNumber}</span></div>
@@ -838,7 +840,7 @@ const POSPage = () => {
             <div className="mt-4 flex gap-3 no-print">
               <button 
                 onClick={() => window.print()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-200"
+                className="flex-1 bg-[#007507] hover:bg-[#003607] text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-950/20 cursor-pointer"
               >
                 <Printer size={18} />
                 <span>طباعة البون [Enter]</span>

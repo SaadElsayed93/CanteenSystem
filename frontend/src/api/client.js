@@ -1,18 +1,21 @@
 import axios from 'axios';
 
 const getBaseURL = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
   if (typeof window !== 'undefined' && window.location) {
     const protocol = window.location.protocol || 'http:';
     const hostname = window.location.hostname || 'localhost';
-    // If accessed directly on port 8000 (single-port unified setup)
-    if (window.location.port === '8000') {
+    const port = window.location.port;
+
+    // When served by backend (port 8000, 80, 443, or default port)
+    // Relative '/api' works on ANY IP, ANY device, and ANY network automatically!
+    if (port === '8000' || !port || port === '80' || port === '443') {
       return '/api';
     }
-    // If accessed via dev server or another port, target port 8000 on the same machine
+
+    // In Vite dev server mode (e.g. port 5173), target backend on the same machine
     return `${protocol}//${hostname}:8000/api`;
   }
-  return 'http://localhost:8000/api';
+  return '/api';
 };
 
 const client = axios.create({
@@ -20,7 +23,7 @@ const client = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // If using cookies/sessions
+  withCredentials: true,
 });
 
 // Interceptor لمعالجة انقطاع الاتصال والأخطاء
@@ -28,10 +31,8 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if (!error.response) {
-      // لا يوجد رد من السيرفر (انقطاع الاتصال)
-      console.error('Network Error - No response from server');
-      // يمكن هنا إطلاق حدث (event) لإظهار تنبيه للمستخدم
-      return Promise.reject(new Error('انقطع الاتصال بالسيرفر. يرجى المحاولة لاحقاً.'));
+      console.error('Network Error - No response from server:', error);
+      return Promise.reject(new Error('انقطع الاتصال بالسيرفر. يرجى التأكد من اتصالك بالشبكة.'));
     }
     return Promise.reject(error);
   }

@@ -59,31 +59,33 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
-      <div className="bg-white p-10 rounded-xl shadow-xl w-full max-w-md border-2 border-gray-200">
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-indigo-100 p-4 rounded-full mb-3">
-            <Store className="text-indigo-600" size={40} />
+    <div className="min-h-screen flex items-center justify-center bg-slate-50" dir="rtl">
+      <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md border border-slate-200/80">
+        <div className="flex flex-col items-center mb-6 text-center">
+          <img 
+            src="/logo.png" 
+            alt="المركز الوطني لعلاج الإدمان" 
+            className="w-24 h-24 object-contain mb-3 drop-shadow-md rounded-full bg-white p-1 border border-slate-100" 
+          />
+          <div className="inline-block bg-emerald-50 text-[#007507] text-xs font-black px-3.5 py-1 rounded-full mb-1.5 border border-emerald-200/80 shadow-xs">
+            المركز الوطني لعلاج الإدمان
           </div>
-          <div className="inline-block bg-indigo-50 text-indigo-900 text-xs font-black px-3.5 py-1 rounded-full mb-2 border border-indigo-200 shadow-sm">
-            المستشفى العسكري ق.م بالإسماعيلية
-          </div>
-          <h2 className="text-2xl font-black text-gray-800">منظومة إدارة الكانتين</h2>
-          <p className="text-gray-500 mt-1 text-sm font-bold">تسجيل الدخول لمنظومة الكانتين والخدمات</p>
+          <h2 className="text-xl font-black text-slate-900">منظومة إدارة الكانتين والبوفيه</h2>
+          <p className="text-slate-500 mt-1 text-xs font-bold">المستشفى العسكري ق.م بالإسماعيلية</p>
         </div>
         
-        {error && <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6 text-sm font-bold">{error}</div>}
+        {error && <div className="bg-red-50 border-r-4 border-red-500 text-red-700 p-3.5 rounded-xl mb-5 text-xs font-black">{error}</div>}
         
-        <form onSubmit={handleSubmit} action="/api/auth/login" method="post" autoComplete="on" className="space-y-5">
+        <form onSubmit={handleSubmit} action="/api/auth/login" method="post" autoComplete="on" className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-gray-700 mb-1.5 font-bold text-sm">اسم المستخدم</label>
+            <label htmlFor="username" className="block text-slate-700 mb-1.5 font-bold text-xs">اسم المستخدم</label>
             <input 
               ref={usernameRef}
               id="username"
               name="username"
               type="text" 
               autoComplete="username"
-              className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" 
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#007507] focus:border-transparent transition-all font-bold text-sm bg-slate-50/50 focus:bg-white" 
               defaultValue={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -91,7 +93,7 @@ const LoginPage = () => {
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-gray-700 mb-1.5 font-bold text-sm">كلمة المرور</label>
+            <label htmlFor="password" className="block text-slate-700 mb-1.5 font-bold text-xs">كلمة المرور</label>
             <div className="relative">
               <input 
                 ref={passwordRef}
@@ -99,7 +101,7 @@ const LoginPage = () => {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pl-12"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#007507] focus:border-transparent transition-all pl-12 font-bold text-sm bg-slate-50/50 focus:bg-white"
                 defaultValue={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -109,7 +111,7 @@ const LoginPage = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
                 title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -119,7 +121,7 @@ const LoginPage = () => {
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-indigo-600 text-white font-bold rounded-lg px-4 py-3 hover:bg-indigo-700 transition-colors disabled:opacity-50 mt-4 shadow-lg shadow-indigo-200"
+            className="w-full bg-[#007507] hover:bg-[#003607] text-white font-black rounded-xl px-4 py-3.5 transition-all disabled:opacity-50 mt-2 shadow-md shadow-emerald-950/20 text-sm cursor-pointer"
           >
             {isLoading ? 'جاري التحقق...' : 'تسجيل الدخول'}
           </button>

@@ -20,11 +20,25 @@ app.use('/api', routes);
 
 // Serve static frontend files (Single-port production architecture)
 const frontendDist = path.join(__dirname, '../../frontend/dist');
+
+// Disable caching for HTML so any browser immediately fetches updates
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api') && (!req.path.includes('.') || req.path.endsWith('.html'))) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static(frontendDist));
 
 // SPA fallback for frontend client-side routing
 app.use((req, res, next) => {
   if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     return res.sendFile(path.join(frontendDist, 'index.html'), (err) => {
       if (err) next();
     });

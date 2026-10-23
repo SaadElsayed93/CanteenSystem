@@ -58,35 +58,37 @@ function MainLayout({ children }) {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden print:overflow-visible print:bg-white print:h-auto" dir="rtl">
-      {/* Sidebar */}
-      <aside className={`print:hidden bg-indigo-900 text-white transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className="h-16 flex items-center justify-center border-b border-indigo-800 px-4">
-          <Store className="text-indigo-300 flex-shrink-0" size={28} />
+    <div className="flex h-screen bg-[#f8fafc] font-sans text-slate-800 overflow-hidden print:overflow-visible print:bg-white print:h-auto" dir="rtl">
+      {/* Sidebar - Clean Light Modern Medical Style */}
+      <aside className={`print:hidden bg-white text-slate-800 transition-all duration-300 flex flex-col border-l border-slate-200/80 shadow-sm ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+        <div className="h-16 flex items-center justify-start border-b border-slate-100 px-4 bg-white gap-3">
+          <img src="/logo.png" alt="المركز الوطني" className="w-9 h-9 object-contain rounded-full drop-shadow-sm flex-shrink-0" />
           {isSidebarOpen && (
-            <div className="mr-3 leading-tight overflow-hidden">
-              <div className="font-black text-sm tracking-wide text-white truncate">إدارة الكانتين</div>
-              <div className="text-[10px] text-indigo-300 font-bold truncate">المستشفى العسكري ق.م بالإسماعيلية</div>
+            <div className="leading-tight overflow-hidden text-right">
+              <div className="font-black text-xs tracking-tight text-[#003607] truncate">المركز الوطني لعلاج الإدمان</div>
+              <div className="text-[10px] text-[#007507] font-black truncate">إدارة الكانتين والبوفيه</div>
             </div>
           )}
         </div>
         
-        <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-2 px-3">
+        <nav className="flex-1 overflow-y-auto py-3">
+          <ul className="space-y-1.5 px-3">
             {navItems.map((item, index) => (
               <li key={index}>
                 <NavLink 
                   to={item.to} 
                   end={item.exact}
                   className={({ isActive }) => 
-                    `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                      isActive ? 'bg-indigo-700 text-white font-bold' : 'hover:bg-indigo-800 text-indigo-100'
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                      isActive 
+                        ? 'bg-[#007507] text-white font-black shadow-sm shadow-emerald-950/20' 
+                        : 'text-slate-600 hover:text-[#007507] hover:bg-emerald-50/70 font-bold'
                     }`
                   }
                   title={!isSidebarOpen ? item.label : ""}
                 >
-                  <span className="text-indigo-200">{item.icon}</span>
-                  {isSidebarOpen && <span>{item.label}</span>}
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  {isSidebarOpen && <span className="text-sm">{item.label}</span>}
                 </NavLink>
               </li>
             ))}
@@ -94,25 +96,25 @@ function MainLayout({ children }) {
         </nav>
 
         {user && (
-          <div className="p-4 border-t border-indigo-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-indigo-700 flex items-center justify-center font-bold text-lg">
+          <div className="p-3 border-t border-slate-100 bg-slate-50/80">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-9 h-9 rounded-full bg-[#007507] text-white flex items-center justify-center font-black text-sm shadow-sm flex-shrink-0">
                 {user.fullName.charAt(0)}
               </div>
               {isSidebarOpen && (
-                <div className="overflow-hidden">
-                  <div className="font-bold truncate">{user.fullName}</div>
-                  <div className="text-xs text-indigo-300 truncate">{user.username}</div>
+                <div className="overflow-hidden text-right">
+                  <div className="font-black text-xs text-slate-800 truncate">{user.fullName}</div>
+                  <div className="text-[10px] text-slate-500 font-bold truncate">{user.role} ({user.username})</div>
                 </div>
               )}
             </div>
             <button 
               onClick={logout} 
-              className={`w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition-colors ${!isSidebarOpen && 'px-0'}`}
+              className={`w-full flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white py-2 rounded-xl text-xs font-black transition-all border border-rose-200/60 cursor-pointer ${!isSidebarOpen && 'px-0'}`}
               title="تسجيل خروج"
             >
-              <LogOut size={18} />
-              {isSidebarOpen && <span>خروج</span>}
+              <LogOut size={16} />
+              {isSidebarOpen && <span>تسجيل الخروج</span>}
             </button>
           </div>
         )}
@@ -121,23 +123,28 @@ function MainLayout({ children }) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="print:hidden h-16 bg-white shadow-sm flex items-center px-4 justify-between">
+        <header className="print:hidden h-16 bg-white border-b border-slate-200/80 shadow-xs flex items-center px-5 justify-between">
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none"
+            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-[#007507] transition-colors focus:outline-none cursor-pointer"
           >
-            <Menu size={24} />
+            <Menu size={22} />
           </button>
           
-          <div className="font-bold text-gray-700 flex items-center gap-2 text-xs sm:text-sm">
-            <span className="text-indigo-900 font-black">المستشفى العسكري ق.م بالإسماعيلية</span>
-            <span className="text-gray-300">|</span>
-            <span className="text-gray-600 font-bold">منظومة إدارة الكانتين</span>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="شعار المركز" className="w-8 h-8 object-contain rounded-full shadow-xs" />
+            <div className="hidden sm:flex flex-col text-right">
+              <span className="text-slate-900 font-black text-xs">المركز الوطني لعلاج الإدمان - المستشفى العسكري ق.م بالإسماعيلية</span>
+              <span className="text-slate-500 font-bold text-[10px]">منظومة إدارة الكانتين والبوفيه والخدمات</span>
+            </div>
+            <span className="bg-emerald-50 text-[#007507] font-black text-xs px-2.5 py-1 rounded-full border border-emerald-200 shadow-xs">
+              الكانتين
+            </span>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6 print:overflow-visible print:bg-white print:p-0">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#f8fafc] p-6 print:overflow-visible print:bg-white print:p-0">
           <div className="mx-auto max-w-7xl">
             {children}
           </div>
