@@ -589,33 +589,16 @@ exports.initAutoBackupEngine = () => {
 };
 
 exports.openInExplorer = (targetPath) => {
-  const { exec } = require('child_process');
-  const safeTarget = sanitizePath(targetPath);
-  if (!safeTarget || !fs.existsSync(safeTarget)) {
+  const { spawn } = require('child_process');
+  if (!targetPath || !fs.existsSync(targetPath)) {
     throw new Error('المسار المحدد غير موجود على الجهاز');
   }
-  const resolved = path.resolve(safeTarget);
+  const resolved = path.resolve(targetPath);
   const isFile = fs.statSync(resolved).isFile();
 
-  // Try direct Windows start command first, with PowerShell as robust fallback
-  const winCmd = isFile
-    ? `start explorer.exe /select,"${resolved}"`
-    : `start "" "${resolved}"`;
-
-  try {
-    exec(winCmd, (err) => {
-      if (err) {
-        console.warn('[OpenInExplorer Warning]:', err.message);
-        const escaped = resolved.replace(/'/g, "''");
-        const psCmd = isFile
-          ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
-          : `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '\`\"${escaped}\`\"'"`;
-        exec(psCmd, () => {});
-      }
-    });
-  } catch (e) {
-    console.warn('[OpenInExplorer Error]:', e.message);
-  }
+  const args = isFile ? [`/select,${resolved}`] : [resolved];
+  const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore' });
+  child.unref();
 
   return {
     success: true,
@@ -637,9 +620,14 @@ exports.openBackupFileLocation = async (backupId) => {
   if (!backup) {
     throw new Error('النسخة الاحتياطية غير موجودة بالنظام');
   }
-  const safePath = sanitizePath(backup.filepath);
-  if (!fs.existsSync(safePath)) {
-    throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
+  let target = backup.filepath;
+  if (!fs.existsSync(target)) {
+    const fallbackPath = path.join(BACKUP_DIR, backup.filename);
+    if (fs.existsSync(fallbackPath)) {
+      target = fallbackPath;
+    } else {
+      throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
+    }
   }
-  return exports.openInExplorer(safePath);
+  return exports.openInExplorer(target);
 };
