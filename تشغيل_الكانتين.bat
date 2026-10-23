@@ -11,25 +11,27 @@ echo  [1] جاري التحقق من بيئة التشغيل...
 
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [خطأ] محرك Node.js غير مثبت على هذا الجهاز!
-    echo يرجى تثبيت Node.js أولاً لتشغيل المنظومة.
+    echo.
+    echo  [خطأ] محرك Node.js غير مثبت على هذا الجهاز!
+    echo  يرجى تثبيت Node.js (الإصدار 18 أو 20 أو أحدث) أولاً لتشغيل المنظومة.
+    echo.
     pause
     exit /b 1
 )
 
-echo  [2] تشغيل المنظومة على الشبكة الداخلية الموحدة (Port 8000)...
-echo.
-echo  -------------------------------------------------------------
-echo   * رابط المنظومة على هذا الجهاز:     http://localhost:8000
-echo   * للفتح من أجهزة الشبكة بالمستشفى: استخدم عنوان IP هذا الجهاز متبوعاً بـ :8000
-echo  -------------------------------------------------------------
+echo  [2] تشغيل المنظومة على المنفذ الموحد (Port 8000)...
 echo.
 
 cd /d "%~dp0"
 
 :: فتح المتصفح تلقائياً بعد ثانيتين
-start "" cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:8000"
+start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8000"
 
-:: تشغيل السيرفر الموحد
-node backend/src/server.js
-pause
+:: تشغيل السيرفر الموحد (الباك إند + واجهة المستخدم)
+node backend/src/index.js
+
+if %errorlevel% neq 0 (
+    echo.
+    echo [خطأ] حدث توقف مفاجئ في السيرفر.
+    pause
+)
