@@ -433,7 +433,7 @@ const HomePage = () => {
               <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 col-span-1 md:col-span-2">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-black text-gray-800">مبيعات آخر 7 أيام</h3>
-                  <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold">آخر أسبوع</div>
+                  <div className="bg-emerald-50 text-[#007507] px-3 py-1 rounded-lg text-sm font-bold border border-emerald-100">آخر أسبوع</div>
                 </div>
                 <div className="h-72 w-full" dir="ltr">
                   <ResponsiveContainer width="100%" height="100%">
@@ -442,7 +442,7 @@ const HomePage = () => {
                       <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontWeight: 'bold' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontWeight: 'bold' }} />
                       <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                      <Line type="monotone" dataKey="المبيعات" stroke="#4f46e5" strokeWidth={4} dot={{ r: 4, fill: '#4f46e5', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, fill: '#4f46e5', strokeWidth: 0 }} />
+                      <Line type="monotone" dataKey="المبيعات" stroke="#007507" strokeWidth={4} dot={{ r: 4, fill: '#007507', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6, fill: '#1bb641', strokeWidth: 0 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -455,7 +455,7 @@ const HomePage = () => {
                   {data.topProducts.map((p, i) => (
                     <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-gray-100 text-gray-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-indigo-50 text-indigo-600'}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-gray-100 text-gray-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-emerald-50 text-[#007507]'}`}>
                           {i + 1}
                         </div>
                         <div>
@@ -463,7 +463,7 @@ const HomePage = () => {
                           <p className="text-xs text-gray-400 font-bold">{p.quantity} قطعة مباعة</p>
                         </div>
                       </div>
-                      <div className="font-black text-indigo-600">{Number(p.revenue || 0).toFixed(2)} ج.م</div>
+                      <div className="font-black text-[#007507]">{Number(p.revenue || 0).toFixed(2)} ج.م</div>
                     </div>
                   ))}
                   {data.topProducts.length === 0 && (

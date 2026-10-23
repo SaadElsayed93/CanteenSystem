@@ -48,28 +48,33 @@ const validateSqliteFile = (filePath) => {
 };
 
 /**
- * Clean up older auto backups keeping the most recent N backups
+ * Clean up older backups keeping the most recent N backups (Retention Limit = 100)
+ * Deletes both physical files and database records when exceeding limit
  */
-const autoPruneOldBackups = async (keepCount = 60) => {
+const MAX_BACKUP_RETENTION = 100;
+
+const pruneOldBackups = async (keepCount = MAX_BACKUP_RETENTION) => {
   try {
-    const autoBackups = await prisma.backup.findMany({
-      where: { type: { in: ['AUTO', 'STARTUP'] } },
+    const allBackups = await prisma.backup.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
-    if (autoBackups.length > keepCount) {
-      const toDelete = autoBackups.slice(keepCount);
+    if (allBackups.length > keepCount) {
+      const toDelete = allBackups.slice(keepCount);
       for (const b of toDelete) {
-        if (fs.existsSync(b.filepath)) {
+        if (b.filepath && fs.existsSync(b.filepath)) {
           try { fs.unlinkSync(b.filepath); } catch (e) {}
         }
         await prisma.backup.delete({ where: { id: b.id } }).catch(() => {});
       }
+      console.log(`[Backup Retention Engine] Pruned ${toDelete.length} old backups. Total retained: ${keepCount}.`);
     }
   } catch (err) {
     console.warn('[Backup Prune Warning]:', err.message);
   }
 };
+
+const autoPruneOldBackups = pruneOldBackups;
 
 /**
  * Create a consistent live backup of SQLite database
@@ -212,6 +217,7 @@ exports.listBackups = async () => {
     backups: enriched,
     stats: {
       totalCount: enriched.length,
+      maxRetention: MAX_BACKUP_RETENTION,
       totalSizeBytes,
       totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
       lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,

@@ -170,8 +170,8 @@ const PatientsPage = () => {
           <p className="text-gray-500 mt-1">سجل المرضى، حساباتهم، والأرصدة الحالية</p>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-xl">
-          <button onClick={() => setActiveTab('ACTIVE')} className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'ACTIVE' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>الحاليين</button>
-          <button onClick={() => setActiveTab('DISCHARGED')} className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'DISCHARGED' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>المغادرين (أرشيف)</button>
+          <button onClick={() => setActiveTab('ACTIVE')} className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'ACTIVE' ? 'bg-white text-[#007507] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>الحاليين</button>
+          <button onClick={() => setActiveTab('DISCHARGED')} className={`px-6 py-2 rounded-lg font-bold transition-all ${activeTab === 'DISCHARGED' ? 'bg-white text-[#007507] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>المغادرين (أرشيف)</button>
         </div>
       </div>
 
@@ -181,13 +181,13 @@ const PatientsPage = () => {
           <input 
             type="text" 
             placeholder="بحث بالاسم، رقم الملف، الرقم الداخلي..." 
-            className="w-full border-2 border-gray-200 rounded-xl py-3 pr-10 pl-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white"
+            className="w-full border-2 border-gray-200 rounded-xl py-3 pr-10 pl-4 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
         {activeTab === 'ACTIVE' && (
-          <button onClick={() => setIsAddModalOpen(true)} className="w-full md:w-auto bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+          <button onClick={() => setIsAddModalOpen(true)} className="w-full md:w-auto bg-[#007507] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#006006] transition-colors shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
             <span className="text-xl leading-none">+</span>
             إضافة مريض جديد
           </button>
@@ -258,24 +258,24 @@ const PatientsPage = () => {
             <form onSubmit={handleAddSubmit} className="space-y-4">
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">اسم المريض رباعي</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={addForm.fullName} onChange={e=>setAddForm({...addForm, fullName: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={addForm.fullName} onChange={e=>setAddForm({...addForm, fullName: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">رقم الملف</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={addForm.fileNumber} onChange={e=>setAddForm({...addForm, fileNumber: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={addForm.fileNumber} onChange={e=>setAddForm({...addForm, fileNumber: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الرقم الداخلي (السرير)</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={addForm.internalNumber} onChange={e=>setAddForm({...addForm, internalNumber: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الرصيد الافتتاحي (ديبوزت)</label>
-                <input type="number" min="0" step="1" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-indigo-700 bg-gray-50 focus:bg-white" value={addForm.initialBalance} onChange={e=>setAddForm({...addForm, initialBalance: e.target.value})} placeholder="مثال: 1000" />
+                <input type="number" min="0" step="1" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all font-bold text-[#007507] bg-gray-50 focus:bg-white" value={addForm.initialBalance} onChange={e=>setAddForm({...addForm, initialBalance: e.target.value})} placeholder="مثال: 1000" />
               </div>
               {addForm.initialBalance > 0 && (
                 <div>
                   <label className="block mb-2 font-bold text-gray-700 text-sm">إيداع الديبوزت في (الخزينة):</label>
-                  <select required className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={addForm.paymentMethodId} onChange={e=>setAddForm({...addForm, paymentMethodId: e.target.value})}>
+                  <select required className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-white" value={addForm.paymentMethodId} onChange={e=>setAddForm({...addForm, paymentMethodId: e.target.value})}>
                     <option value="">-- اختر الخزينة --</option>
                     {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
@@ -283,12 +283,12 @@ const PatientsPage = () => {
               )}
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
-                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
+                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={addForm.notes} onChange={e=>setAddForm({...addForm, notes: e.target.value})}></textarea>
               </div>
               
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-50">حفظ المريض</button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2.5 bg-[#007507] text-white font-bold rounded-xl hover:bg-[#006006] transition-colors shadow-lg shadow-emerald-200 disabled:opacity-50">حفظ المريض</button>
               </div>
             </form>
           </div>
@@ -308,19 +308,19 @@ const PatientsPage = () => {
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">اسم المريض رباعي</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.fullName} onChange={e=>setEditForm({...editForm, fullName: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={editForm.fullName} onChange={e=>setEditForm({...editForm, fullName: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">رقم الملف</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.fileNumber} onChange={e=>setEditForm({...editForm, fileNumber: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={editForm.fileNumber} onChange={e=>setEditForm({...editForm, fileNumber: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الرقم الداخلي (السرير)</label>
-                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.internalNumber} onChange={e=>setEditForm({...editForm, internalNumber: e.target.value})}/>
+                <input required type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={editForm.internalNumber} onChange={e=>setEditForm({...editForm, internalNumber: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">ملاحظات (اختياري)</label>
-                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={editForm.notes} onChange={e=>setEditForm({...editForm, notes: e.target.value})}></textarea>
+                <textarea className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={editForm.notes} onChange={e=>setEditForm({...editForm, notes: e.target.value})}></textarea>
               </div>
               
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
@@ -345,12 +345,12 @@ const PatientsPage = () => {
               
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">المبلغ</label>
-                <input required type="number" min="1" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-lg bg-gray-50 focus:bg-white" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})} placeholder="0.00" />
+                <input required type="number" min="1" step="0.01" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all font-bold text-lg bg-gray-50 focus:bg-white" value={transactForm.amount} onChange={e=>setTransactForm({...transactForm, amount: e.target.value})} placeholder="0.00" />
               </div>
               
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">الخزينة المرتبطة (اختياري)</label>
-                <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-white" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
+                <select className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-white" value={transactForm.paymentMethodId} onChange={e=>setTransactForm({...transactForm, paymentMethodId: e.target.value})}>
                   <option value="">-- بدون تأثير على الخزينة --</option>
                   {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name} (المتاح: {m.currentBalance})</option>)}
                 </select>
@@ -359,7 +359,7 @@ const PatientsPage = () => {
               
               <div>
                 <label className="block mb-2 font-bold text-gray-700 text-sm">مصدر الدخل / الوصف (اختياري)</label>
-                <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-gray-50 focus:bg-white" value={transactForm.description} onChange={e=>setTransactForm({...transactForm, description: e.target.value})} placeholder="مثال: خصم لغياب، إيداع مقدم..." />
+                <input type="text" className="w-full border border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] transition-all bg-gray-50 focus:bg-white" value={transactForm.description} onChange={e=>setTransactForm({...transactForm, description: e.target.value})} placeholder="مثال: خصم لغياب، إيداع مقدم..." />
               </div>
               
               <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
@@ -376,11 +376,11 @@ const PatientsPage = () => {
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
               <div>
-                <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200">
+                <div className="inline-block bg-emerald-50 text-[#003607] text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-emerald-200">
                   المستشفى العسكري ق.م بالإسماعيلية - إدارة الكانتين
                 </div>
                 <h3 className="text-2xl font-black text-gray-800">كشف حساب المريض</h3>
-                <p className="text-indigo-600 font-bold mt-1">{statementModal.fullName} (كود: {statementModal.fileNumber})</p>
+                <p className="text-[#007507] font-bold mt-1">{statementModal.fullName} (كود: {statementModal.fileNumber})</p>
               </div>
               <button onClick={() => setStatementModal(null)} className="text-gray-400 hover:text-red-500 transition-colors bg-gray-50 hover:bg-red-50 p-2 rounded-xl">
                 <X size={24} />
@@ -394,21 +394,21 @@ const PatientsPage = () => {
                   {statementModal.currentDebt} جنية
                 </div>
               </div>
-              <div className="p-4 rounded-xl border-2 border-indigo-100 bg-indigo-50 flex items-center justify-between">
+              <div className="p-4 rounded-xl border-2 border-emerald-100 bg-emerald-50 flex items-center justify-between">
                 <div>
                   <div className="text-sm font-bold text-gray-500 mb-1">إجمالي الحركات</div>
-                  <div className="text-xl font-bold text-indigo-900">{statementModal.transactions?.length || 0} حركة مالية</div>
+                  <div className="text-xl font-bold text-[#003607]">{statementModal.transactions?.length || 0} حركة مالية</div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-500 mb-1">فواتير مسحوبات المريض</div>
-                  <div className="text-xl font-bold text-indigo-900">{statementModal.invoices?.length || 0} فاتورة</div>
+                  <div className="text-xl font-bold text-[#003607]">{statementModal.invoices?.length || 0} فاتورة</div>
                 </div>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-6">
               <div>
-                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-indigo-100 inline-block pb-1">سجل الحركات المالية</h4>
+                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-emerald-100 inline-block pb-1">سجل الحركات المالية</h4>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
                   <table className="w-full text-right border-collapse text-sm">
                     <thead className="bg-gray-50">
@@ -444,7 +444,7 @@ const PatientsPage = () => {
               </div>
 
               <div>
-                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-indigo-100 inline-block pb-1">أحدث فواتير مسحوبات المريض المسحوبة</h4>
+                <h4 className="font-black text-gray-800 mb-3 border-b-2 border-emerald-100 inline-block pb-1">أحدث فواتير مسحوبات المريض المسحوبة</h4>
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
                   <table className="w-full text-right border-collapse text-sm">
                     <thead className="bg-gray-50">
@@ -467,7 +467,7 @@ const PatientsPage = () => {
                             <td className="p-3 border-b text-center">
                               <button onClick={() => {
                                 client.get(`/sales/invoices/${inv.id}`).then(res => setSelectedInvoice(res.data.data)).catch(console.error);
-                              }} className="text-indigo-600 hover:text-indigo-800 font-bold underline text-xs bg-indigo-50 px-2 py-1 rounded">عرض التفاصيل</button>
+                              }} className="text-[#007507] hover:text-[#003607] font-bold underline text-xs bg-emerald-50 px-2 py-1 rounded">عرض التفاصيل</button>
                             </td>
                           </tr>
                         ))
@@ -479,7 +479,7 @@ const PatientsPage = () => {
             </div>
             
             <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
-              <button onClick={() => setStatementModal(null)} className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">إغلاق الكشف</button>
+              <button onClick={() => setStatementModal(null)} className="px-8 py-3 bg-[#007507] text-white font-bold rounded-xl hover:bg-[#006006] transition-colors shadow-lg shadow-emerald-200">إغلاق الكشف</button>
             </div>
           </div>
         </div>
@@ -510,7 +510,7 @@ const PatientsPage = () => {
                       <td className="p-3 font-bold">{item.product?.name}</td>
                       <td className="p-3 text-center font-bold">{item.quantity}</td>
                       <td className="p-3">{item.unitPrice}</td>
-                      <td className="p-3 font-bold text-indigo-700">{item.subtotal}</td>
+                      <td className="p-3 font-bold text-[#007507]">{item.subtotal}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -518,7 +518,7 @@ const PatientsPage = () => {
             </div>
             <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
               <span className="font-bold text-gray-600">إجمالي الفاتورة:</span>
-              <span className="text-2xl font-black text-indigo-700">{selectedInvoice.totalAmount} جنية</span>
+              <span className="text-2xl font-black text-[#007507]">{selectedInvoice.totalAmount} جنية</span>
             </div>
           </div>
         </div>
@@ -528,7 +528,7 @@ const PatientsPage = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
             <h3 className="text-2xl font-black text-gray-800 mb-6 flex items-center gap-2">🚪 مغادرة وتصفية حساب</h3>
-            <p className="text-gray-600 mb-4 font-bold">هل أنت متأكد من مغادرة المريض <span className="text-indigo-700">{dischargeForm.patient.fullName}</span>؟</p>
+            <p className="text-gray-600 mb-4 font-bold">هل أنت متأكد من مغادرة المريض <span className="text-[#007507]">{dischargeForm.patient.fullName}</span>؟</p>
             
             <div className={`p-4 rounded-xl border-2 mb-6 ${dischargeForm.patient.currentDebt > 0 ? 'bg-red-50 border-red-200 text-red-800' : dischargeForm.patient.currentDebt < 0 ? 'bg-green-50 border-green-200 text-green-800' : 'bg-gray-50 border-gray-200 text-gray-800'}`}>
               <div className="text-sm font-bold opacity-80 mb-1">الرصيد الحالي:</div>
@@ -544,7 +544,7 @@ const PatientsPage = () => {
               {dischargeForm.patient.currentDebt !== 0 && (
                 <div className="mb-6">
                   <label className="block mb-2 font-bold text-gray-700 text-sm">اختر الخزينة لتسوية الحساب:</label>
-                  <select required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white" value={dischargeForm.paymentMethodId} onChange={e => setDischargeForm({...dischargeForm, paymentMethodId: e.target.value})}>
+                  <select required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-[#007507] bg-white" value={dischargeForm.paymentMethodId} onChange={e => setDischargeForm({...dischargeForm, paymentMethodId: e.target.value})}>
                     <option value="">-- اختر الخزينة --</option>
                     {paymentMethods.map(m => <option key={m.id} value={m.id}>{m.name} (المتاح: {m.currentBalance})</option>)}
                   </select>

@@ -164,7 +164,7 @@ const SuppliersPage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100 gap-4">
         <div>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-            <Building2 className="text-indigo-600" size={28} />
+            <Building2 className="text-[#007507]" size={28} />
             <span>إدارة الموردين وحسابات المشتريات</span>
           </h2>
           <p className="text-gray-400 font-bold text-sm mt-1">كشوفات حسابات الموردين، رصد الديون المستحقة، وإدارة الفواتير</p>
@@ -173,14 +173,14 @@ const SuppliersPage = () => {
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <Link 
               to="/purchases/new" 
-              className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center justify-center gap-2"
+              className="flex-1 sm:flex-none bg-[#007507] hover:bg-[#006006] text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center justify-center gap-2"
             >
               <ShoppingCart size={18} />
               <span>+ فاتورة مشتريات جديدة</span>
             </Link>
             <button 
               onClick={() => setIsModalOpen(true)} 
-              className="flex-1 sm:flex-none bg-white hover:bg-indigo-50 text-indigo-600 border-2 border-indigo-600 font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm"
+              className="flex-1 sm:flex-none bg-white hover:bg-emerald-50 text-[#007507] border-2 border-[#007507] font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm"
             >
               + إضافة مورد جديد
             </button>
@@ -217,7 +217,7 @@ const SuppliersPage = () => {
                 {totalPurchasesAll.toFixed(2)} <span className="text-sm font-bold text-gray-400">ج.م</span>
               </div>
             </div>
-            <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
+            <div className="p-3 bg-emerald-50 rounded-xl text-[#007507]">
               <ShoppingCart size={26} />
             </div>
           </div>
@@ -305,7 +305,7 @@ const SuppliersPage = () => {
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => openStatement(s.id)}
-                          className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5"
+                          className="bg-emerald-50 hover:bg-emerald-100 text-[#007507] border border-emerald-200 font-bold px-3.5 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5"
                           title="عرض كشف الحساب التفصيلي"
                         >
                           <FileText size={15} />
@@ -354,7 +354,7 @@ const SuppliersPage = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
               <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                <Building2 className="text-indigo-600" size={22} />
+                <Building2 className="text-[#007507]" size={22} />
                 <span>إضافة مورد جديد</span>
               </h3>
               <button 
@@ -371,7 +371,7 @@ const SuppliersPage = () => {
                 <input 
                   required 
                   type="text" 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800" 
                   placeholder="مثال: شركة الأمل للمشروبات..."
                   value={form.name} 
                   onChange={e => setForm({...form, name: e.target.value})}
@@ -382,7 +382,7 @@ const SuppliersPage = () => {
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">العنوان أو رقم الهاتف (اختياري):</label>
                 <input 
                   type="text" 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800" 
                   placeholder="رقم الهاتف أو العنوان..."
                   value={form.address} 
                   onChange={e => setForm({...form, address: e.target.value})}
@@ -392,7 +392,7 @@ const SuppliersPage = () => {
               <div>
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">ملاحظات (اختياري):</label>
                 <textarea 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 text-sm font-bold text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800" 
                   rows="2"
                   placeholder="شروط السداد، المندوب، إلخ..."
                   value={form.notes} 
@@ -410,7 +410,7 @@ const SuppliersPage = () => {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all"
+                  className="px-6 py-2.5 bg-[#007507] hover:bg-[#006006] text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all"
                 >
                   حفظ المورد
                 </button>
@@ -530,11 +530,11 @@ const SuppliersPage = () => {
             {/* Modal Header */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-100 print:border-b-2 print:border-black print:pb-3">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl print:hidden">
+                <div className="p-3 bg-emerald-50 text-[#007507] rounded-2xl print:hidden">
                   <FileText size={26} />
                 </div>
                 <div>
-                  <div className="inline-block bg-indigo-50 text-indigo-900 text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-indigo-200 print:border-none print:p-0 print:text-black print:font-bold">
+                  <div className="inline-block bg-emerald-50 text-[#003607] text-[11px] font-black px-2.5 py-0.5 rounded-full mb-1 border border-emerald-200 print:border-none print:p-0 print:text-black print:font-bold">
                     المستشفى العسكري ق.م بالإسماعيلية - إدارة الكانتين
                   </div>
                   <h3 className="text-xl font-black text-gray-900">
@@ -562,7 +562,7 @@ const SuppliersPage = () => {
                 <button 
                   type="button" 
                   onClick={() => window.print()} 
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-indigo-100"
+                  className="px-4 py-2 bg-[#007507] hover:bg-[#006006] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-100"
                 >
                   <Printer size={16} />
                   <span>طباعة الكشف كاملاً</span>
@@ -639,7 +639,7 @@ const SuppliersPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleViewPurchase(entry.purchaseId)}
-                                  className="px-2.5 py-1 rounded-full text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-600 hover:text-white transition-all flex items-center gap-1 shadow-sm print:border-none print:p-0 print:text-indigo-900"
+                                  className="px-2.5 py-1 rounded-full text-xs font-black bg-emerald-50 text-[#007507] border border-emerald-200 hover:bg-[#007507] hover:text-white transition-all flex items-center gap-1 shadow-sm print:border-none print:p-0 print:text-[#003607]"
                                   title="انقر لفتح تفاصيل الفاتورة كاملة"
                                 >
                                   <Eye size={13} className="print:hidden" />
@@ -656,7 +656,7 @@ const SuppliersPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleViewPurchase(entry.purchaseId)}
-                                  className="text-indigo-600 hover:text-indigo-900 hover:underline font-black cursor-pointer print:text-black"
+                                  className="text-[#007507] hover:text-[#003607] hover:underline font-black cursor-pointer print:text-black"
                                   title="فتح تفاصيل الفاتورة"
                                 >
                                   {entry.reference}
@@ -672,7 +672,7 @@ const SuppliersPage = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleViewPurchase(entry.purchaseId)}
-                                    className="text-[10px] font-black text-indigo-600 hover:underline bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-lg border border-indigo-100 transition-colors print:hidden"
+                                    className="text-[10px] font-black text-[#007507] hover:underline bg-emerald-50 hover:bg-emerald-100 px-2 py-0.5 rounded-lg border border-emerald-100 transition-colors print:hidden"
                                     title="عرض الفاتورة بالتفصيل"
                                   >
                                     فتح الفاتورة 🔍
@@ -729,7 +729,7 @@ const SuppliersPage = () => {
             {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-50 text-indigo-700 rounded-2xl">
+                <div className="p-3 bg-emerald-50 text-[#007507] rounded-2xl">
                   <FileText size={24} />
                 </div>
                 <div>
@@ -754,7 +754,7 @@ const SuppliersPage = () => {
             <div className="my-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 text-xs font-bold grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
                 <span className="text-gray-400 block mb-0.5">اسم المورد:</span>
-                <span className="text-indigo-900 font-black text-sm">{selectedPurchase.supplier?.name || '-'}</span>
+                <span className="text-[#003607] font-black text-sm">{selectedPurchase.supplier?.name || '-'}</span>
               </div>
               <div>
                 <span className="text-gray-400 block mb-0.5">تاريخ ووقت الفاتورة:</span>
@@ -784,7 +784,7 @@ const SuppliersPage = () => {
                     <tr key={it.id || idx} className="hover:bg-gray-50">
                       <td className="p-3 text-gray-400">{idx + 1}</td>
                       <td className="p-3 text-gray-900">{it.product?.name || it.productName || 'صنف مسجل'}</td>
-                      <td className="p-3 text-indigo-700">{it.quantity} {it.product?.unit || 'قطعة'}</td>
+                      <td className="p-3 text-[#007507]">{it.quantity} {it.product?.unit || 'قطعة'}</td>
                       <td className="p-3 text-gray-700">{Number(it.unitCost).toFixed(2)} ج.م</td>
                       <td className="p-3">
                         {it.expiryDate || it.batches?.[0]?.expiryDate ? (
@@ -808,16 +808,16 @@ const SuppliersPage = () => {
             </div>
 
             {/* Financial Summary Card */}
-            <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2 text-xs font-bold">
+            <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-100 space-y-2 text-xs font-bold">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-indigo-900 font-black">إجمالي قيمة الفاتورة:</span>
-                <span className="text-xl font-black text-indigo-700">{Number(selectedPurchase.totalAmount).toFixed(2)} ج.م</span>
+                <span className="text-[#003607] font-black">إجمالي قيمة الفاتورة:</span>
+                <span className="text-xl font-black text-[#007507]">{Number(selectedPurchase.totalAmount).toFixed(2)} ج.م</span>
               </div>
-              <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+              <div className="flex justify-between items-center border-t border-emerald-100 pt-2">
                 <span className="text-emerald-800 font-bold">المبلغ المسدد من الخزينة:</span>
                 <span className="text-base font-black text-emerald-700">{Number(selectedPurchase.paidAmount || 0).toFixed(2)} ج.م</span>
               </div>
-              <div className="flex justify-between items-center border-t border-indigo-100 pt-2">
+              <div className="flex justify-between items-center border-t border-emerald-100 pt-2">
                 <span className="text-red-700 font-bold">المتبقي كمديونية للمورد:</span>
                 <span className="text-base font-black text-red-600">
                   {Math.max(0, Number(selectedPurchase.totalAmount) - Number(selectedPurchase.paidAmount || 0)).toFixed(2)} ج.م

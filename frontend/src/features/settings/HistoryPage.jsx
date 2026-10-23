@@ -7,19 +7,19 @@ import {
 } from 'lucide-react';
 
 const actionMap = {
-  'SALE': { label: 'فاتورة بيع (POS)', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+  'SALE': { label: 'فاتورة بيع (POS)', color: 'bg-emerald-100 text-[#003607] border-emerald-200' },
   'PURCHASE': { label: 'فاتورة مشتريات', color: 'bg-orange-100 text-orange-800 border-orange-200' },
   'PAY': { label: 'سداد دفعة لمورد', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   'CREATE': { label: 'إضافة جديدة', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   'TRANSFER': { label: 'تحويل سيولة بين الخزائن', color: 'bg-sky-100 text-sky-800 border-sky-200' },
-  'DAILY_SETTLEMENT': { label: 'تسوية وتقفيل يومية', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+  'DAILY_SETTLEMENT': { label: 'تسوية وتقفيل يومية', color: 'bg-slate-100 text-slate-800 border-slate-200' },
   'OPEN_SHIFT': { label: 'فتح وردية يومية', color: 'bg-teal-100 text-teal-800 border-teal-200' },
   'CLOSE_SHIFT': { label: 'إغلاق وردية ويومية', color: 'bg-rose-100 text-rose-800 border-rose-200' },
   'TRANSACT': { label: 'حركة رصيد مريض', color: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
   'UPDATE': { label: 'تعديل بيانات', color: 'bg-blue-100 text-blue-800 border-blue-200' },
   'UPDATE_STATUS': { label: 'تحديث حالة / تصفية', color: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200' },
   'RETURN': { label: 'مرتجع مبيعات', color: 'bg-rose-100 text-rose-800 border-rose-200' },
-  'ADJUST_INVENTORY': { label: 'تسوية وجرد مخزون', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+  'ADJUST_INVENTORY': { label: 'تسوية وجرد مخزون', color: 'bg-slate-100 text-slate-800 border-slate-200' },
   'RESTORE': { label: 'استعادة نسخة احتياطية', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   'DELETE': { label: 'حذف', color: 'bg-red-100 text-red-800 border-red-200' }
 };
@@ -365,7 +365,7 @@ const HistoryPage = () => {
         <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
           <div>
             <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-              <Clock className="text-indigo-600" size={26} />
+              <Clock className="text-[#007507]" size={26} />
               <span>سجل حركات النظام والرقابة (Audit Log)</span>
             </h2>
             <p className="text-gray-500 mt-1 font-bold text-sm">مراقبة وتوثيق كافة العمليات النقدية والمخزنية والإدارية بالعربية بدقة وفورية</p>
@@ -373,7 +373,7 @@ const HistoryPage = () => {
 
           {/* Quick Refresh and Count Indicator */}
           <div className="flex items-center gap-3">
-            <span className="bg-indigo-50 text-indigo-700 px-3.5 py-1.5 rounded-xl font-black text-xs border border-indigo-200">
+            <span className="bg-emerald-50 text-[#007507] px-3.5 py-1.5 rounded-xl font-black text-xs border border-emerald-200">
               إجمالي الحركات: {totalCount.toLocaleString('ar-EG')}
             </span>
             <button
@@ -382,7 +382,7 @@ const HistoryPage = () => {
               disabled={loading}
               className="p-2.5 rounded-xl border-2 border-gray-200 hover:bg-gray-100 text-gray-600 transition-colors disabled:opacity-50"
             >
-              <RotateCcw size={16} className={loading ? 'animate-spin text-indigo-600' : ''} />
+              <RotateCcw size={16} className={loading ? 'animate-spin text-[#007507]' : ''} />
             </button>
           </div>
         </div>
@@ -395,7 +395,7 @@ const HistoryPage = () => {
             <input 
               type="text" 
               placeholder="بحث في السجل والتفاصيل..." 
-              className="w-full border-2 border-gray-200 rounded-xl py-2 pr-9 pl-8 outline-none focus:border-indigo-600 bg-gray-50 font-bold text-xs"
+              className="w-full border-2 border-gray-200 rounded-xl py-2 pr-9 pl-8 outline-none focus:border-[#007507] bg-gray-50 font-bold text-xs"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -412,7 +412,7 @@ const HistoryPage = () => {
           {/* Entity Filter (الأقسام) */}
           <div>
             <select 
-              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-[#007507] bg-white font-bold text-gray-700 text-xs cursor-pointer"
               value={entityFilter}
               onChange={handleEntityChange}
             >
@@ -426,7 +426,7 @@ const HistoryPage = () => {
           {/* Action Filter (أنواع الحركات) */}
           <div>
             <select 
-              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-[#007507] bg-white font-bold text-gray-700 text-xs cursor-pointer"
               value={actionFilter}
               onChange={handleActionChange}
             >
@@ -440,7 +440,7 @@ const HistoryPage = () => {
           {/* Sort Order Selector */}
           <div>
             <select 
-              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer"
+              className="w-full border-2 border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-[#007507] bg-white font-bold text-gray-700 text-xs cursor-pointer"
               value={sortOrder}
               onChange={handleSortChange}
             >
@@ -452,7 +452,7 @@ const HistoryPage = () => {
           {/* Limit / Page Size & Reset Filter */}
           <div className="flex gap-2">
             <select 
-              className="border-2 border-gray-200 rounded-xl py-2 px-2.5 outline-none focus:border-indigo-600 bg-white font-bold text-gray-700 text-xs cursor-pointer flex-1"
+              className="border-2 border-gray-200 rounded-xl py-2 px-2.5 outline-none focus:border-[#007507] bg-white font-bold text-gray-700 text-xs cursor-pointer flex-1"
               value={limit}
               onChange={handleLimitChange}
             >
@@ -478,7 +478,7 @@ const HistoryPage = () => {
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 text-xs">
             <span className="font-bold text-gray-400">الفلاتر المطبقة:</span>
             {entityFilter && (
-              <span className="bg-indigo-50 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+              <span className="bg-emerald-50 text-[#003607] border border-emerald-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
                 القسم: {entityMap[entityFilter]}
                 <button onClick={() => { setEntityFilter(''); setPage(1); }} className="hover:text-red-600">
                   <X size={12} />
@@ -486,7 +486,7 @@ const HistoryPage = () => {
               </span>
             )}
             {actionFilter && (
-              <span className="bg-indigo-50 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+              <span className="bg-emerald-50 text-[#003607] border border-emerald-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
                 الحركة: {actionMap[actionFilter]?.label}
                 <button onClick={() => { setActionFilter(''); setPage(1); }} className="hover:text-red-600">
                   <X size={12} />
@@ -522,7 +522,7 @@ const HistoryPage = () => {
       {/* Main Table */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden flex flex-col relative">
         {loading && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 font-black text-indigo-700 text-sm gap-2">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10 font-black text-[#007507] text-sm gap-2">
             <RotateCcw size={18} className="animate-spin" />
             <span>جاري تحديث السجل...</span>
           </div>
@@ -551,7 +551,7 @@ const HistoryPage = () => {
                   <tr 
                     key={log.id} 
                     onClick={() => handleRowClick(log)}
-                    className="border-b border-gray-100 transition-colors cursor-pointer hover:bg-indigo-50/70 group"
+                    className="border-b border-gray-100 transition-colors cursor-pointer hover:bg-emerald-50/70 group"
                   >
                     <td className="p-4 text-xs font-bold text-gray-500 font-mono" dir="ltr">
                       {formatDateTime(log.createdAt)}
@@ -570,15 +570,15 @@ const HistoryPage = () => {
                     <td className="p-4 font-bold text-gray-800">
                       <span>{entityName}</span>
                       {log.entityId && (
-                        <span className="text-xs text-indigo-600 font-mono mr-1.5 font-bold">
+                        <span className="text-xs text-[#007507] font-mono mr-1.5 font-bold">
                           #{log.entityId}
                         </span>
                       )}
                     </td>
-                    <td className="p-4 text-xs font-bold text-gray-700 max-w-md truncate group-hover:text-indigo-900" title="اضغط لعرض التفاصيل الكاملة">
+                    <td className="p-4 text-xs font-bold text-gray-700 max-w-md truncate group-hover:text-[#003607]" title="اضغط لعرض التفاصيل الكاملة">
                       <div className="flex items-center gap-2">
                         <span className="truncate">{formatDetails(log.newValues, true)}</span>
-                        <Eye size={14} className="text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        <Eye size={14} className="text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </div>
                     </td>
                   </tr>
@@ -605,7 +605,7 @@ const HistoryPage = () => {
             <button 
               disabled={page <= 1 || loading} 
               onClick={() => setPage(p => Math.max(p - 1, 1))}
-              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
+              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-[#007507] disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
             >
               <ChevronRight size={18} /> السابق
             </button>
@@ -615,7 +615,7 @@ const HistoryPage = () => {
             <button 
               disabled={page >= totalPages || loading} 
               onClick={() => setPage(p => p + 1)}
-              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
+              className="px-4 py-2 rounded-xl bg-white border-2 border-gray-200 text-gray-700 hover:bg-emerald-50 hover:text-[#007507] disabled:opacity-40 disabled:cursor-not-allowed font-bold text-sm flex items-center gap-1 transition-colors shadow-sm"
             >
               التالي <ChevronLeft size={18} />
             </button>
@@ -629,7 +629,7 @@ const HistoryPage = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-100">
             <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
               <h3 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-                <FileText className="text-indigo-600" size={26} />
+                <FileText className="text-[#007507]" size={26} />
                 <span>{invoiceType === 'INVOICE' ? 'فاتورة مبيعات' : 'فاتورة مشتريات'} #{selectedInvoice.id}</span>
               </h3>
               <button 
@@ -652,13 +652,13 @@ const HistoryPage = () => {
               {invoiceType === 'INVOICE' && selectedInvoice.patient && (
                 <div className="col-span-2 pt-2 border-t border-gray-200">
                   <p className="text-gray-500 font-bold mb-1">المريض (العميل):</p>
-                  <p className="font-black text-indigo-700">{selectedInvoice.patient.fullName}</p>
+                  <p className="font-black text-[#007507]">{selectedInvoice.patient.fullName}</p>
                 </div>
               )}
               {invoiceType === 'PURCHASE' && selectedInvoice.supplier && (
                 <div className="col-span-2 pt-2 border-t border-gray-200">
                   <p className="text-gray-500 font-bold mb-1">المورد:</p>
-                  <p className="font-black text-indigo-700">{selectedInvoice.supplier.name}</p>
+                  <p className="font-black text-[#007507]">{selectedInvoice.supplier.name}</p>
                 </div>
               )}
             </div>
@@ -679,25 +679,25 @@ const HistoryPage = () => {
                     <td className="p-3 font-bold text-gray-800">{item.product?.name || item.productName || 'صنف مسجل'}</td>
                     <td className="p-3 font-bold">{item.quantity}</td>
                     <td className="p-3 font-bold">{item.unitPrice} ج.م</td>
-                    <td className="p-3 font-black text-indigo-600">{item.subtotal} ج.م</td>
+                    <td className="p-3 font-black text-[#007507]">{item.subtotal} ج.م</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 flex flex-col gap-2">
+            <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-indigo-900 text-base">إجمالي الفاتورة:</span>
-                <span className="font-black text-2xl text-indigo-700">{selectedInvoice.totalAmount} ج.م</span>
+                <span className="font-bold text-[#003607] text-base">إجمالي الفاتورة:</span>
+                <span className="font-black text-2xl text-[#007507]">{selectedInvoice.totalAmount} ج.م</span>
               </div>
               {invoiceType === 'PURCHASE' && selectedInvoice.paidAmount !== undefined && (
                 <>
-                  <div className="flex justify-between items-center border-t border-indigo-100 pt-2 text-sm">
+                  <div className="flex justify-between items-center border-t border-emerald-100 pt-2 text-sm">
                     <span className="font-bold text-emerald-800">المبلغ المدفوع من الخزينة:</span>
                     <span className="font-black text-emerald-600">{selectedInvoice.paidAmount} ج.م</span>
                   </div>
                   {selectedInvoice.totalAmount > selectedInvoice.paidAmount && (
-                    <div className="flex justify-between items-center border-t border-indigo-100 pt-2 text-sm">
+                    <div className="flex justify-between items-center border-t border-emerald-100 pt-2 text-sm">
                       <span className="font-bold text-red-800">المتبقي كمديونية للمورد:</span>
                       <span className="font-black text-red-600">{(selectedInvoice.totalAmount - selectedInvoice.paidAmount).toFixed(2)} ج.م</span>
                     </div>
@@ -716,10 +716,10 @@ const HistoryPage = () => {
             <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/80">
               <div>
                 <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                  <Clock className="text-indigo-600" size={22} />
+                  <Clock className="text-[#007507]" size={22} />
                   <span>تفاصيل حركة النظام</span>
                 </h3>
-                <p className="text-indigo-600 font-bold text-sm mt-1">
+                <p className="text-[#007507] font-bold text-sm mt-1">
                   {entityMap[genericDetails.entityType] || genericDetails.entityType} {genericDetails.entityId ? `(#${genericDetails.entityId})` : ''} — {actionMap[genericDetails.action]?.label || genericDetails.action}
                 </p>
               </div>

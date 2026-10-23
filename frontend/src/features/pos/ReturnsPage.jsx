@@ -138,7 +138,7 @@ const ReturnsPage = () => {
           <input 
             type="text" 
             placeholder="🔍 ابحث هنا (مثال: شيبسي، سعدون، INV-123)..." 
-            className="w-full border-2 border-indigo-200 rounded-xl p-4 text-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all shadow-inner bg-gray-50 focus:bg-white text-center"
+            className="w-full border-2 border-emerald-200 rounded-xl p-4 text-lg font-bold outline-none focus:ring-2 focus:ring-[#007507] transition-all shadow-inner bg-gray-50 focus:bg-white text-center"
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
@@ -159,11 +159,11 @@ const ReturnsPage = () => {
               <div 
                 key={inv.id} 
                 onClick={() => openInvoiceFromList(inv.invoiceNumber)}
-                className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-indigo-500 hover:shadow-md border-gray-100 bg-gray-50 hover:bg-indigo-50"
+                className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-emerald-500 hover:shadow-md border-gray-100 bg-gray-50 hover:bg-emerald-50"
               >
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-bold text-gray-800 text-sm">{inv.invoiceNumber}</span>
-                  <span className="text-xs font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">{inv.totalAmount} ج.م</span>
+                  <span className="text-xs font-bold text-[#007507] bg-emerald-100 px-2 py-1 rounded">{inv.totalAmount} ج.م</span>
                 </div>
                 <div className="text-xs text-gray-500 font-bold mb-2">
                   {inv.paymentType === 'CASH' ? '💵 نقدي' : `📝 على حساب ${inv.patient?.fullName || 'المريض'}`}
@@ -183,15 +183,15 @@ const ReturnsPage = () => {
 
       {/* Selected Invoice Details & Return Form */}
       {invoice && (
-        <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-indigo-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border-2 border-emerald-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-black text-indigo-900">تفاصيل الفاتورة وتحديد المرتجع</h2>
+            <h2 className="text-2xl font-black text-[#003607]">تفاصيل الفاتورة وتحديد المرتجع</h2>
             <button onClick={() => setInvoice(null)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors">
               رجوع للقائمة
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-indigo-50 p-6 rounded-xl border-2 border-indigo-100">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-emerald-50 p-6 rounded-xl border-2 border-emerald-100">
             <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
               <div className="text-xs text-gray-500 mb-1">رقم الفاتورة</div>
               <div className="font-bold text-gray-800 text-sm md:text-base">{invoice.invoiceNumber}</div>
@@ -206,7 +206,7 @@ const ReturnsPage = () => {
             </div>
             <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100">
               <div className="text-xs text-gray-500 mb-1">الإجمالي الأصلي</div>
-              <div className="font-black text-indigo-700 text-lg">{invoice.totalAmount} ج.م</div>
+              <div className="font-black text-[#007507] text-lg">{invoice.totalAmount} ج.م</div>
             </div>
           </div>
 
@@ -220,7 +220,7 @@ const ReturnsPage = () => {
                   <th className="p-4 border-b font-bold text-center">الكمية المباعة</th>
                   <th className="p-4 border-b font-bold text-center">تم إرجاعه سابقاً</th>
                   <th className="p-4 border-b font-bold text-center">السعر</th>
-                  <th className="p-4 border-b font-bold text-center rounded-tl-xl bg-indigo-100 text-indigo-900">الكمية المرتجعة الآن</th>
+                  <th className="p-4 border-b font-bold text-center rounded-tl-xl bg-emerald-100 text-[#003607]">الكمية المرتجعة الآن</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,12 +239,12 @@ const ReturnsPage = () => {
                       <td className="p-4 text-center font-bold text-gray-600">{item.quantity}</td>
                       <td className="p-4 text-center font-bold text-red-500">{returnedAlready}</td>
                       <td className="p-4 text-center font-bold text-gray-600">{item.unitPrice}</td>
-                      <td className="p-4 bg-indigo-50/50">
+                      <td className="p-4 bg-emerald-50/50">
                         <div className="flex justify-center items-center gap-3">
                           <button 
                             type="button" 
                             onClick={() => handleQtyChange(item.id, item.returnQty - 1)}
-                            className="w-8 h-8 rounded-full bg-white border-2 border-indigo-200 text-indigo-600 font-bold hover:bg-indigo-100 flex items-center justify-center transition-colors"
+                            className="w-8 h-8 rounded-full bg-white border-2 border-emerald-200 text-[#007507] font-bold hover:bg-emerald-100 flex items-center justify-center transition-colors"
                           >-</button>
                           <input 
                             type="number" 
@@ -252,12 +252,12 @@ const ReturnsPage = () => {
                             max={maxAllowed} 
                             value={item.returnQty}
                             onChange={(e) => handleQtyChange(item.id, e.target.value)}
-                            className="w-16 text-center border-2 border-indigo-200 rounded-lg p-1 font-bold outline-none focus:border-indigo-500"
+                            className="w-16 text-center border-2 border-emerald-200 rounded-lg p-1 font-bold outline-none focus:border-emerald-500"
                           />
                           <button 
                             type="button" 
                             onClick={() => handleQtyChange(item.id, item.returnQty + 1)}
-                            className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 flex items-center justify-center shadow-md transition-colors"
+                            className="w-8 h-8 rounded-full bg-[#007507] text-white font-bold hover:bg-[#006006] flex items-center justify-center shadow-md transition-colors"
                           >+</button>
                         </div>
                       </td>
@@ -273,7 +273,7 @@ const ReturnsPage = () => {
               <div>
                 <label className="block mb-2 font-bold text-gray-700">سبب المرتجع (اختياري)</label>
                 <textarea 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 transition-all bg-white"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 transition-all bg-white"
                   value={reason} 
                   onChange={e => setReason(e.target.value)}
                   placeholder="مثال: تالف، خطأ في الطلب..."
@@ -286,7 +286,7 @@ const ReturnsPage = () => {
                   <label className="block mb-2 font-bold text-gray-700">سحب مبلغ المرتجع من (الخزينة): <span className="text-red-500">*</span></label>
                   <select 
                     required
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 bg-white font-bold"
                     value={selectedMethodId}
                     onChange={e => setSelectedMethodId(e.target.value)}
                   >
@@ -299,12 +299,12 @@ const ReturnsPage = () => {
               )}
             </div>
 
-            <div className="flex flex-col justify-center bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-100">
+            <div className="flex flex-col justify-center bg-white p-6 rounded-xl shadow-sm border-2 border-emerald-100">
               <div className="text-center mb-6">
                 <div className="text-gray-500 font-bold mb-1">إجمالي قيمة المرتجع الحالي</div>
                 <div className="text-4xl font-black text-red-600">{returnTotal} ج.م</div>
                 {invoice.paymentType !== 'CASH' && returnTotal > 0 && (
-                  <div className="mt-2 text-sm font-bold text-indigo-600 bg-indigo-50 p-2 rounded-lg inline-block">
+                  <div className="mt-2 text-sm font-bold text-[#007507] bg-emerald-50 p-2 rounded-lg inline-block">
                     سيتم خصم هذا المبلغ من مديونية المريض ({invoice.patient?.fullName}) تلقائياً.
                   </div>
                 )}

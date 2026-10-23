@@ -161,7 +161,7 @@ export const ShiftModals = () => {
       {isClosingModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border-2 border-rose-100 overflow-hidden transform transition-all my-8">
-            <div className="bg-gradient-to-r from-rose-600 to-indigo-700 p-6 text-white flex justify-between items-center">
+            <div className="bg-gradient-to-r from-rose-600 to-slate-800 p-6 text-white flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-white/20 rounded-2xl backdrop-blur-sm">
                   <Lock size={26} className="text-white" />
@@ -245,7 +245,7 @@ export const ShiftModals = () => {
                   required
                   value={closingCountedCash}
                   onChange={(e) => setClosingCountedCash(e.target.value)}
-                  className="w-full text-xl font-black text-gray-900 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:bg-white transition"
+                  className="w-full text-xl font-black text-gray-900 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-[#007507] focus:bg-white transition"
                   placeholder="0.00"
                 />
               </div>
@@ -280,7 +280,7 @@ export const ShiftModals = () => {
                     required
                     value={closingTransferCash}
                     onChange={(e) => setClosingTransferCash(e.target.value)}
-                    className="w-full font-black text-gray-800 p-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:bg-white transition"
+                    className="w-full font-black text-gray-800 p-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-[#007507] focus:bg-white transition"
                     placeholder="0.00"
                   />
                 </div>
@@ -302,7 +302,7 @@ export const ShiftModals = () => {
                   type="text"
                   value={closingNotes}
                   onChange={(e) => setClosingNotes(e.target.value)}
-                  className="w-full font-bold text-gray-800 p-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:bg-white transition text-xs"
+                  className="w-full font-bold text-gray-800 p-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-[#007507] focus:bg-white transition text-xs"
                   placeholder="ملاحظات التسليم والاستلام بين الورديات..."
                 />
               </div>
@@ -370,7 +370,7 @@ export const ShiftModals = () => {
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-200">
                   <span className="text-gray-500">حالة المطابقة:</span>
-                  <span className="font-black text-indigo-700">{closedReceipt.discrepancyText}</span>
+                  <span className="font-black text-[#007507]">{closedReceipt.discrepancyText}</span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b-2 border-dashed border-gray-300 bg-emerald-50 px-2 rounded-lg">
                   <span className="text-emerald-900 font-black">المبلغ المورد للخزينة:</span>
@@ -397,7 +397,7 @@ export const ShiftModals = () => {
               <button 
                 type="button" 
                 onClick={() => window.print()} 
-                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                className="px-5 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Printer size={16} />
                 <span>طباعة الإيصال</span>
@@ -405,7 +405,7 @@ export const ShiftModals = () => {
               <button 
                 type="button" 
                 onClick={() => setClosedReceipt(null)} 
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all"
+                className="px-6 py-2.5 bg-[#007507] hover:bg-[#006006] text-white font-bold rounded-xl transition-all cursor-pointer"
               >
                 إغلاق
               </button>

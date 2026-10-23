@@ -402,7 +402,7 @@ const NewPurchasePage = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#007507] mb-4"></div>
         <p className="text-gray-600 font-bold">جاري تحميل شاشة المشتريات...</p>
       </div>
     );
@@ -414,7 +414,7 @@ const NewPurchasePage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-3xl shadow-sm border-2 border-gray-100 gap-4">
         <div>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-            <ShoppingCart className="text-indigo-600" size={28} />
+            <ShoppingCart className="text-[#007507]" size={28} />
             <span>فاتورة مشتريات جديدة</span>
           </h2>
           <p className="text-gray-500 font-bold text-sm mt-1">تسجيل بضاعة جديدة وإضافتها للمخزون مع إثبات حساب المورد والخزينة</p>
@@ -436,7 +436,7 @@ const NewPurchasePage = () => {
           </label>
           <select 
             required
-            className="w-full border-2 border-gray-200 rounded-2xl p-3.5 outline-none focus:border-indigo-600 transition-all bg-white font-bold text-gray-800 text-base" 
+            className="w-full border-2 border-gray-200 rounded-2xl p-3.5 outline-none focus:border-[#007507] transition-all bg-white font-bold text-gray-800 text-base" 
             value={form.supplierId} 
             onChange={e => setForm({ ...form, supplierId: e.target.value })}
           >
@@ -455,7 +455,7 @@ const NewPurchasePage = () => {
           <input 
             type="text" 
             placeholder="مثال: فاتورة رقم 1045 أو يُترك ليتولد تلقائياً" 
-            className="w-full border-2 border-gray-200 rounded-2xl p-3.5 outline-none focus:border-indigo-600 transition-all font-bold text-gray-800" 
+            className="w-full border-2 border-gray-200 rounded-2xl p-3.5 outline-none focus:border-[#007507] transition-all font-bold text-gray-800" 
             value={form.referenceNo} 
             onChange={e => setForm({ ...form, referenceNo: e.target.value })}
           />
@@ -463,18 +463,18 @@ const NewPurchasePage = () => {
       </div>
 
       {/* Barcode Quick Scan Section */}
-      <div className="bg-gradient-to-r from-indigo-900 to-indigo-800 p-6 rounded-3xl text-white shadow-lg border-2 border-indigo-700">
+      <div className="bg-gradient-to-r from-[#003607] to-slate-800 p-6 rounded-3xl text-white shadow-lg border-2 border-slate-700">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-white/10 rounded-2xl border border-white/20">
-              <Barcode size={32} className="text-indigo-300" />
+              <Barcode size={32} className="text-emerald-300" />
             </div>
             <div>
               <h3 className="text-lg font-black tracking-wide flex items-center gap-2">
                 <span>مسح الباركود للإضافة السريعة</span>
-                <span className="text-xs bg-indigo-500/40 text-indigo-200 px-2.5 py-1 rounded-full font-bold">ذكي وسريع</span>
+                <span className="text-xs bg-[#1bb641]/40 text-emerald-200 px-2.5 py-1 rounded-full font-bold">ذكي وسريع</span>
               </h3>
-              <p className="text-indigo-200 text-xs font-bold mt-0.5">
+              <p className="text-emerald-200 text-xs font-bold mt-0.5">
                 امسح الباركود وسيتم إضافة الصنف فوراً، أو إنشاؤه في ثانية واحدة إذا كان جديداً
               </p>
             </div>
@@ -486,7 +486,7 @@ const NewPurchasePage = () => {
                 ref={barcodeRef}
                 type="text" 
                 placeholder="امسح الباركود هنا واضغط Enter..." 
-                className="w-full bg-white text-gray-900 font-black rounded-2xl px-4 py-3 text-base outline-none border-2 border-transparent focus:border-indigo-400 placeholder:text-gray-400 placeholder:font-normal"
+                className="w-full bg-white text-gray-900 font-black rounded-2xl px-4 py-3 text-base outline-none border-2 border-transparent focus:border-emerald-400 placeholder:text-gray-400 placeholder:font-normal"
                 value={barcodeInput}
                 onChange={e => setBarcodeInput(e.target.value)}
               />
@@ -503,10 +503,10 @@ const NewPurchasePage = () => {
       </div>
 
       {/* Manual Add Item Accordion / Box */}
-      <div className="bg-indigo-50/60 p-6 rounded-3xl border-2 border-indigo-100 space-y-4">
+      <div className="bg-emerald-50/60 p-6 rounded-3xl border-2 border-emerald-100 space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-black text-indigo-950 flex items-center gap-2">
-            <Layers className="text-indigo-600" size={20} />
+          <h3 className="font-black text-slate-900 flex items-center gap-2">
+            <Layers className="text-[#007507]" size={20} />
             <span>إضافة صنف يدوياً أو تعديل كميات / كراتين</span>
           </h3>
           <button 
@@ -526,7 +526,7 @@ const NewPurchasePage = () => {
               });
               setIsCreateModalOpen(true);
             }}
-            className="text-indigo-700 bg-white hover:bg-indigo-100 border border-indigo-200 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm"
+            className="text-[#007507] bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm"
           >
             <PlusCircle size={16} />
             <span>+ إنشاء صنف جديد</span>
@@ -537,7 +537,7 @@ const NewPurchasePage = () => {
           <div className="md:col-span-4">
             <label className="block mb-1.5 font-bold text-gray-700 text-xs">الصنف:</label>
             <select 
-              className="w-full border-2 border-indigo-200 rounded-2xl p-3 outline-none focus:border-indigo-600 bg-white font-bold text-sm text-gray-800" 
+              className="w-full border-2 border-emerald-200 rounded-2xl p-3 outline-none focus:border-[#007507] bg-white font-bold text-sm text-gray-800" 
               value={currentItem.productId} 
               onChange={e => handleProductSelect(e.target.value)}
             >
@@ -551,19 +551,19 @@ const NewPurchasePage = () => {
           </div>
 
           {selectedProductInfo && selectedProductInfo.packageUnit && (
-            <div className="md:col-span-12 flex gap-3 items-center bg-white p-2.5 rounded-2xl border border-indigo-200">
+            <div className="md:col-span-12 flex gap-3 items-center bg-white p-2.5 rounded-2xl border border-emerald-200">
               <span className="text-xs font-black text-gray-600 ml-1">الوحدة:</span>
               <button 
                 type="button" 
                 onClick={() => toggleBuyMode(false)} 
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${!currentItem.buyInPackage ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${!currentItem.buyInPackage ? 'bg-[#007507] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 بالوحدة الأساسية ({selectedProductInfo.unit})
               </button>
               <button 
                 type="button" 
                 onClick={() => toggleBuyMode(true)} 
-                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${currentItem.buyInPackage ? 'bg-indigo-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${currentItem.buyInPackage ? 'bg-[#007507] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 بالكرتونة ({selectedProductInfo.packageUnit} = {selectedProductInfo.piecesPerPackage} {selectedProductInfo.unit})
               </button>
@@ -579,7 +579,7 @@ const NewPurchasePage = () => {
               min="0.01" 
               step="0.01" 
               placeholder="1"
-              className="w-full border-2 border-indigo-200 rounded-2xl p-3 outline-none focus:border-indigo-600 font-bold bg-white text-gray-800" 
+              className="w-full border-2 border-emerald-200 rounded-2xl p-3 outline-none focus:border-[#007507] font-bold bg-white text-gray-800" 
               value={currentItem.quantity} 
               onChange={e => setCurrentItem({ ...currentItem, quantity: e.target.value })}
             />
@@ -592,7 +592,7 @@ const NewPurchasePage = () => {
               min="0.01" 
               step="0.01" 
               placeholder="0.00"
-              className="w-full border-2 border-indigo-200 rounded-2xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 bg-white" 
+              className="w-full border-2 border-emerald-200 rounded-2xl p-3 outline-none focus:border-[#007507] font-black text-[#007507] bg-white" 
               value={currentItem.unitCost} 
               onChange={e => setCurrentItem({ ...currentItem, unitCost: e.target.value })}
             />
@@ -605,7 +605,7 @@ const NewPurchasePage = () => {
             </label>
             <input 
               type="date" 
-              className="w-full border-2 border-indigo-200 rounded-2xl p-2.5 outline-none focus:border-indigo-600 font-bold bg-white text-gray-800 text-xs shadow-sm" 
+              className="w-full border-2 border-emerald-200 rounded-2xl p-2.5 outline-none focus:border-[#007507] font-bold bg-white text-gray-800 text-xs shadow-sm" 
               value={currentItem.expiryDate || ''} 
               onChange={e => setCurrentItem({ ...currentItem, expiryDate: e.target.value })}
             />
@@ -614,7 +614,7 @@ const NewPurchasePage = () => {
           <div className="md:col-span-2">
             <button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl p-3.5 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full bg-[#007507] hover:bg-[#006006] text-white font-black rounded-2xl p-3.5 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>+ إضافة للفاتورة</span>
             </button>
@@ -649,7 +649,7 @@ const NewPurchasePage = () => {
                       <button 
                         type="button"
                         onClick={() => handleOpenEditProduct(item.productId)}
-                        className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1 text-gray-400 hover:text-[#007507] hover:bg-emerald-50 rounded-lg transition-all"
                         title="تعديل بيانات الصنف والباركود"
                       >
                         <Edit3 size={15} />
@@ -660,7 +660,7 @@ const NewPurchasePage = () => {
                 <td className="p-4 font-bold text-gray-700">
                   {item.displayQty} <span className="text-xs text-gray-500 font-normal">{item.displayUnit}</span>
                   {item.isPackage && (
-                    <span className="block text-xs text-indigo-600 font-bold mt-0.5">(= {item.baseQuantity} قطعة أساسية)</span>
+                    <span className="block text-xs text-[#007507] font-bold mt-0.5">(= {item.baseQuantity} قطعة أساسية)</span>
                   )}
                 </td>
                 <td className="p-4 font-black text-gray-700">{Number(item.displayCost).toFixed(2)} ج.م</td>
@@ -670,7 +670,7 @@ const NewPurchasePage = () => {
                       type="date"
                       value={item.expiryDate ? item.expiryDate.split('T')[0] : ''}
                       onChange={e => updateItemExpiryDate(idx, e.target.value)}
-                      className="border-2 border-gray-200 rounded-xl px-3 py-2 text-xs font-black bg-white focus:border-indigo-600 outline-none w-40 text-gray-800 shadow-sm transition-all"
+                      className="border-2 border-gray-200 rounded-xl px-3 py-2 text-xs font-black bg-white focus:border-[#007507] outline-none w-40 text-gray-800 shadow-sm transition-all"
                       title="حدد تاريخ انتهاء الصلاحية الخاص بهذا الصنف في هذه الفاتورة"
                     />
                     {item.expiryDate ? (
@@ -687,7 +687,7 @@ const NewPurchasePage = () => {
                     )}
                   </div>
                 </td>
-                <td className="p-4 font-black text-indigo-700 text-base">{Number(item.subtotal).toFixed(2)} ج.م</td>
+                <td className="p-4 font-black text-[#007507] text-base">{Number(item.subtotal).toFixed(2)} ج.م</td>
                 <td className="p-4 text-center">
                   <button 
                     onClick={() => removeItem(idx)} 
@@ -710,14 +710,14 @@ const NewPurchasePage = () => {
           <tfoot className="bg-gray-50 font-black text-lg border-t-2 border-gray-100">
             <tr>
               <td colSpan="4" className="p-5 text-gray-700 text-left">إجمالي قيمة الفاتورة:</td>
-              <td colSpan="2" className="p-5 text-indigo-700 font-black text-2xl">{totalInvoice.toFixed(2)} ج.م</td>
+              <td colSpan="2" className="p-5 text-[#007507] font-black text-2xl">{totalInvoice.toFixed(2)} ج.م</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
       {/* Payment & Confirmation Bar */}
-      <div className="bg-gradient-to-br from-gray-50 to-indigo-50/30 p-6 border-2 border-gray-200 rounded-3xl flex flex-col md:flex-row gap-6 justify-between items-center mb-10">
+      <div className="bg-gradient-to-br from-gray-50 to-emerald-50/30 p-6 border-2 border-gray-200 rounded-3xl flex flex-col md:flex-row gap-6 justify-between items-center mb-10">
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-2/3">
           <div className="flex-1">
             <label className="block mb-2 font-black text-gray-700 text-xs">
@@ -728,7 +728,7 @@ const NewPurchasePage = () => {
               step="0.01" 
               min="0" 
               placeholder="0.00 (اتركه 0 إذا كانت الفاتورة آجلة بالكامل)" 
-              className="w-full border-2 border-gray-300 rounded-2xl p-3.5 outline-none focus:border-indigo-600 font-black text-indigo-700 text-lg bg-white" 
+              className="w-full border-2 border-gray-300 rounded-2xl p-3.5 outline-none focus:border-[#007507] font-black text-[#007507] text-lg bg-white" 
               value={paidAmount} 
               onChange={e => setPaidAmount(e.target.value)} 
             />
@@ -740,7 +740,7 @@ const NewPurchasePage = () => {
                 الخزينة (لسحب المبلغ المدفوع):
               </label>
               <select 
-                className="w-full border-2 border-indigo-300 rounded-2xl p-3.5 outline-none focus:border-indigo-600 bg-white font-bold text-gray-800 text-sm shadow-sm" 
+                className="w-full border-2 border-emerald-300 rounded-2xl p-3.5 outline-none focus:border-[#007507] bg-white font-bold text-gray-800 text-sm shadow-sm" 
                 value={paymentMethodId || (paymentMethods[0]?.id || '')} 
                 onChange={e => setPaymentMethodId(e.target.value)}
               >
@@ -757,7 +757,7 @@ const NewPurchasePage = () => {
         <div className="flex flex-col gap-3 items-end w-full md:w-auto mt-4 md:mt-0">
           <div className="text-left w-full space-y-1">
             <div className="text-gray-500 text-xs font-bold">صافي الفاتورة</div>
-            <div className="text-3xl font-black text-indigo-700">{totalInvoice.toFixed(2)} ج.م</div>
+            <div className="text-3xl font-black text-[#007507]">{totalInvoice.toFixed(2)} ج.م</div>
             {Number(paidAmount) > 0 && Number(paidAmount) < totalInvoice && (
               <div className="text-xs text-red-600 font-black">
                 المتبقي مديونية للمورد: {(totalInvoice - Number(paidAmount)).toFixed(2)} ج.م
@@ -788,7 +788,7 @@ const NewPurchasePage = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-lg border border-gray-100">
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
               <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                <Sparkles className="text-indigo-600" size={24} />
+                <Sparkles className="text-[#007507]" size={24} />
                 <span>إنشاء صنف جديد وإضافته للفاتورة</span>
               </h3>
               <button 
@@ -806,7 +806,7 @@ const NewPurchasePage = () => {
                   required
                   type="text" 
                   placeholder="مثال: شوكولاتة كندر بوينو"
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                   value={newProductForm.name}
                   onChange={e => setNewProductForm({ ...newProductForm, name: e.target.value })}
                 />
@@ -817,7 +817,7 @@ const NewPurchasePage = () => {
                   <label className="block mb-1 text-xs font-bold text-gray-700">الباركود:</label>
                   <input 
                     type="text" 
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800 font-mono"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800 font-mono"
                     value={newProductForm.barcode}
                     onChange={e => setNewProductForm({ ...newProductForm, barcode: e.target.value })}
                   />
@@ -827,7 +827,7 @@ const NewPurchasePage = () => {
                   <input 
                     required
                     type="text" 
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800 font-mono"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800 font-mono"
                     value={newProductForm.internalCode}
                     onChange={e => setNewProductForm({ ...newProductForm, internalCode: e.target.value })}
                   />
@@ -843,7 +843,7 @@ const NewPurchasePage = () => {
                     step="0.01" 
                     min="0"
                     placeholder="0.00"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-black text-[#007507] text-base"
                     value={newProductForm.purchasePrice}
                     onChange={e => setNewProductForm({ ...newProductForm, purchasePrice: e.target.value })}
                   />
@@ -856,7 +856,7 @@ const NewPurchasePage = () => {
                     step="0.01" 
                     min="0"
                     placeholder="0.00"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-emerald-600 text-base"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-black text-emerald-600 text-base"
                     value={newProductForm.sellingPrice}
                     onChange={e => setNewProductForm({ ...newProductForm, sellingPrice: e.target.value })}
                   />
@@ -869,7 +869,7 @@ const NewPurchasePage = () => {
                   <input 
                     type="text" 
                     placeholder="قطعة / كيس / زجاجة"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                     value={newProductForm.unit}
                     onChange={e => setNewProductForm({ ...newProductForm, unit: e.target.value })}
                   />
@@ -880,7 +880,7 @@ const NewPurchasePage = () => {
                     type="number" 
                     min="0"
                     placeholder="10"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                     value={newProductForm.alertThreshold}
                     onChange={e => setNewProductForm({ ...newProductForm, alertThreshold: e.target.value })}
                   />
@@ -893,7 +893,7 @@ const NewPurchasePage = () => {
                 </label>
                 <input 
                   type="date" 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                   value={newProductForm.expiryDate}
                   onChange={e => setNewProductForm({ ...newProductForm, expiryDate: e.target.value })}
                 />
@@ -910,7 +910,7 @@ const NewPurchasePage = () => {
                 <button 
                   type="submit"
                   disabled={isCreatingProduct}
-                  className="px-6 py-2.5 rounded-xl font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl font-black bg-[#007507] hover:bg-[#006006] text-white shadow-md shadow-emerald-200 disabled:opacity-50"
                 >
                   {isCreatingProduct ? 'جاري الحفظ...' : 'حفظ وإضافة للفاتورة'}
                 </button>
@@ -979,7 +979,7 @@ const NewPurchasePage = () => {
                     type="number" 
                     step="0.01" 
                     min="0"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-amber-600 font-black text-indigo-700 text-base"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-amber-600 font-black text-[#007507] text-base"
                     value={editingProduct.purchasePrice}
                     onChange={e => setEditingProduct({ ...editingProduct, purchasePrice: e.target.value })}
                   />

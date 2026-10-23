@@ -1,22 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  /* Legacy sRGB/HEX Color Fallbacks for Windows 7 (Chrome < 111) */
-  --color-indigo-950: #0f172a;
-  --color-indigo-900: #1e1b4b;
-  --color-indigo-800: #312e81;
-  --color-indigo-700: #4338ca;
-  --color-indigo-600: #4f46e5;
-  --color-indigo-500: #6366f1;
-  --color-indigo-100: #e0e7ff;
-  --color-indigo-50: #eef2ff;
+  /* Brand Identity Variables - المركز الوطني لعلاج الإدمان */
+  --text: #000000;
+  --background: #ffffff;
+  --primary: #007507;
+  --secondary: #1bb641;
+  --accent: #003607;
 
+  /* Global Harmony Fallbacks: Maps legacy indigo & purple into Brand Forest Green & Slate */
+  --color-indigo-950: #002204;
+  --color-indigo-900: #003607;
+  --color-indigo-800: #004b05;
+  --color-indigo-700: #006006;
+  --color-indigo-600: #007507;
+  --color-indigo-500: #1bb641;
+  --color-indigo-400: #4ade80;
+  --color-indigo-300: #86efac;
+  --color-indigo-200: #bbf7d0;
+  --color-indigo-100: #dcfce7;
+  --color-indigo-50: #f0fdf4;
+
+  --color-purple-950: #0f172a;
+  --color-purple-900: #1e293b;
+  --color-purple-800: #004b05;
+  --color-purple-700: #006006;
+  --color-purple-600: #007507;
+  --color-purple-500: #1bb641;
+  --color-purple-200: #bbf7d0;
+  --color-purple-100: #dcfce7;
+  --color-purple-50: #f8fafc;
+
+  /* Legacy sRGB/HEX Color Fallbacks for Windows 7 (Chrome < 111) */
   --color-emerald-950: #022c22;
   --color-emerald-900: #064e3b;
   --color-emerald-800: #065f46;
   --color-emerald-700: #047857;
-  --color-emerald-600: #059669;
-  --color-emerald-500: #10b981;
+  --color-emerald-600: #007507;
+  --color-emerald-500: #1bb641;
   --color-emerald-400: #34d399;
   --color-emerald-300: #6ee7b7;
   --color-emerald-200: #a7f3d0;

@@ -25,9 +25,9 @@ const formatDateTime = (dateString) => {
 };
 
 const typeMap = {
-  'MANUAL': { label: 'يدوي بطلب المدير', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-  'AUTO': { label: 'تلقائي مجدول (يومياً)', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-  'SHIFT_CLOSE': { label: 'تقفيل وردية ويومية', color: 'bg-violet-100 text-violet-800 border-violet-200' },
+  'MANUAL': { label: 'يدوي بطلب المدير', color: 'bg-emerald-50 text-[#007507] border-emerald-200' },
+  'AUTO': { label: 'تلقائي مجدول (يومياً)', color: 'bg-emerald-100 text-[#003607] border-emerald-300' },
+  'SHIFT_CLOSE': { label: 'تقفيل وردية ويومية', color: 'bg-slate-100 text-slate-800 border-slate-300' },
   'STARTUP': { label: 'وقائي عند تشغيل السيرفر', color: 'bg-amber-100 text-amber-800 border-amber-200' },
   'SAFETY_PRE_RESTORE': { label: 'أمان تلقائي قبل استرجاع', color: 'bg-rose-100 text-rose-800 border-rose-200' }
 };
@@ -306,17 +306,17 @@ const BackupPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-l from-indigo-900 via-indigo-800 to-indigo-950 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -z-0"></div>
+      {/* Header Banner - Brand Identity Style */}
+      <div className="bg-gradient-to-l from-[#003607] via-[#007507] to-slate-900 p-6 rounded-3xl text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden border border-emerald-800/40">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -z-0"></div>
         <div className="z-10">
           <div className="flex items-center gap-3 mb-2">
-            <span className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-emerald-400">
+            <span className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 text-emerald-300">
               <ShieldCheck size={28} />
             </span>
             <div>
               <h1 className="text-2xl font-black">مركز النسخ الاحتياطي وإدارة الأمان</h1>
-              <p className="text-indigo-200 text-xs font-bold mt-0.5">
+              <p className="text-emerald-100/90 text-xs font-bold mt-0.5">
                 حماية شاملة لقاعدة بيانات الكانتين ضد أي أعطال أو انقطاع للكهرباء مع إمكانية الاسترداد الفوري
               </p>
             </div>
@@ -326,7 +326,7 @@ const BackupPage = () => {
         <div className="z-10 flex flex-wrap items-center gap-2.5">
           <button 
             onClick={handleOpenFolder}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg"
+            className="flex items-center gap-2 bg-[#1bb641] hover:bg-emerald-600 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
             title="فتح مجلد النسخ الاحتياطية في مستعرض ملفات ويندوز"
           >
             <FolderOpen size={16} />
@@ -336,7 +336,7 @@ const BackupPage = () => {
           <button 
             onClick={fetchBackups} 
             disabled={loading}
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm"
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
           >
             <RotateCcw size={15} className={loading ? 'animate-spin' : ''} />
             <span>تحديث السجل</span>
@@ -351,51 +351,52 @@ const BackupPage = () => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-gray-400 font-bold text-xs">حالة الأمان والجاهزية</p>
-              <h3 className="text-lg font-black text-emerald-600 mt-1">قاعدة البيانات مؤمنة</h3>
+              <h3 className="text-lg font-black text-[#007507] mt-1">قاعدة البيانات مؤمنة</h3>
             </div>
-            <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="p-2.5 bg-emerald-50 text-[#007507] rounded-xl">
               <ShieldCheck size={22} />
             </div>
           </div>
-          <div className="text-xs font-bold text-emerald-700 bg-emerald-50/80 p-2 rounded-lg border border-emerald-100">
+          <div className="text-xs font-bold text-emerald-800 bg-emerald-50/80 p-2 rounded-lg border border-emerald-100">
             جاهزية الاسترداد والنسخ الحي 100%
           </div>
         </div>
 
         {/* Card 2: Last Backup */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-indigo-100 shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-gray-400 font-bold text-xs">توقيت آخر نسخة مسجلة</p>
-              <h3 className="text-sm font-black text-gray-800 mt-1 truncate" title={formatDateTime(stats.lastBackupTime)}>
+              <h3 className="text-sm font-black text-slate-800 mt-1 truncate" title={formatDateTime(stats.lastBackupTime)}>
                 {stats.lastBackupTime ? formatDateTime(stats.lastBackupTime) : 'لا توجد نسخ بعد'}
               </h3>
             </div>
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-2.5 bg-slate-100 text-slate-700 rounded-xl">
               <Clock size={22} />
             </div>
           </div>
-          <div className="text-xs font-bold text-indigo-700 bg-indigo-50/80 p-2 rounded-lg border border-indigo-100 flex items-center justify-between">
-            <span>مجدول يومياً: {scheduleTime === '00:00' ? '12:00 منتصف الليل' : scheduleTime}</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div className="text-xs font-bold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+            <span>مجدول: {scheduleTime === '00:00' ? '12:00 منتصف الليل' : scheduleTime}</span>
+            <span className="w-2 h-2 rounded-full bg-[#1bb641] animate-pulse"></span>
           </div>
         </div>
 
-        {/* Card 3: Total Archive */}
-        <div className="bg-white p-5 rounded-2xl border-2 border-purple-100 shadow-sm relative overflow-hidden flex flex-col justify-between">
+        {/* Card 3: Total Archive (100 Max Limit & Auto-Rotation) */}
+        <div className="bg-white p-5 rounded-2xl border-2 border-emerald-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-gray-400 font-bold text-xs">إجمالي أرشيف النسخ</p>
-              <h3 className="text-xl font-black text-purple-700 mt-1">
-                {stats.totalCount} <span className="text-xs font-bold text-gray-500">نسخة محفوظة</span>
+              <h3 className="text-xl font-black text-slate-900 mt-1">
+                {stats.totalCount} <span className="text-xs font-bold text-emerald-700">/ 100 نسخة كحد أقصى</span>
               </h3>
             </div>
-            <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl">
+            <div className="p-2.5 bg-emerald-50 text-[#007507] rounded-xl">
               <Database size={22} />
             </div>
           </div>
-          <div className="text-xs font-bold text-purple-700 bg-purple-50/80 p-2 rounded-lg border border-purple-100">
-            المساحة المستهلكة: {stats.totalSizeFormatted}
+          <div className="text-xs font-bold text-[#007507] bg-emerald-50/80 p-2 rounded-lg border border-emerald-100 flex items-center justify-between">
+            <span>المساحة: {stats.totalSizeFormatted}</span>
+            <span className="text-[10px] bg-white text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">تدوير وحذف تلقائي</span>
           </div>
         </div>
 
@@ -404,7 +405,7 @@ const BackupPage = () => {
           <div className="flex justify-between items-start mb-2">
             <div>
               <p className="text-gray-400 font-bold text-xs">النسخ الخارجي (فلاشة USB)</p>
-              <h3 className="text-sm font-black text-gray-800 mt-1 truncate" title={stats.externalPath || 'غير مفعل'}>
+              <h3 className="text-sm font-black text-slate-800 mt-1 truncate" title={stats.externalPath || 'غير مفعل'}>
                 {stats.externalPath ? 'مفعل على المسار المحدد' : 'غير محدد حالياً'}
               </h3>
             </div>
@@ -419,7 +420,7 @@ const BackupPage = () => {
       </div>
 
       {/* Automated Daily Scheduled Backup Panel */}
-      <div className="bg-gradient-to-l from-indigo-900 via-indigo-950 to-slate-900 text-white p-6 rounded-3xl shadow-md border-2 border-indigo-700/50 space-y-4">
+      <div className="bg-gradient-to-l from-slate-900 via-slate-800 to-[#003607] text-white p-6 rounded-3xl shadow-md border-2 border-slate-700 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div className="flex items-center gap-3">
             <span className="p-3 bg-white/10 backdrop-blur rounded-2xl text-emerald-400 border border-white/10">
@@ -432,7 +433,7 @@ const BackupPage = () => {
                   {scheduleEnabled ? '● النظام التلقائي نَشِط' : '○ متوقف'}
                 </span>
               </div>
-              <p className="text-xs font-bold text-indigo-200 mt-0.5">
+              <p className="text-xs font-bold text-slate-300 mt-0.5">
                 يقوم النظام تلقائياً بأخذ نسخة كاملة من قاعدة البيانات يومياً في الموعد المحدد وحفظها بأمان دون أي تدخل بشري
               </p>
             </div>
@@ -441,7 +442,7 @@ const BackupPage = () => {
           <button
             onClick={handleTriggerAutoBackup}
             disabled={testingAuto}
-            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
+            className="px-4 py-2.5 bg-[#1bb641] hover:bg-emerald-500 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 whitespace-nowrap cursor-pointer"
           >
             {testingAuto ? (
               <>
@@ -460,7 +461,7 @@ const BackupPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 items-end">
           {/* Time Picker */}
           <div>
-            <label className="block text-xs font-black text-indigo-200 mb-1.5">
+            <label className="block text-xs font-black text-slate-300 mb-1.5">
               توقيت النسخ اليومي التلقائي:
             </label>
             <div className="flex items-center gap-2">
@@ -468,10 +469,10 @@ const BackupPage = () => {
                 type="time" 
                 value={scheduleTime}
                 onChange={e => setScheduleTime(e.target.value)}
-                className="w-full bg-white/10 border-2 border-indigo-400/40 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-emerald-400 text-center"
+                className="w-full bg-white/10 border-2 border-slate-600 rounded-xl px-3 py-2 text-sm font-black text-white focus:outline-none focus:border-[#1bb641] text-center"
                 dir="ltr"
               />
-              <span className="text-xs font-bold text-indigo-300 whitespace-nowrap">
+              <span className="text-xs font-bold text-slate-400 whitespace-nowrap">
                 {scheduleTime === '00:00' ? '(منتصف الليل 12:00 ص)' : ''}
               </span>
             </div>
@@ -479,7 +480,7 @@ const BackupPage = () => {
 
           {/* Toggle Enable */}
           <div>
-            <label className="block text-xs font-black text-indigo-200 mb-1.5">
+            <label className="block text-xs font-black text-slate-300 mb-1.5">
               حالة التفعيل:
             </label>
             <div className="flex items-center gap-2">
@@ -499,7 +500,7 @@ const BackupPage = () => {
             <button
               onClick={handleSaveSchedule}
               disabled={savingSchedule}
-              className="w-full py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow border border-indigo-300/30 disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 bg-[#007507] hover:bg-emerald-700 text-white rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow border border-emerald-500/40 disabled:opacity-50 cursor-pointer"
             >
               <Save size={16} />
               <span>{savingSchedule ? 'جاري الحفظ...' : 'حفظ إعدادات الجدولة 💾'}</span>
@@ -507,7 +508,7 @@ const BackupPage = () => {
           </div>
         </div>
 
-        <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-indigo-300 border-t border-white/10">
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-400 border-t border-white/10">
           <div>
             📂 مسار الحفظ المزدوج: <span className="text-white font-mono" dir="ltr">{stats.backupDir || 'السيرفر/backups'}</span>
             {stats.externalPath ? (
@@ -527,7 +528,7 @@ const BackupPage = () => {
         {/* Panel 1: Create Backup Now & USB Setup */}
         <div className="bg-white p-6 rounded-3xl border-2 border-gray-200 shadow-sm space-y-5">
           <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100">
-            <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <span className="p-2 bg-emerald-50 text-[#007507] rounded-xl">
               <Save size={20} />
             </span>
             <div>
@@ -544,14 +545,14 @@ const BackupPage = () => {
                 placeholder="مثلاً: قبل تعديل أسعار الأصناف، أو نسخة أسبوعية..." 
                 value={backupNotes}
                 onChange={e => setBackupNotes(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-600 bg-gray-50/50"
+                className="w-full border-2 border-gray-200 rounded-xl p-3 text-xs font-bold outline-none focus:border-[#007507] bg-gray-50/50"
               />
             </div>
 
             <button
               onClick={handleCreateBackup}
               disabled={creating}
-              className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+              className="w-full py-3.5 bg-[#007507] hover:bg-[#006006] text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {creating ? (
                 <>
@@ -579,13 +580,13 @@ const BackupPage = () => {
                 placeholder="مثلاً: E:\CanteenBackups أو F:\نسخ_الكانتين" 
                 value={externalPath}
                 onChange={e => setExternalPath(e.target.value)}
-                className="flex-1 border-2 border-gray-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-indigo-600 bg-gray-50/50"
+                className="flex-1 border-2 border-gray-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-[#007507] bg-gray-50/50"
                 dir="ltr"
               />
               <button
                 onClick={handleSaveExternalPath}
                 disabled={savingPath}
-                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50 whitespace-nowrap"
+                className="px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer"
               >
                 <Save size={15} />
                 <span>{savingPath ? 'جاري الحفظ...' : 'حفظ المسار'}</span>
@@ -611,7 +612,7 @@ const BackupPage = () => {
 
           <div className="space-y-4">
             <div className="p-5 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 hover:bg-gray-50 transition-colors flex flex-col items-center justify-center text-center">
-              <FolderOpen size={36} className="text-indigo-400 mb-2" />
+              <FolderOpen size={36} className="text-[#007507] mb-2" />
               <p className="font-black text-xs text-gray-700 mb-1">
                 {selectedFile ? selectedFile.name : 'اسحب ملف النسخة (.db) هنا أو اضغط للاختيار'}
               </p>
@@ -629,7 +630,7 @@ const BackupPage = () => {
               />
               <label 
                 htmlFor="backup-file-input"
-                className="px-4 py-2 bg-white border-2 border-gray-200 hover:border-indigo-600 rounded-xl text-xs font-black text-gray-700 cursor-pointer shadow-sm hover:text-indigo-600 transition-colors"
+                className="px-4 py-2 bg-white border-2 border-gray-200 hover:border-[#007507] rounded-xl text-xs font-black text-gray-700 cursor-pointer shadow-sm hover:text-[#007507] transition-colors"
               >
                 {selectedFile ? 'تغيير الملف المحدد' : 'اختيار ملف من الجهاز'}
               </label>
@@ -645,7 +646,7 @@ const BackupPage = () => {
             <button
               onClick={handleUploadAndRestore}
               disabled={!selectedFile || uploadingRestore}
-              className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {uploadingRestore ? (
                 <>
@@ -668,15 +669,15 @@ const BackupPage = () => {
         <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
-              <Database size={20} className="text-indigo-600" />
+              <Database size={20} className="text-[#007507]" />
               <span>سجل وأرشيف النسخ الاحتياطية</span>
             </h3>
             <p className="text-gray-400 font-bold text-xs mt-0.5">
               كافة النسخ المحفوظة على السيرفر مصنفة حسب التوقيت والنوع مع خيارات التحميل والاسترجاع الفوري
             </p>
           </div>
-          <span className="text-xs font-black bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl border border-indigo-200">
-            {backups.length} نسخة محفوظة
+          <span className="text-xs font-black bg-emerald-50 text-[#007507] px-3 py-1.5 rounded-xl border border-emerald-200">
+            {backups.length} نسخة محفوظة (أقصى حد: 100)
           </span>
         </div>
 
@@ -700,10 +701,10 @@ const BackupPage = () => {
                 };
 
                 return (
-                  <tr key={backup.id} className="hover:bg-indigo-50/40 transition-colors">
+                  <tr key={backup.id} className="hover:bg-emerald-50/40 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        <Database size={16} className="text-indigo-500 flex-shrink-0" />
+                        <Database size={16} className="text-[#007507] flex-shrink-0" />
                         <span className="font-mono text-gray-900 font-black" dir="ltr">
                           {backup.filename}
                         </span>
@@ -734,7 +735,7 @@ const BackupPage = () => {
                         <button
                           onClick={() => handleOpenFileLocation(backup)}
                           title="فتح وتحديد مكان ملف النسخة في ويندوز"
-                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl transition-colors shadow-sm"
+                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl transition-colors shadow-sm cursor-pointer"
                         >
                           <FolderOpen size={15} />
                         </button>
@@ -744,10 +745,10 @@ const BackupPage = () => {
                           onClick={() => handleDownload(backup)}
                           disabled={downloadingId === backup.id}
                           title="تنزيل النسخة إلى جهازك أو فلاشة"
-                          className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                           {downloadingId === backup.id ? (
-                            <RotateCcw size={15} className="animate-spin text-indigo-600" />
+                            <RotateCcw size={15} className="animate-spin text-slate-600" />
                           ) : (
                             <Download size={15} />
                           )}

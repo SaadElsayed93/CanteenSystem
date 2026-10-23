@@ -124,13 +124,13 @@ const TreasuryPage = () => {
   const getMethodIcon = (name) => {
     if (name.includes('درج') || name.includes('نقدي')) return <Banknote className="text-emerald-600" size={26} />;
     if (name.includes('فودافون') || name.includes('كاش')) return <Wallet className="text-amber-600" size={26} />;
-    return <Landmark className="text-indigo-600" size={26} />;
+    return <Landmark className="text-[#007507]" size={26} />;
   };
 
   const getMethodBadgeColor = (name) => {
     if (name.includes('درج') || name.includes('نقدي')) return 'border-emerald-200 bg-emerald-50/50';
     if (name.includes('فودافون') || name.includes('كاش')) return 'border-amber-200 bg-amber-50/50';
-    return 'border-indigo-200 bg-indigo-50/50';
+    return 'border-emerald-200 bg-emerald-50/50';
   };
 
   if (loading) return (
@@ -154,7 +154,7 @@ const TreasuryPage = () => {
         <div>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2 flex-wrap">
             <span>الخزينة والمعاملات المالية</span>
-            <span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-bold border border-indigo-100">3 قنوات معتمدة</span>
+            <span className="text-xs bg-emerald-50 text-[#007507] px-3 py-1 rounded-full font-bold border border-emerald-100">3 قنوات معتمدة</span>
             {isOpen ? (
               <span className="text-xs bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full font-bold border border-emerald-200 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -195,7 +195,7 @@ const TreasuryPage = () => {
 
               <button 
                 onClick={() => setIsTransferModalOpen(true)} 
-                className="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                className="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-[#007507] border-2 border-emerald-200 font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 <ArrowLeftRight size={18} />
                 <span>تحويل بين الخزائن</span>
@@ -211,7 +211,7 @@ const TreasuryPage = () => {
               )}
             </>
           ) : (
-            <span className="text-xs bg-indigo-50 text-indigo-700 px-3.5 py-2 rounded-xl font-bold border border-indigo-100 flex items-center gap-1.5">
+            <span className="text-xs bg-emerald-50 text-[#007507] px-3.5 py-2 rounded-xl font-bold border border-emerald-100 flex items-center gap-1.5">
               <ShieldCheck size={16} />
               <span>لوحة الرقابة والمتابعة المالية (الإدارة)</span>
             </span>
@@ -247,13 +247,13 @@ const TreasuryPage = () => {
       {/* Tabs */}
       <div className="flex bg-white rounded-xl shadow-sm border-2 border-gray-100 p-1">
         <button 
-          className={`flex-1 py-3 text-center rounded-lg font-bold transition-all ${activeTab === 'TREASURY' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 py-3 text-center rounded-lg font-bold transition-all ${activeTab === 'TREASURY' ? 'bg-emerald-50 text-[#007507] shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('TREASURY')}
         >
           حركة الخزينة والتحويلات (الداخل والخارج)
         </button>
         <button 
-          className={`flex-1 py-3 text-center rounded-lg font-bold transition-all ${activeTab === 'EXPENSES' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+          className={`flex-1 py-3 text-center rounded-lg font-bold transition-all ${activeTab === 'EXPENSES' ? 'bg-emerald-50 text-[#007507] shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('EXPENSES')}
         >
           سجل المصروفات
@@ -290,7 +290,7 @@ const TreasuryPage = () => {
                           {t.type === 'IN' ? 'توريد وردية (+)' : 'تقفيل وردية (-)'}
                         </span>
                       ) : t.referenceType === 'TRANSFER' ? (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1 w-fit">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-[#007507] border border-emerald-200 flex items-center gap-1 w-fit">
                           <ArrowLeftRight size={12} />
                           {t.type === 'IN' ? 'تحويل وارد (+)' : 'تحويل صادر (-)'}
                         </span>
@@ -334,7 +334,7 @@ const TreasuryPage = () => {
                     <td className="p-4 text-gray-500 font-bold text-xs">{new Date(e.createdAt).toLocaleString('ar-EG')}</td>
                     <td className="p-4 font-bold text-gray-800">{e.category?.name}</td>
                     <td className="p-4 font-black text-red-600 text-base">{e.amount} ج.م</td>
-                    <td className="p-4 font-bold text-indigo-700">{e.paymentMethod?.name}</td>
+                    <td className="p-4 font-bold text-[#007507]">{e.paymentMethod?.name}</td>
                     <td className="p-4 font-bold text-gray-600">{e.description || '-'}</td>
                     <td className="p-4 text-gray-400 font-bold text-xs">{e.user?.fullName}</td>
                   </tr>
@@ -351,7 +351,7 @@ const TreasuryPage = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
               <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                <ArrowLeftRight className="text-indigo-600" size={22} />
+                <ArrowLeftRight className="text-[#007507]" size={22} />
                 <span>تحويل بين الخزائن والقنوات</span>
               </h3>
               <button 
@@ -367,7 +367,7 @@ const TreasuryPage = () => {
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">تحويل من (المصدر):</label>
                 <select 
                   required 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold text-sm text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 bg-white font-bold text-sm text-gray-800"
                   value={transferForm.fromMethodId} 
                   onChange={e => setTransferForm({ ...transferForm, fromMethodId: e.target.value })}
                 >
@@ -380,7 +380,7 @@ const TreasuryPage = () => {
                 </select>
                 {selectedSource && (
                   <p className="text-xs text-gray-500 font-bold mt-1">
-                    الرصيد المتاح للتحويل: <span className="text-indigo-600 font-black">{selectedSource.currentBalance} ج.م</span>
+                    الرصيد المتاح للتحويل: <span className="text-[#007507] font-black">{selectedSource.currentBalance} ج.م</span>
                   </p>
                 )}
               </div>
@@ -389,7 +389,7 @@ const TreasuryPage = () => {
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">تحويل إلى (الهدف):</label>
                 <select 
                   required 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold text-sm text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 bg-white font-bold text-sm text-gray-800"
                   value={transferForm.toMethodId} 
                   onChange={e => setTransferForm({ ...transferForm, toMethodId: e.target.value })}
                 >
@@ -412,7 +412,7 @@ const TreasuryPage = () => {
                   step="0.01" 
                   min="0.01" 
                   max={selectedSource ? selectedSource.currentBalance : undefined}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-black text-indigo-700 text-lg"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-black text-[#007507] text-lg"
                   placeholder="0.00"
                   value={transferForm.amount} 
                   onChange={e => setTransferForm({ ...transferForm, amount: e.target.value })}
@@ -422,7 +422,7 @@ const TreasuryPage = () => {
               <div>
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">ملاحظات / سبب التحويل (اختياري):</label>
                 <textarea 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 text-sm font-bold text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800"
                   rows="2"
                   placeholder="مثال: سحب نقدية من فودافون كاش وتوريدها للدرج..."
                   value={transferForm.notes} 
@@ -441,7 +441,7 @@ const TreasuryPage = () => {
                 <button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all disabled:opacity-50"
+                  className="px-6 py-2.5 bg-[#007507] hover:bg-[#006006] text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? 'جاري التحويل...' : 'تأكيد التحويل الآن'}
                 </button>
@@ -473,7 +473,7 @@ const TreasuryPage = () => {
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">بند المصروف:</label>
                 <select 
                   required 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold text-sm text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 bg-white font-bold text-sm text-gray-800" 
                   value={expenseForm.categoryId} 
                   onChange={e => setExpenseForm({ ...expenseForm, categoryId: e.target.value })}
                 >
@@ -531,7 +531,7 @@ const TreasuryPage = () => {
                         <button 
                           type="button" 
                           onClick={() => setExpenseForm({ ...expenseForm, amount: selectedSupplierForExpense.currentDebt })}
-                          className="text-xs text-indigo-700 hover:text-indigo-900 font-black underline bg-white px-2 py-1 rounded-md border border-amber-200"
+                          className="text-xs text-[#007507] hover:text-[#003607] font-black underline bg-white px-2 py-1 rounded-md border border-amber-200"
                         >
                           سداد كامل المديونية ({Number(selectedSupplierForExpense.currentDebt).toFixed(2)} ج.م)
                         </button>
@@ -558,7 +558,7 @@ const TreasuryPage = () => {
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">القناة المالية (يُخصم من):</label>
                 <select 
                   required 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 bg-white font-bold text-sm text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 bg-white font-bold text-sm text-gray-800" 
                   value={expenseForm.paymentMethodId} 
                   onChange={e => setExpenseForm({ ...expenseForm, paymentMethodId: e.target.value })}
                 >
@@ -574,7 +574,7 @@ const TreasuryPage = () => {
               <div>
                 <label className="block mb-1.5 text-xs font-bold text-gray-700">تفاصيل / بيان المصروف:</label>
                 <textarea 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 text-sm font-bold text-gray-800" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 text-sm font-bold text-gray-800" 
                   rows="2"
                   value={expenseForm.description} 
                   onChange={e => setExpenseForm({ ...expenseForm, description: e.target.value })}

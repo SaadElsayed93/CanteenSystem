@@ -319,7 +319,7 @@ const ProductsPage = () => {
         <div>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
             <span>إدارة الأصناف والمخزون</span>
-            <span className="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-black">
+            <span className="text-xs bg-emerald-100 text-[#003607] px-3 py-1 rounded-full font-black">
               3 أقسام مستقلة
             </span>
           </h2>
@@ -370,11 +370,11 @@ const ProductsPage = () => {
           onClick={() => setActivityFilter('ALL')}
           className={`p-3.5 rounded-2xl border-2 transition-all flex items-center gap-3 text-right font-black ${
             activityFilter === 'ALL'
-              ? 'border-indigo-600 bg-indigo-50/70 text-indigo-950 shadow-sm ring-2 ring-indigo-500/20'
+              ? 'border-[#007507] bg-emerald-50/70 text-slate-900 shadow-sm ring-2 ring-[#007507]/20'
               : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
           }`}
         >
-          <div className={`p-2.5 rounded-xl ${activityFilter === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+          <div className={`p-2.5 rounded-xl ${activityFilter === 'ALL' ? 'bg-[#007507] text-white' : 'bg-gray-100 text-gray-600'}`}>
             <Layers size={20} />
           </div>
           <div>
@@ -501,7 +501,7 @@ const ProductsPage = () => {
               onClick={() => setFilterTab('ALL')}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
                 filterTab === 'ALL'
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  ? 'bg-[#007507] text-white shadow-md shadow-emerald-200'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -569,7 +569,7 @@ const ProductsPage = () => {
             <input 
               type="text" 
               placeholder="بحث بالاسم، الكود، أو الباركود..." 
-              className="w-full border-2 border-gray-200 rounded-xl pr-10 pl-4 py-2 outline-none focus:border-indigo-600 transition-all font-bold text-xs sm:text-sm"
+              className="w-full border-2 border-gray-200 rounded-xl pr-10 pl-4 py-2 outline-none focus:border-[#007507] transition-all font-bold text-xs sm:text-sm"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -598,7 +598,7 @@ const ProductsPage = () => {
                 const isRaw = p.productType === 'RAW_MATERIAL';
 
                 return (
-                  <tr key={p.id} className={`hover:bg-indigo-50/30 transition-colors ${!p.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
+                  <tr key={p.id} className={`hover:bg-emerald-50/30 transition-colors ${!p.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
                     <td className="p-3.5 font-mono text-gray-600">{p.internalCode}</td>
                     
                     {/* Name & Barcode */}
@@ -630,7 +630,7 @@ const ProductsPage = () => {
                         )}
 
                         {isRecipe && (
-                          <span className="bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded-lg text-[10px] font-black inline-flex items-center gap-1">
+                          <span className="bg-slate-100 text-slate-900 border border-slate-300 px-2 py-0.5 rounded-lg text-[10px] font-black inline-flex items-center gap-1">
                             <ChefHat size={11} /> صنف مركب
                           </span>
                         )}
@@ -648,7 +648,7 @@ const ProductsPage = () => {
                         {Number(p.effectiveCost || p.purchasePrice || 0).toFixed(2)} ج.م
                       </div>
                       {isRecipe && (
-                        <div className="text-[10px] text-purple-700 font-bold">
+                        <div className="text-[10px] text-slate-700 font-bold">
                           تكلفة المكونات للحصة
                         </div>
                       )}
@@ -689,8 +689,8 @@ const ProductsPage = () => {
                     <td className="p-3.5">
                       {isRecipe ? (
                         <div className="space-y-0.5">
-                          <span className="text-base text-purple-900 font-black">{p.totalStock}</span>{' '}
-                          <span className="text-xs font-bold text-purple-700">حصة جاهزة للتحضير</span>
+                          <span className="text-base text-slate-900 font-black">{p.totalStock}</span>{' '}
+                          <span className="text-xs font-bold text-slate-700">حصة جاهزة للتحضير</span>
                           <div className="text-[10px] text-gray-500 font-normal">
                             محسوبة آلياً من رصيد المواد الخام
                           </div>
@@ -749,7 +749,7 @@ const ProductsPage = () => {
                         {isRecipe && (
                           <button 
                             onClick={() => setViewRecipeModal(p)} 
-                            className="px-2.5 py-1.5 bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
                             title="عرض مكونات الوصفة"
                           >
                             <Eye size={13} />
@@ -759,7 +759,7 @@ const ProductsPage = () => {
                         {(p.activityType === 'SANDWICH' ? isAdmin : hasPermission('MANAGE_PRODUCTS')) && (
                           <button 
                             onClick={() => openEditModal(p)} 
-                            className="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 bg-emerald-50 text-[#007507] hover:bg-emerald-100 border border-emerald-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
                           >
                             <Edit3 size={13} />
                             تعديل
@@ -768,7 +768,7 @@ const ProductsPage = () => {
                         {!isRecipe && hasPermission('MANAGE_INVENTORY') && (
                           <button 
                             onClick={() => openAdjustModal(p)} 
-                            className="px-2.5 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
+                            className="px-2.5 py-1.5 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-xl font-black text-xs flex items-center gap-1 transition-colors"
                           >
                             <SlidersHorizontal size={13} />
                             تسوية
@@ -816,7 +816,7 @@ const ProductsPage = () => {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="text-indigo-600" size={24} />
+                    <Sparkles className="text-[#007507]" size={24} />
                     <span>إضافة صنف جديد للمنظومة</span>
                   </>
                 )}
@@ -890,7 +890,7 @@ const ProductsPage = () => {
                     onClick={() => setForm({ ...form, productType: 'SIMPLE' })}
                     className={`py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1 transition-all ${
                       form.productType === 'SIMPLE'
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-900'
+                        ? 'border-[#007507] bg-emerald-50 text-[#003607]'
                         : 'border-gray-200 bg-white text-gray-600'
                     }`}
                   >
@@ -902,7 +902,7 @@ const ProductsPage = () => {
                     onClick={() => setForm({ ...form, productType: 'RECIPE' })}
                     className={`py-2 px-2 rounded-xl border-2 font-bold text-xs flex items-center justify-center gap-1 transition-all ${
                       form.productType === 'RECIPE'
-                        ? 'border-purple-600 bg-purple-50 text-purple-900'
+                        ? 'border-[#007507] bg-slate-50 text-slate-900'
                         : 'border-gray-200 bg-white text-gray-600'
                     }`}
                   >
@@ -935,7 +935,7 @@ const ProductsPage = () => {
                   autoFocus
                   type="text" 
                   placeholder={form.productType === 'RAW_MATERIAL' ? 'مثال: سكر أبيض بالكيلو / بن محوج' : 'مثال: شيبسي عائلي / شاي فتلة / برجر لحم'}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                 />
@@ -948,7 +948,7 @@ const ProductsPage = () => {
                   <input 
                     type="text" 
                     placeholder="امسح أو اكتب الباركود"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800 font-mono"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800 font-mono"
                     value={form.barcode}
                     onChange={e => setForm({ ...form, barcode: e.target.value })}
                   />
@@ -960,7 +960,7 @@ const ProductsPage = () => {
                   <input 
                     required
                     type="text" 
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800 font-mono"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800 font-mono"
                     value={form.internalCode}
                     onChange={e => setForm({ ...form, internalCode: e.target.value })}
                   />
@@ -978,7 +978,7 @@ const ProductsPage = () => {
                       step="0.01" 
                       min="0"
                       placeholder="0.00"
-                      className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
+                      className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-black text-[#007507] text-base"
                       value={form.purchasePrice}
                       onChange={e => setForm({ ...form, purchasePrice: e.target.value })}
                     />
@@ -998,7 +998,7 @@ const ProductsPage = () => {
                         step="0.01" 
                         min="0"
                         placeholder="0.00"
-                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-indigo-700 text-base"
+                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-black text-[#007507] text-base"
                         value={form.purchasePrice}
                         onChange={e => setForm({ ...form, purchasePrice: e.target.value })}
                       />
@@ -1013,7 +1013,7 @@ const ProductsPage = () => {
                         step="0.01" 
                         min="0"
                         placeholder="0.00"
-                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-black text-emerald-600 text-base"
+                        className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-black text-emerald-600 text-base"
                         value={form.sellingPrice}
                         onChange={e => setForm({ ...form, sellingPrice: e.target.value })}
                       />
@@ -1029,7 +1029,7 @@ const ProductsPage = () => {
                   <input 
                     type="text" 
                     placeholder={form.productType === 'RAW_MATERIAL' ? 'كيلو / فتلة / كوب / قطعة' : 'قطعة / كيس / زجاجة / كوب'}
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                     value={form.unit}
                     onChange={e => setForm({ ...form, unit: e.target.value })}
                   />
@@ -1040,7 +1040,7 @@ const ProductsPage = () => {
                     type="number" 
                     min="0"
                     placeholder="10"
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-600 font-bold text-gray-800"
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-gray-800"
                     value={form.alertThreshold}
                     onChange={e => setForm({ ...form, alertThreshold: e.target.value })}
                   />
@@ -1077,7 +1077,7 @@ const ProductsPage = () => {
                     id="isActive" 
                     checked={form.isActive} 
                     onChange={e => setForm({ ...form, isActive: e.target.checked })} 
-                    className="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" 
+                    className="w-5 h-5 rounded text-[#007507] focus:ring-[#007507] cursor-pointer" 
                   />
                   <label htmlFor="isActive" className="font-bold text-gray-700 cursor-pointer text-sm">
                     الصنف نشط (يظهر في شاشة البيع POS)
@@ -1097,7 +1097,7 @@ const ProductsPage = () => {
                 <button 
                   type="submit"
                   disabled={isSaving}
-                  className="px-6 py-2.5 rounded-xl font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 disabled:opacity-50 transition-colors"
+                  className="px-6 py-2.5 rounded-xl font-black bg-[#007507] hover:bg-[#006006] text-white shadow-md shadow-emerald-200 disabled:opacity-50 transition-colors"
                 >
                   {isSaving ? 'جاري الحفظ...' : isEditMode ? 'تحديث الصنف' : 'حفظ الصنف'}
                 </button>
@@ -1114,7 +1114,7 @@ const ProductsPage = () => {
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
                 <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                  <ChefHat className="text-purple-600" size={24} />
+                  <ChefHat className="text-[#007507]" size={24} />
                   <span>مكونات ووصفة: {viewRecipeModal.name}</span>
                 </h3>
                 <p className="text-xs text-gray-500 font-bold mt-1">
@@ -1132,7 +1132,7 @@ const ProductsPage = () => {
             {/* Recipe Ingredients Table */}
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full text-right text-xs">
-                <thead className="bg-purple-50/70 text-purple-950 font-black">
+                <thead className="bg-slate-50/70 text-slate-900 font-black">
                   <tr>
                     <th className="p-3 border-b">المادة الخام</th>
                     <th className="p-3 border-b">الحصة لكل وحدة</th>
@@ -1148,13 +1148,13 @@ const ProductsPage = () => {
                         <div className="font-black text-gray-900">{ing.rawMaterialName}</div>
                         <div className="text-[10px] text-gray-400 font-mono">{ing.rawMaterialCode}</div>
                       </td>
-                      <td className="p-3 font-mono font-black text-purple-700">
+                      <td className="p-3 font-mono font-black text-slate-700">
                         {ing.quantityPerUnit} {ing.rawMaterialUnit}
                       </td>
                       <td className="p-3 font-mono">
                         {Number(ing.rawMaterialPurchasePrice).toFixed(2)} ج.م
                       </td>
-                      <td className="p-3 font-mono font-black text-indigo-700">
+                      <td className="p-3 font-mono font-black text-[#007507]">
                         {Number(ing.itemCost).toFixed(2)} ج.م
                       </td>
                       <td className="p-3 font-mono">
@@ -1183,7 +1183,7 @@ const ProductsPage = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center">
               <div>
                 <div className="text-[11px] text-gray-500 font-bold">إجمالي تكلفة المكونات</div>
-                <div className="text-base font-black text-purple-700 font-mono">
+                <div className="text-base font-black text-slate-700 font-mono">
                   {Number(viewRecipeModal.effectiveCost || 0).toFixed(2)} ج.م
                 </div>
               </div>
@@ -1201,7 +1201,7 @@ const ProductsPage = () => {
               </div>
               <div>
                 <div className="text-[11px] text-gray-500 font-bold">الحصص الممكن تحضيرها</div>
-                <div className="text-base font-black text-indigo-700 font-mono">
+                <div className="text-base font-black text-[#007507] font-mono">
                   {viewRecipeModal.totalStock} حصة
                 </div>
               </div>
@@ -1224,14 +1224,14 @@ const ProductsPage = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-sm border border-gray-100">
             <h3 className="text-xl font-black mb-5 text-gray-800 border-b border-gray-100 pb-3 flex items-center gap-2">
-              <SlidersHorizontal className="text-purple-600" size={22} />
+              <SlidersHorizontal className="text-[#007507]" size={22} />
               <span>تسوية المخزون</span>
             </h3>
             <form onSubmit={handleAdjustSubmit} className="flex flex-col gap-4">
               <div>
                 <label className="block mb-1 text-xs font-bold text-gray-700">نوع الحركة:</label>
                 <select 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-purple-600 font-bold bg-white" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold bg-white" 
                   value={adjustForm.type} 
                   onChange={e => setAdjustForm({ ...adjustForm, type: e.target.value })}
                 >
@@ -1246,7 +1246,7 @@ const ProductsPage = () => {
                   type="number" 
                   step="any"
                   min="0.001"
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-purple-600 font-bold" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold" 
                   placeholder="0" 
                   value={adjustForm.quantity} 
                   onChange={e => setAdjustForm({ ...adjustForm, quantity: e.target.value })} 
@@ -1257,7 +1257,7 @@ const ProductsPage = () => {
                 <input 
                   required
                   type="text" 
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-purple-600 font-bold" 
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold" 
                   placeholder="مثال: جرد دوري، تالف..." 
                   value={adjustForm.reason} 
                   onChange={e => setAdjustForm({ ...adjustForm, reason: e.target.value })} 
@@ -1267,13 +1267,13 @@ const ProductsPage = () => {
                 <button 
                   type="button" 
                   onClick={() => setAdjustModal(false)} 
-                  className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100"
+                  className="px-5 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 cursor-pointer"
                 >
                   إلغاء
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2.5 rounded-xl font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-200"
+                  className="px-6 py-2.5 rounded-xl font-bold bg-[#007507] hover:bg-[#006006] text-white shadow-md shadow-emerald-200 cursor-pointer"
                 >
                   تنفيذ التسوية
                 </button>

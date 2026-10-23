@@ -426,22 +426,22 @@ const SandwichesPage = () => {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border-2 border-gray-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl">
+          <div className="p-3 bg-emerald-50 text-[#007507] rounded-xl">
             <ChefHat size={24} />
           </div>
           <div>
             <div className="text-xs font-bold text-gray-500">جاهز للتحضير الفوري</div>
-            <div className="text-2xl font-black text-indigo-700">{totalPortionsReady} سندوتش</div>
+            <div className="text-2xl font-black text-[#007507]">{totalPortionsReady} سندوتش</div>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-2xl border-2 border-gray-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-purple-50 text-purple-700 rounded-xl">
+          <div className="p-3 bg-slate-50 text-slate-700 rounded-xl">
             <Calculator size={24} />
           </div>
           <div>
             <div className="text-xs font-bold text-gray-500">متوسط هامش الربح</div>
-            <div className="text-2xl font-black text-purple-700">{avgMargin}%</div>
+            <div className="text-2xl font-black text-slate-700">{avgMargin}%</div>
           </div>
         </div>
 
@@ -535,7 +535,7 @@ const SandwichesPage = () => {
                   <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl border border-gray-200 text-center font-mono">
                     <div>
                       <div className="text-[10px] text-gray-500 font-bold">التكلفة</div>
-                      <div className="text-sm font-black text-purple-700">
+                      <div className="text-sm font-black text-slate-700">
                         {Number(sandwich.effectiveCost || 0).toFixed(2)}
                       </div>
                     </div>
@@ -556,9 +556,9 @@ const SandwichesPage = () => {
                   </div>
 
                   {/* Ready in kitchen */}
-                  <div className="flex justify-between items-center text-xs p-2 bg-indigo-50/60 rounded-xl border border-indigo-100">
-                    <span className="font-bold text-indigo-950">المتاح للتحضير الفوري:</span>
-                    <span className="font-black font-mono text-indigo-800 text-sm">
+                  <div className="flex justify-between items-center text-xs p-2 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                    <span className="font-bold text-slate-900">المتاح للتحضير الفوري:</span>
+                    <span className="font-black font-mono text-[#003607] text-sm">
                       {sandwich.totalStock} سندوتش
                     </span>
                   </div>
@@ -568,7 +568,7 @@ const SandwichesPage = () => {
                 <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                   <button
                     onClick={() => setViewRecipeModal(sandwich)}
-                    className="flex-1 py-2 bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-colors"
+                    className="flex-1 py-2 bg-slate-50 text-slate-800 hover:bg-slate-100 border border-slate-200 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-colors"
                   >
                     <Eye size={14} />
                     <span>المكونات</span>
@@ -831,11 +831,11 @@ const SandwichesPage = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <span className="p-1.5 bg-indigo-600 text-white rounded-lg text-xs font-black">خطوة 2</span>
+                    <span className="p-1.5 bg-[#007507] text-white rounded-lg text-xs font-black">خطوة 2</span>
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="text-sm font-black text-gray-800">الخامات المكملة (عيش، طماطم، صوصات...):</h4>
-                        <span className="text-[10px] font-black bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] font-black bg-slate-100 text-slate-900 px-2 py-0.5 rounded-full">
                           📊 للتكلفة وتقفيلة الشهر
                         </span>
                       </div>
@@ -848,7 +848,7 @@ const SandwichesPage = () => {
                   <button
                     type="button"
                     onClick={handleAddExtra}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-3.5 py-1.5 rounded-xl text-xs transition-colors flex items-center gap-1 shadow-sm"
+                    className="bg-[#007507] hover:bg-[#006006] text-white font-black px-3.5 py-1.5 rounded-xl text-xs transition-colors flex items-center gap-1 shadow-sm"
                   >
                     <Plus size={15} />
                     <span>+ إضافة مكون إضافي</span>
@@ -858,7 +858,7 @@ const SandwichesPage = () => {
                 {extrasWithStats.length > 0 ? (
                   <div className="overflow-x-auto rounded-2xl border-2 border-gray-200">
                     <table className="w-full text-right text-xs">
-                      <thead className="bg-indigo-50/70 text-indigo-950 font-black">
+                      <thead className="bg-emerald-50/70 text-slate-900 font-black">
                         <tr>
                           <th className="p-3 border-b">المكون الإضافي</th>
                           <th className="p-3 border-b">الكمية لإجمالي الدفعة ({baseCount})</th>
@@ -870,11 +870,11 @@ const SandwichesPage = () => {
                       </thead>
                       <tbody className="divide-y divide-gray-100 font-bold text-gray-700">
                         {extrasWithStats.map((extra, idx) => (
-                          <tr key={idx} className="hover:bg-indigo-50/20">
+                          <tr key={idx} className="hover:bg-emerald-50/20">
                             {/* Raw Material Select */}
                             <td className="p-3">
                               <select
-                                className="border-2 border-gray-200 rounded-xl p-2 outline-none focus:border-indigo-600 font-black text-gray-800 bg-white w-full min-w-[140px]"
+                                className="border-2 border-gray-200 rounded-xl p-2 outline-none focus:border-[#007507] font-black text-gray-800 bg-white w-full min-w-[140px]"
                                 value={extra.rawMaterialId}
                                 onChange={e => handleUpdateExtra(idx, 'rawMaterialId', e.target.value)}
                               >
@@ -894,7 +894,7 @@ const SandwichesPage = () => {
                                   type="number"
                                   step="any"
                                   min="0.001"
-                                  className="border-2 border-gray-200 rounded-xl p-2 outline-none focus:border-indigo-600 font-black font-mono text-gray-800 w-24 bg-white"
+                                  className="border-2 border-gray-200 rounded-xl p-2 outline-none focus:border-[#007507] font-black font-mono text-gray-800 w-24 bg-white"
                                   value={extra.batchQuantity}
                                   onChange={e => handleUpdateExtra(idx, 'batchQuantity', e.target.value)}
                                 />
@@ -903,12 +903,12 @@ const SandwichesPage = () => {
                             </td>
 
                             {/* Per Sandwich Portions */}
-                            <td className="p-3 font-mono font-black text-indigo-900">
+                            <td className="p-3 font-mono font-black text-[#003607]">
                               {extra.qtyPerSandwich.toFixed(3)} {extra.raw?.unit}
                             </td>
 
                             {/* Cost per sandwich */}
-                            <td className="p-3 font-mono font-black text-purple-700">
+                            <td className="p-3 font-mono font-black text-slate-700">
                               {extra.itemCostPerSandwich.toFixed(2)} ج.م
                             </td>
 
@@ -961,17 +961,17 @@ const SandwichesPage = () => {
               </div>
 
               {/* Automatic Formula & Profit Summary Card */}
-              <div className="bg-gradient-to-r from-emerald-500/10 via-purple-500/10 to-indigo-500/10 p-5 rounded-2xl border-2 border-emerald-300/70 space-y-3">
+              <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 p-5 rounded-2xl border-2 border-emerald-300/70 space-y-3">
                 <div className="text-xs font-bold text-gray-600 flex items-center gap-1.5">
                   <Calculator size={16} className="text-emerald-700" />
                   <span>معادلة التكلفة: ({baseCostTotal.toFixed(2)} ج.م أساسي + {extrasCostTotal.toFixed(2)} ج.م إضافات) ÷ {baseCount} قطعة = </span>
-                  <span className="font-black text-purple-800 font-mono text-sm">{costPerSandwich.toFixed(2)} ج.م للسندوتش</span>
+                  <span className="font-black text-slate-800 font-mono text-sm">{costPerSandwich.toFixed(2)} ج.م للسندوتش</span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div>
                     <div className="text-[11px] text-gray-500 font-bold">تكلفة السندوتش الإجمالية</div>
-                    <div className="text-xl font-black text-purple-700 font-mono mt-0.5">
+                    <div className="text-xl font-black text-slate-700 font-mono mt-0.5">
                       {costPerSandwich.toFixed(2)} ج.م
                     </div>
                   </div>
@@ -992,7 +992,7 @@ const SandwichesPage = () => {
 
                   <div>
                     <div className="text-[11px] text-gray-500 font-bold">سندوتشات جاهزة للتحضير</div>
-                    <div className="text-xl font-black text-indigo-700 font-mono mt-0.5">
+                    <div className="text-xl font-black text-[#007507] font-mono mt-0.5">
                       {maxPossibleSandwiches} سندوتش
                     </div>
                   </div>
@@ -1074,7 +1074,7 @@ const SandwichesPage = () => {
                       <td className="p-3 font-mono">
                         {Number(ing.rawMaterialPurchasePrice).toFixed(2)} ج.م
                       </td>
-                      <td className="p-3 font-mono font-black text-purple-700">
+                      <td className="p-3 font-mono font-black text-slate-700">
                         {Number(ing.itemCost).toFixed(2)} ج.م
                       </td>
                       <td className="p-3 font-mono">
@@ -1093,7 +1093,7 @@ const SandwichesPage = () => {
             <div className="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200 text-center font-mono">
               <div>
                 <div className="text-[11px] text-gray-500 font-bold">التكلفة الإجمالية</div>
-                <div className="text-base font-black text-purple-700">
+                <div className="text-base font-black text-slate-700">
                   {Number(viewRecipeModal.effectiveCost || 0).toFixed(2)} ج.م
                 </div>
               </div>

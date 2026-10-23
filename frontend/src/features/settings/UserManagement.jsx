@@ -132,14 +132,14 @@ const UserManagement = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Shield className="text-indigo-600" size={26} />
+            <Shield className="text-[#007507]" size={26} />
             <span>إدارة المستخدمين والصلاحيات 👥</span>
           </h2>
           <p className="text-gray-400 font-bold text-sm mt-1">حسابات الكاشير، المشرفين، كلمات المرور، وصلاحيات النظام</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)} 
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-indigo-200 flex items-center gap-2"
+          className="bg-[#007507] hover:bg-[#006006] text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-200 flex items-center gap-2"
         >
           <UserPlus size={18} />
           <span>إضافة مستخدم جديد</span>
@@ -165,7 +165,7 @@ const UserManagement = () => {
                   <td className="p-4 font-bold text-gray-800 text-base">{u.fullName}</td>
                   <td className="p-4 font-mono font-bold text-gray-700">{u.username}</td>
                   <td className="p-4">
-                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1 rounded-full text-xs font-bold inline-block">
+                    <span className="bg-emerald-50 text-[#007507] border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold inline-block">
                       {u.role?.name || 'مستخدم'}
                     </span>
                   </td>
@@ -192,7 +192,7 @@ const UserManagement = () => {
 
                       <button 
                         onClick={() => handleOpenPasswordReset(u)} 
-                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1"
+                        className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1"
                         title="إعادة تعيين كلمة المرور"
                       >
                         <Key size={13} />
@@ -227,7 +227,7 @@ const UserManagement = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <UserPlus className="text-indigo-600" size={22} />
+                <UserPlus className="text-[#007507]" size={22} />
                 <span>إضافة مستخدم جديد</span>
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold p-1">
@@ -237,26 +237,26 @@ const UserManagement = () => {
             <form onSubmit={handleAddUser} className="flex flex-col gap-4">
               <div>
                 <label className="block mb-1.5 font-bold text-gray-700 text-xs">الاسم بالكامل</label>
-                <input required type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm" value={form.fullName} onChange={e=>setForm({...form, fullName: e.target.value})}/>
+                <input required type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm" value={form.fullName} onChange={e=>setForm({...form, fullName: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-1.5 font-bold text-gray-700 text-xs">اسم المستخدم (للدخول بالإنجليزية)</label>
-                <input required type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm" dir="ltr" value={form.username} onChange={e=>setForm({...form, username: e.target.value})}/>
+                <input required type="text" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm" dir="ltr" value={form.username} onChange={e=>setForm({...form, username: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-1.5 font-bold text-gray-700 text-xs">كلمة المرور (6 أحرف أو أرقام على الأقل)</label>
-                <input required type="password" minLength="6" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm" value={form.password} onChange={e=>setForm({...form, password: e.target.value})}/>
+                <input required type="password" minLength="6" className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm" value={form.password} onChange={e=>setForm({...form, password: e.target.value})}/>
               </div>
               <div>
                 <label className="block mb-1.5 font-bold text-gray-700 text-xs">الصلاحية / الوظيفة</label>
-                <select required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-indigo-500 font-bold text-sm bg-white" value={form.roleId} onChange={e=>setForm({...form, roleId: e.target.value})}>
+                <select required className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-emerald-500 font-bold text-sm bg-white" value={form.roleId} onChange={e=>setForm({...form, roleId: e.target.value})}>
                   <option value="">اختر الصلاحية...</option>
                   {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
               <div className="flex justify-end gap-3 mt-2 pt-3 border-t border-gray-100">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200">إنشاء الحساب</button>
+                <button type="submit" className="px-6 py-2.5 bg-[#007507] text-white font-bold rounded-xl hover:bg-[#006006] transition-colors shadow-lg shadow-emerald-200">إنشاء الحساب</button>
               </div>
             </form>
           </div>
@@ -309,7 +309,7 @@ const UserManagement = () => {
           <div className="bg-white rounded-3xl shadow-2xl p-7 w-full max-w-md">
             <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <Key className="text-purple-600" size={22} />
+                <Key className="text-[#007507]" size={22} />
                 <span>إعادة تعيين كلمة المرور 🔑</span>
               </h3>
               <button onClick={() => setIsPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold p-1">
@@ -317,9 +317,9 @@ const UserManagement = () => {
               </button>
             </div>
 
-            <div className="bg-purple-50 border border-purple-100 p-4 rounded-2xl mb-4 text-xs font-bold">
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl mb-4 text-xs font-bold">
               <div className="text-gray-500 mb-1">المستخدم المستهدف:</div>
-              <div className="text-purple-900 font-black text-sm">{passwordTargetUser.fullName} ({passwordTargetUser.username})</div>
+              <div className="text-slate-900 font-black text-sm">{passwordTargetUser.fullName} ({passwordTargetUser.username})</div>
             </div>
 
             <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-4">
@@ -330,7 +330,7 @@ const UserManagement = () => {
                     required 
                     type="password" 
                     minLength="6" 
-                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-purple-500 font-bold text-sm" 
+                    className="w-full border-2 border-gray-200 rounded-xl p-3 outline-none focus:border-[#007507] font-bold text-sm" 
                     placeholder="أدخل كلمة المرور الجديدة..."
                     value={newPassword} 
                     onChange={e => setNewPassword(e.target.value)}
@@ -340,8 +340,8 @@ const UserManagement = () => {
               </div>
 
               <div className="flex justify-end gap-3 mt-2 pt-3 border-t border-gray-100">
-                <button type="button" onClick={() => setIsPasswordModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
-                <button type="submit" disabled={isSubmittingPassword} className="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg shadow-purple-200 disabled:opacity-50">
+                <button type="button" onClick={() => setIsPasswordModalOpen(false)} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors cursor-pointer">إلغاء</button>
+                <button type="submit" disabled={isSubmittingPassword} className="px-6 py-2.5 bg-[#007507] text-white font-bold rounded-xl hover:bg-[#006006] transition-colors shadow-lg shadow-emerald-200 disabled:opacity-50 cursor-pointer">
                   {isSubmittingPassword ? 'جاري التحديث...' : 'تأكيد تغيير كلمة المرور'}
                 </button>
               </div>

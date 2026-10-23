@@ -354,12 +354,12 @@ const POSPage = () => {
           <span>اختصارات الكاشير السريعة:</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg font-bold border border-indigo-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-indigo-900">F2</kbd>
+          <span className="bg-emerald-50 text-[#007507] px-3 py-1 rounded-lg font-bold border border-emerald-100 flex items-center gap-1">
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-[#003607]">F2</kbd>
             <span>بحث/باركود</span>
           </span>
-          <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg font-bold border border-purple-100 flex items-center gap-1">
-            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-purple-900">F4</kbd>
+          <span className="bg-slate-50 text-slate-700 px-3 py-1 rounded-lg font-bold border border-slate-200 flex items-center gap-1">
+            <kbd className="bg-white px-1.5 py-0.5 rounded shadow text-xs font-mono font-black text-slate-900">F4</kbd>
             <span>تحويل كاش/مريض</span>
           </span>
           <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg font-bold border border-emerald-100 flex items-center gap-1">
@@ -377,7 +377,7 @@ const POSPage = () => {
               type="checkbox" 
               checked={showReceiptModal} 
               onChange={toggleShowReceipt} 
-              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              className="w-4 h-4 rounded text-[#007507] focus:ring-[#007507] cursor-pointer"
             />
             <span>إظهار بون الفاتورة بعد الحفظ</span>
           </label>
@@ -420,7 +420,7 @@ const POSPage = () => {
                   ref={barcodeInputRef}
                   type="text" 
                   placeholder="مرر الباركود أو ابحث بالاسم أو الكود... [F2 للتركيز]" 
-                  className="w-full pr-12 pl-4 py-3 border-2 border-gray-200 rounded-xl text-base outline-none focus:border-indigo-500 focus:bg-white bg-gray-50/50 font-bold transition-all"
+                  className="w-full pr-12 pl-4 py-3 border-2 border-gray-200 rounded-xl text-base outline-none focus:border-emerald-500 focus:bg-white bg-gray-50/50 font-bold transition-all"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   autoFocus
@@ -437,7 +437,7 @@ const POSPage = () => {
               </div>
               <button 
                 type="submit" 
-                className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-bold px-7 rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2"
+                className="bg-[#007507] hover:bg-[#006006] transition-colors text-white font-bold px-7 rounded-xl shadow-md shadow-emerald-200 flex items-center gap-2"
               >
                 بحث
               </button>
@@ -454,7 +454,7 @@ const POSPage = () => {
                 onClick={() => setDivisionTab('ALL')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   divisionTab === 'ALL'
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                    ? 'bg-[#007507] text-white shadow-sm shadow-emerald-200'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -528,8 +528,8 @@ const POSPage = () => {
                         : p.isExpiringSoon 
                         ? 'border-amber-200 bg-amber-50/20 hover:bg-amber-50 hover:border-amber-300' 
                         : isRecipe
-                        ? 'border-purple-100 bg-purple-50/10 hover:bg-purple-50 hover:border-purple-300 hover:shadow-md'
-                        : 'border-gray-100 hover:bg-indigo-50/60 hover:border-indigo-200 hover:shadow-md'
+                        ? 'border-slate-200 bg-slate-50/10 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md'
+                        : 'border-gray-100 hover:bg-emerald-50/60 hover:border-emerald-200 hover:shadow-md'
                     }`}
                   >
                     {/* Expiry Pill */}
@@ -562,19 +562,19 @@ const POSPage = () => {
                         </span>
                       )}
                       {isRecipe && (
-                        <span className="text-[9px] font-black bg-purple-100 text-purple-900 px-1.5 py-0.2 rounded-md mr-auto">
+                        <span className="text-[9px] font-black bg-slate-100 text-slate-900 px-1.5 py-0.2 rounded-md mr-auto">
                           تحضير
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <div className="font-bold text-gray-800 mb-1 group-hover:text-indigo-900 transition-colors line-clamp-1 text-sm">{p.name}</div>
+                      <div className="font-bold text-gray-800 mb-1 group-hover:text-[#003607] transition-colors line-clamp-1 text-sm">{p.name}</div>
                       <div className="text-[11px] text-gray-400 font-bold mb-2 font-mono">{p.internalCode}</div>
                     </div>
 
                     <div>
-                      <div className="text-indigo-600 font-black text-xl mb-1.5 font-mono">
+                      <div className="text-[#007507] font-black text-xl mb-1.5 font-mono">
                         {p.sellingPrice} <span className="text-xs font-bold text-gray-500">ج.م</span>
                       </div>
                       
@@ -583,7 +583,7 @@ const POSPage = () => {
                         <div className={`text-[11px] px-2 py-0.5 inline-block rounded-lg font-black font-mono ${
                           p.totalStock <= 0 
                             ? 'bg-rose-100 text-rose-800 border border-rose-200' 
-                            : 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : 'bg-slate-100 text-slate-900 border border-slate-200'
                         }`}>
                           {p.totalStock <= 0 ? `خامات ناقصة (${p.totalStock})` : `جاهز: ${p.totalStock}`}
                         </div>
@@ -618,7 +618,7 @@ const POSPage = () => {
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-gray-800">الفاتورة الحالية</h2>
                 {cart.length > 0 && (
-                  <span className="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  <span className="bg-emerald-100 text-[#007507] text-xs font-bold px-2.5 py-0.5 rounded-full">
                     {cart.length} أصناف
                   </span>
                 )}
@@ -668,7 +668,7 @@ const POSPage = () => {
                             </button>
                           </div>
                         </td>
-                        <td className="py-2.5 text-left font-black font-mono text-indigo-700 text-sm whitespace-nowrap">
+                        <td className="py-2.5 text-left font-black font-mono text-[#007507] text-sm whitespace-nowrap">
                           {(item.price * item.quantity).toFixed(2)} ج
                         </td>
                         <td className="py-2.5 pr-1 text-left">
@@ -692,7 +692,7 @@ const POSPage = () => {
             {/* Total */}
             <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-100">
               <span className="font-black text-gray-700 text-sm">المبلغ الإجمالي:</span>
-              <span className="font-mono font-black text-2xl text-indigo-700">{totalAmount.toFixed(2)} <span className="text-sm">ج.م</span></span>
+              <span className="font-mono font-black text-2xl text-[#007507]">{totalAmount.toFixed(2)} <span className="text-sm">ج.م</span></span>
             </div>
 
             {/* Payment Type Tabs */}
@@ -715,7 +715,7 @@ const POSPage = () => {
                 onClick={() => setInvoiceType('CREDIT')}
                 className={`py-2 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition-all ${
                   invoiceType === 'CREDIT'
-                    ? 'bg-purple-600 text-white shadow-sm'
+                    ? 'bg-[#007507] text-white shadow-sm'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -728,7 +728,7 @@ const POSPage = () => {
             {invoiceType === 'CASH' && (
               <div>
                 <select
-                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 outline-none focus:border-indigo-600 font-bold text-xs bg-white text-gray-800"
+                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 outline-none focus:border-[#007507] font-bold text-xs bg-white text-gray-800"
                   value={paymentMethodId}
                   onChange={e => setPaymentMethodId(e.target.value)}
                 >
@@ -743,7 +743,7 @@ const POSPage = () => {
             {invoiceType === 'CREDIT' && (
               <div>
                 <select
-                  className="w-full border-2 border-purple-200 rounded-xl p-2.5 outline-none focus:border-purple-600 font-bold text-xs bg-white text-gray-800"
+                  className="w-full border-2 border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#007507] font-bold text-xs bg-white text-gray-800"
                   value={patientId}
                   onChange={e => setPatientId(e.target.value)}
                 >

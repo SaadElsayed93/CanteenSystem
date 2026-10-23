@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 
@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children, requiredPermission, disallowAdmin = false, d
       <div className="p-12 text-center space-y-4 bg-white rounded-3xl m-8 border-2 border-red-100 shadow-sm max-w-lg mx-auto">
         <h3 className="text-2xl font-black text-rose-700">غير مسموح لهذا الحساب!</h3>
         <p className="font-bold text-gray-600">شاشة البيع والمرتجعات مخصصة لموظف المبيعات والكاشير فقط، والمدير مخصص له الرقابة والإدارة والمتابعة والتقارير.</p>
-        <a href="/" className="inline-block bg-indigo-600 text-white font-black px-6 py-2.5 rounded-xl">العودة للرئيسية</a>
+        <a href="/" className="inline-block bg-[#007507] hover:bg-[#006006] text-white font-black px-6 py-2.5 rounded-xl transition-colors">العودة للرئيسية</a>
       </div>
     );
   }

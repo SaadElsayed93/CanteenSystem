@@ -87,7 +87,7 @@ const getActivityLabel = (type) => {
 const StatCard = ({ title, value, icon: Icon, color, subValue, subLabel, onClick, clickableText }) => (
   <div 
     onClick={onClick}
-    className={`bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-all ${
+    className={`bg-white rounded-2xl p-6 border-2 border-gray-100 shadow-sm relative overflow-hidden group hover:border-emerald-100 transition-all ${
       onClick ? 'cursor-pointer hover:shadow-md hover:scale-[1.02]' : ''
     }`}
   >
@@ -451,7 +451,7 @@ const ReportsPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
           <div>
             <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
-              <span className="w-2.5 h-6 bg-indigo-600 rounded-full inline-block"></span>
+              <span className="w-2.5 h-6 bg-[#007507] rounded-full inline-block"></span>
               <span>{title} ({list.length} صنف)</span>
             </h3>
             <p className="text-xs text-gray-500 font-bold mt-0.5">
@@ -466,7 +466,7 @@ const ReportsPage = () => {
               onClick={() => setSalesDivisionFilter('ALL')}
               className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                 salesDivisionFilter === 'ALL'
-                  ? 'bg-white text-indigo-700 shadow-xs'
+                  ? 'bg-white text-[#007507] shadow-xs'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -544,16 +544,16 @@ const ReportsPage = () => {
                 </div>
                 <div className="flex items-center gap-4 text-xs font-bold text-gray-700">
                   <div>
-                    القطع: <span className="text-indigo-700 font-black">{div.stats.totalQty}</span>
+                    القطع: <span className="text-[#007507] font-black">{div.stats.totalQty}</span>
                   </div>
                   <div>
                     الإيراد: <span className="text-emerald-700 font-black">{div.stats.totalRevenue.toFixed(2)} ج.م</span>
                   </div>
                   <div>
-                    الربح: <span className="text-indigo-900 font-black">{div.stats.totalProfit.toFixed(2)} ج.م</span>
+                    الربح: <span className="text-[#003607] font-black">{div.stats.totalProfit.toFixed(2)} ج.م</span>
                   </div>
                   <div className="bg-white/80 px-2 py-0.5 rounded-md border border-gray-200 text-[11px]">
-                    هامش: <span className="text-indigo-800 font-black">{div.stats.margin}%</span>
+                    هامش: <span className="text-[#003607] font-black">{div.stats.margin}%</span>
                   </div>
                 </div>
               </div>
@@ -589,16 +589,16 @@ const ReportsPage = () => {
                               </span>
                             )}
                           </td>
-                          <td className="p-3 text-indigo-700 font-black">{p.quantity}</td>
+                          <td className="p-3 text-[#007507] font-black">{p.quantity}</td>
                           <td className="p-3 text-gray-600">{cost.toFixed(2)} ج.م</td>
                           <td className="p-3 text-emerald-700 font-black">{rev.toFixed(2)} ج.م</td>
-                          <td className={`p-3 font-black ${profit >= 0 ? 'text-indigo-900' : 'text-red-600'}`}>
+                          <td className={`p-3 font-black ${profit >= 0 ? 'text-[#003607]' : 'text-red-600'}`}>
                             {profit.toFixed(2)} ج.م
                           </td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                               Number(margin) >= 30 ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
-                              Number(margin) >= 15 ? 'bg-indigo-50 text-indigo-800 border border-indigo-200' :
+                              Number(margin) >= 15 ? 'bg-emerald-50 text-[#003607] border border-emerald-200' :
                               Number(margin) > 0 ? 'bg-amber-50 text-amber-800 border border-amber-200' :
                               'bg-red-50 text-red-800 border border-red-200'
                             }`}>
@@ -622,11 +622,11 @@ const ReportsPage = () => {
                         <td colSpan="2" className="p-3">
                           مجموع {div.shortTitle} ({div.stats.count} صنف)
                         </td>
-                        <td className="p-3 text-indigo-800">{div.stats.totalQty} قطعة</td>
+                        <td className="p-3 text-[#003607]">{div.stats.totalQty} قطعة</td>
                         <td className="p-3 text-gray-800">{div.stats.totalCost.toFixed(2)} ج.م</td>
                         <td className="p-3 text-emerald-800">{div.stats.totalRevenue.toFixed(2)} ج.م</td>
-                        <td className="p-3 text-indigo-950">{div.stats.totalProfit.toFixed(2)} ج.م</td>
-                        <td className="p-3 text-indigo-900">{div.stats.margin}%</td>
+                        <td className="p-3 text-slate-900">{div.stats.totalProfit.toFixed(2)} ج.م</td>
+                        <td className="p-3 text-[#003607]">{div.stats.margin}%</td>
                       </tr>
                     </tfoot>
                   )}
@@ -638,10 +638,10 @@ const ReportsPage = () => {
 
         {/* Grand Total Summary Banner (shown when 'ALL' is selected and there are items) */}
         {salesDivisionFilter === 'ALL' && list.length > 0 && (
-          <div className="p-4 bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 text-white rounded-2xl shadow-md border border-gray-800">
+          <div className="p-4 bg-gradient-to-r from-gray-900 via-slate-900 to-gray-900 text-white rounded-2xl shadow-md border border-gray-800">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <span className="text-xs uppercase tracking-wider text-indigo-300 font-bold">
+                <span className="text-xs uppercase tracking-wider text-emerald-300 font-bold">
                   ملخص كافة الأقسام مجمعة
                 </span>
                 <h4 className="text-lg font-black text-white">
@@ -656,7 +656,7 @@ const ReportsPage = () => {
                 </div>
                 <div className="bg-white/10 p-2.5 rounded-xl">
                   <div className="text-[11px] text-gray-300 font-bold mb-0.5">الكمية المباعة</div>
-                  <div className="text-base font-black text-indigo-300">{grandStats.totalQty} قطعة</div>
+                  <div className="text-base font-black text-emerald-300">{grandStats.totalQty} قطعة</div>
                 </div>
                 <div className="bg-white/10 p-2.5 rounded-xl">
                   <div className="text-[11px] text-gray-300 font-bold mb-0.5">إجمالي التكلفة</div>
@@ -984,11 +984,11 @@ const ReportsPage = () => {
       {/* Header */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center print:hidden">
         <div>
-          <span className="text-xs font-black text-indigo-900 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 inline-block mb-1.5 shadow-sm">
+          <span className="text-xs font-black text-[#003607] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block mb-1.5 shadow-sm">
             المستشفى العسكري ق.م بالإسماعيلية
           </span>
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-            <FileText className="text-indigo-600" size={26} />
+            <FileText className="text-[#007507]" size={26} />
             <span>التقارير والإحصائيات المالية</span>
           </h2>
           <p className="text-gray-500 mt-1 font-bold text-sm">استخراج التقارير اليومية والشهرية بنقرة زر واحدة وتصديرها</p>
@@ -997,7 +997,7 @@ const ReportsPage = () => {
           <button 
             onClick={() => setActiveTab('DETAILED')}
             className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all ${
-              activeTab === 'DETAILED' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'DETAILED' ? 'bg-white text-[#007507] shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             التقارير المفصلة واليومية
@@ -1005,7 +1005,7 @@ const ReportsPage = () => {
           <button 
             onClick={() => setActiveTab('DASHBOARD')}
             className={`px-6 py-2.5 rounded-xl font-black text-sm transition-all ${
-              activeTab === 'DASHBOARD' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'DASHBOARD' ? 'bg-white text-[#007507] shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             لوحة المؤشرات والرسوم
@@ -1021,7 +1021,7 @@ const ReportsPage = () => {
               title="مبيعات اليوم" 
               value={`${(metrics.todaySales || 0).toFixed(2)} ج.م`} 
               icon={ShoppingCart} 
-              color="indigo" 
+              color="emerald" 
               subValue={`${(metrics.monthSales || 0).toFixed(2)} ج.م`}
               subLabel="إجمالي الشهر"
             />
@@ -1065,7 +1065,7 @@ const ReportsPage = () => {
             <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border-2 border-gray-100">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-black text-gray-800">مبيعات آخر 7 أيام</h3>
-                <div className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg text-sm font-bold">
+                <div className="bg-emerald-50 text-[#007507] px-3 py-1 rounded-lg text-sm font-bold">
                   آخر أسبوع
                 </div>
               </div>
@@ -1099,7 +1099,7 @@ const ReportsPage = () => {
                   <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors border border-transparent hover:border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                        i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-gray-100 text-gray-600' : 'bg-indigo-50 text-indigo-600'
+                        i === 0 ? 'bg-amber-100 text-amber-600' : i === 1 ? 'bg-gray-100 text-gray-600' : 'bg-emerald-50 text-[#007507]'
                       }`}>
                         {i + 1}
                       </div>
@@ -1108,7 +1108,7 @@ const ReportsPage = () => {
                         <p className="text-xs text-gray-400 font-bold">{p.quantity} قطعة مباعة</p>
                       </div>
                     </div>
-                    <div className="font-black text-indigo-600">
+                    <div className="font-black text-[#007507]">
                       {p.revenue} ج.م
                     </div>
                   </div>
@@ -1156,7 +1156,7 @@ const ReportsPage = () => {
                   type="button"
                   onClick={() => applyPreset('WEEK')}
                   className={`px-4 py-2 rounded-xl font-black text-xs transition-all ${
-                    preset === 'WEEK' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    preset === 'WEEK' ? 'bg-[#007507] text-white shadow-md shadow-emerald-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                   }`}
                 >
                   آخر 7 أيام
@@ -1165,7 +1165,7 @@ const ReportsPage = () => {
                   type="button"
                   onClick={() => applyPreset('THIS_MONTH')}
                   className={`px-4 py-2 rounded-xl font-black text-xs transition-all ${
-                    preset === 'THIS_MONTH' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    preset === 'THIS_MONTH' ? 'bg-[#007507] text-white shadow-md shadow-emerald-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                   }`}
                 >
                   هذا الشهر (من 1 للشهر)
@@ -1174,7 +1174,7 @@ const ReportsPage = () => {
                   type="button"
                   onClick={() => applyPreset('LAST_MONTH')}
                   className={`px-4 py-2 rounded-xl font-black text-xs transition-all ${
-                    preset === 'LAST_MONTH' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    preset === 'LAST_MONTH' ? 'bg-[#007507] text-white shadow-md shadow-emerald-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                   }`}
                 >
                   الشهر السابق كاملاً
@@ -1200,7 +1200,7 @@ const ReportsPage = () => {
                 <select 
                   value={reportType}
                   onChange={(e) => handleReportTypeChange(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm bg-white"
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-[#007507] outline-none text-sm bg-white"
                 >
                   <optgroup label="🌟 التقارير الإجمالية الشاملة">
                     <option value="DAILY_FINANCIAL">{isSingleDayMode ? 'التقرير المالي اليومي الشامل (ملخص اليوم والصندوق)' : 'التقرير المالي الشامل للفترة (ملخص الإيرادات والمصروفات)'}</option>
@@ -1249,7 +1249,7 @@ const ReportsPage = () => {
                       }}
                       dateFormat="dd/MM/yyyy"
                       locale="ar-EG"
-                      className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm text-center"
+                      className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-[#007507] outline-none text-sm text-center"
                       disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK' || reportType === 'PATIENTS' || reportType === 'SUPPLIERS'}
                     />
                   </div>
@@ -1263,7 +1263,7 @@ const ReportsPage = () => {
                       }}
                       dateFormat="dd/MM/yyyy"
                       locale="ar-EG"
-                      className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-indigo-600 outline-none text-sm text-center"
+                      className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-[#007507] outline-none text-sm text-center"
                       disabled={reportType === 'INVENTORY' || reportType === 'LOW_STOCK' || reportType === 'PATIENTS' || reportType === 'SUPPLIERS'}
                     />
                   </div>
@@ -1276,7 +1276,7 @@ const ReportsPage = () => {
                   <button 
                     onClick={generateReport}
                     disabled={isGenerating}
-                    className="w-full bg-indigo-600 text-white font-black py-3 rounded-xl hover:bg-indigo-700 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200 text-sm"
+                    className="w-full bg-[#007507] text-white font-black py-3 rounded-xl hover:bg-[#006006] flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-emerald-200 text-sm"
                   >
                     <Filter size={18} />
                     <span>{isGenerating ? 'جاري الاستخراج...' : 'تحديث التقرير'}</span>
@@ -1325,7 +1325,7 @@ const ReportsPage = () => {
                           supplierId: selectedSupplier
                         });
                       }}
-                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-[#007507] shadow-sm"
                     >
                       <option value="ALL">الكل (جميع القنوات والخزائن)</option>
                       {paymentMethodsList.map(pm => (
@@ -1354,7 +1354,7 @@ const ReportsPage = () => {
                           supplierId: supVal
                         });
                       }}
-                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                      className="w-full border-2 border-amber-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-[#007507] shadow-sm"
                     >
                       <option value="ALL">الكل (كافة بنود المصروفات)</option>
                       {categoriesList.map(cat => (
@@ -1366,8 +1366,8 @@ const ReportsPage = () => {
                   {/* 3. المورد (يظهر إذا كان المختار سداد لمورد أو إذا ارتبط بمورد) */}
                   {isSupplierCategorySelected && (
                     <div className="animate-in fade-in duration-200">
-                      <label className="block text-xs font-black text-indigo-950 mb-1.5 flex items-center gap-1.5">
-                        <Truck size={14} className="text-indigo-700" />
+                      <label className="block text-xs font-black text-slate-900 mb-1.5 flex items-center gap-1.5">
+                        <Truck size={14} className="text-[#007507]" />
                         <span>تحديد المورد:</span>
                       </label>
                       <select 
@@ -1381,7 +1381,7 @@ const ReportsPage = () => {
                             categoryId: selectedExpenseCategory
                           });
                         }}
-                        className="w-full border-2 border-indigo-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                        className="w-full border-2 border-emerald-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-[#007507] shadow-sm"
                       >
                         <option value="ALL">الكل (جميع الموردين)</option>
                         {suppliersList.map(sup => (
@@ -1396,14 +1396,14 @@ const ReportsPage = () => {
 
             {/* Custom Sub-Filters for PURCHASES Report */}
             {reportType === 'PURCHASES' && (
-              <div className="bg-indigo-50/70 border-2 border-indigo-200 rounded-2xl p-4 mt-2 space-y-3 animate-in fade-in duration-200">
-                <div className="flex items-center gap-2 text-indigo-900 font-black text-xs border-b border-indigo-200/80 pb-2">
-                  <Truck size={16} className="text-indigo-700" />
+              <div className="bg-emerald-50/70 border-2 border-emerald-200 rounded-2xl p-4 mt-2 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center gap-2 text-[#003607] font-black text-xs border-b border-emerald-200/80 pb-2">
+                  <Truck size={16} className="text-[#007507]" />
                   <span>فلترة فواتير المشتريات حسب المورد:</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-black text-indigo-950 mb-1.5">تحديد المورد:</label>
+                    <label className="block text-xs font-black text-slate-900 mb-1.5">تحديد المورد:</label>
                     <select 
                       value={selectedPurchaseSupplier}
                       onChange={(e) => {
@@ -1411,7 +1411,7 @@ const ReportsPage = () => {
                         setSelectedPurchaseSupplier(val);
                         generateReportForDates(reportType, startDate, endDate, { purchaseSupplierId: val });
                       }}
-                      className="w-full border-2 border-indigo-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-indigo-600 shadow-sm"
+                      className="w-full border-2 border-emerald-300 rounded-xl p-2.5 bg-white font-bold text-xs text-gray-800 outline-none focus:border-[#007507] shadow-sm"
                     >
                       <option value="ALL">الكل (جميع الموردين)</option>
                       {suppliersList.map(sup => (
@@ -1428,7 +1428,7 @@ const ReportsPage = () => {
                 <button 
                   onClick={generateReport}
                   disabled={isGenerating}
-                  className="bg-indigo-600 text-white font-black px-8 py-3 rounded-xl hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200 text-sm cursor-pointer"
+                  className="bg-[#007507] text-white font-black px-8 py-3 rounded-xl hover:bg-[#006006] flex items-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-emerald-200 text-sm cursor-pointer"
                 >
                   <Filter size={18} />
                   <span>{isGenerating ? 'جاري الاستخراج...' : 'استخراج التقرير'}</span>
@@ -1454,8 +1454,8 @@ const ReportsPage = () => {
 
           {/* Loading state indicator */}
           {isGenerating && (
-            <div className="bg-white p-16 rounded-3xl shadow-sm border-2 border-indigo-100 flex flex-col items-center justify-center text-center">
-              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <div className="bg-white p-16 rounded-3xl shadow-sm border-2 border-emerald-100 flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 border-4 border-[#007507] border-t-transparent rounded-full animate-spin mb-4"></div>
               <div className="text-xl font-black text-gray-800">جاري إعداد واستخراج بيانات التقرير...</div>
               <div className="text-xs font-bold text-gray-400 mt-1">المستشفى العسكري ق.م بالإسماعيلية - نظام الكانتين</div>
             </div>
@@ -1470,7 +1470,7 @@ const ReportsPage = () => {
                 <div className="flex justify-between items-center mb-3 text-xs text-gray-700 font-bold">
                   <div className="text-right">
                     <div className="text-base font-black text-gray-900">المستشفى العسكري ق.م بالإسماعيلية</div>
-                    <div className="text-xs text-indigo-900 font-bold">إدارة الكانتين والخدمات الغذائية</div>
+                    <div className="text-xs text-[#003607] font-bold">إدارة الكانتين والخدمات الغذائية</div>
                   </div>
                   <div className="flex items-center gap-2 print:hidden">
                     <button
@@ -1533,9 +1533,9 @@ const ReportsPage = () => {
                 <div className="space-y-8">
                   {/* KPI Cards Banner */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-center">
-                      <div className="text-xs font-bold text-indigo-700 mb-1">إجمالي المبيعات (كاش + حساب)</div>
-                      <div className="text-2xl font-black text-indigo-900">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
+                    <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-100 text-center">
+                      <div className="text-xs font-bold text-[#007507] mb-1">إجمالي المبيعات (كاش + حساب)</div>
+                      <div className="text-2xl font-black text-[#003607]">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">
                         كاش: {Number(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {Number(detailedData.summary.creditSales || 0).toFixed(2)}
                       </div>
@@ -1567,7 +1567,7 @@ const ReportsPage = () => {
                         {Number(detailedData.summary.patientRefunds || 0) > 0 && (
                           <>
                             <span>|</span>
-                            <span className="text-indigo-700 font-black">رد أمانات: {Number(detailedData.summary.patientRefunds).toFixed(2)}</span>
+                            <span className="text-[#007507] font-black">رد أمانات: {Number(detailedData.summary.patientRefunds).toFixed(2)}</span>
                           </>
                         )}
                       </div>
@@ -1609,7 +1609,7 @@ const ReportsPage = () => {
                   {detailedData.summary?.divisions && (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-[#007507] pr-3">
                           <span>أرباح ومبيعات الأقسام الثلاثة المستقلة (كانتين - بوفيه - سندوتشات)</span>
                         </h3>
                         <span className="text-xs text-gray-500 font-bold">
@@ -1735,7 +1735,7 @@ const ReportsPage = () => {
 
                   {/* Section A: Shifts & Cash Box Drawer */}
                   <div className="space-y-3">
-                    <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                    <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-[#007507] pr-3">
                       <span>1. حركة الورديات وتقفيل الصندوق {isSingleDayMode ? 'لليوم' : 'خلال الفترة'}</span>
                     </h3>
                     <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -1773,7 +1773,7 @@ const ReportsPage = () => {
                               <td className={`p-3 ${s.discrepancy?.includes?.('عجز') ? 'text-red-600' : s.discrepancy?.includes?.('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
                                 {s.discrepancy || 'مطابق للنظام'}
                               </td>
-                              <td className="p-3 text-indigo-700">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
+                              <td className="p-3 text-[#007507]">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
                               <td className="p-3 text-emerald-700">{Number(s.remainingCash || 0).toFixed(2)} ج</td>
                             </tr>
                           ))}
@@ -1817,7 +1817,7 @@ const ReportsPage = () => {
                                 <td className="p-3 font-mono" dir="ltr">{formatDateTime(exp.date)}</td>
                                 <td className="p-3 text-gray-800">{exp.category}</td>
                                 <td className="p-3 text-gray-600">{exp.description}</td>
-                                <td className="p-3 text-indigo-700">{exp.paymentMethod}</td>
+                                <td className="p-3 text-[#007507]">{exp.paymentMethod}</td>
                                 <td className="p-3 text-gray-700">{exp.user}</td>
                                 <td className="p-3 text-red-600 font-black">{Number(exp.amount || 0).toFixed(2)} ج.م</td>
                               </tr>
@@ -1835,9 +1835,9 @@ const ReportsPage = () => {
                 <div className="space-y-8">
                   {/* Monthly Summary Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 text-center">
-                      <div className="text-xs font-bold text-indigo-700 mb-1">إجمالي مبيعات الشهر</div>
-                      <div className="text-2xl font-black text-indigo-900">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
+                    <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-100 text-center">
+                      <div className="text-xs font-bold text-[#007507] mb-1">إجمالي مبيعات الشهر</div>
+                      <div className="text-2xl font-black text-[#003607]">{Number(detailedData.summary.totalSales || 0).toFixed(2)} ج.م</div>
                       <div className="text-[11px] text-gray-500 mt-1 font-bold">
                         كاش: {Number(detailedData.summary.cashSales || 0).toFixed(2)} | حساب: {Number(detailedData.summary.creditSales || 0).toFixed(2)}
                       </div>
@@ -1902,7 +1902,7 @@ const ReportsPage = () => {
                   {detailedData.summary?.divisions && (
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                        <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-[#007507] pr-3">
                           <span>أرباح ومبيعات الأقسام الثلاثة في تقفيلة الشهر (كانتين - بوفيه - سندوتشات)</span>
                         </h3>
                         <span className="text-xs text-gray-500 font-bold">
@@ -2029,7 +2029,7 @@ const ReportsPage = () => {
                   {/* Section: Treasury Balances at Month End */}
                   {detailedData.treasuryBalances && (
                     <div className="space-y-3">
-                      <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-indigo-600 pr-3">
+                      <h3 className="text-base font-black text-gray-800 flex items-center gap-2 border-r-4 border-[#007507] pr-3">
                         <span>1. أرصدة القنوات المالية الثلاث بنهاية الفترة</span>
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2039,7 +2039,7 @@ const ReportsPage = () => {
                               <div className="text-xs text-gray-500 font-bold">{m.name}</div>
                               <div className="text-xl font-black text-gray-900 mt-0.5">{Number(m.balance || 0).toFixed(2)} ج.م</div>
                             </div>
-                            <Wallet className="text-indigo-600" size={26} />
+                            <Wallet className="text-[#007507]" size={26} />
                           </div>
                         ))}
                       </div>
@@ -2278,7 +2278,7 @@ const ReportsPage = () => {
                 return (
                   <div className="space-y-6">
                     {/* 1. Header Hero Card with Rules Explanation */}
-                    <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-indigo-950 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
                         <div>
@@ -2415,13 +2415,13 @@ const ReportsPage = () => {
                       </div>
 
                       {/* Metric 3: Month Purchases Cost */}
-                      <div className="p-4 bg-purple-50 rounded-2xl border-2 border-purple-200 text-center shadow-sm">
-                        <div className="text-[11px] font-bold text-purple-800 mb-1 flex items-center justify-center gap-1">
-                          <ShoppingCart size={14} className="text-purple-600" />
+                      <div className="p-4 bg-slate-50 rounded-2xl border-2 border-slate-200 text-center shadow-sm">
+                        <div className="text-[11px] font-bold text-slate-800 mb-1 flex items-center justify-center gap-1">
+                          <ShoppingCart size={14} className="text-[#007507]" />
                           <span>وارد مشتريات الشهر</span>
                         </div>
-                        <div className="text-2xl font-black text-purple-950">{Number(detailedData.summary.totalPeriodPurchasesCost || 0).toFixed(2)} ج.م</div>
-                        <div className="text-[10px] text-purple-700 font-bold mt-1">
+                        <div className="text-2xl font-black text-slate-900">{Number(detailedData.summary.totalPeriodPurchasesCost || 0).toFixed(2)} ج.م</div>
+                        <div className="text-[10px] text-slate-700 font-bold mt-1">
                           فواتير الموردين لخامات المطبخ
                         </div>
                       </div>
@@ -2621,7 +2621,7 @@ const ReportsPage = () => {
                                     {m.purchasedQty > 0 ? (
                                       <div>
                                         <div className="text-gray-900 font-black">+{m.purchasedQty} {m.unit}</div>
-                                        <div className="text-[10px] text-purple-700">({m.purchasedCost} ج.م)</div>
+                                        <div className="text-[10px] text-slate-700">({m.purchasedCost} ج.م)</div>
                                       </div>
                                     ) : (
                                       <span className="text-gray-400 font-normal">لا مشتريات</span>
@@ -2724,7 +2724,7 @@ const ReportsPage = () => {
                                 <td colSpan="4" className="p-3 text-gray-800 font-black text-sm">
                                   إجمالي الجرد ({displayedMaterials.length} خامة)
                                 </td>
-                                <td className="p-3 font-mono text-purple-900">
+                                <td className="p-3 font-mono text-slate-900">
                                   {displayedMaterials.reduce((sum, m) => sum + Number(m.purchasedCost || 0), 0).toFixed(2)} ج.م
                                 </td>
                                 <td className="p-3 font-mono text-gray-700">—</td>
@@ -2744,7 +2744,7 @@ const ReportsPage = () => {
                     </div>
 
                     {/* 5. Sticky Action Bar to Commit Settlement */}
-                    <div className="bg-gradient-to-r from-gray-900 to-indigo-950 p-5 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-indigo-800/40">
+                    <div className="bg-gradient-to-r from-gray-900 to-slate-900 p-5 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border border-emerald-800/40">
                       <div className="space-y-1 text-center md:text-right">
                         <div className="text-xs font-bold text-gray-300 flex items-center gap-2 justify-center md:justify-start">
                           <ChefHat size={16} className="text-emerald-400" />
@@ -2771,7 +2771,7 @@ const ReportsPage = () => {
                             <button
                               type="button"
                               onClick={() => handleReportTypeChange('MONTHLY_FINANCIAL')}
-                              className="w-full sm:w-auto px-5 py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
+                              className="w-full sm:w-auto px-5 py-3.5 bg-[#007507] hover:bg-[#1bb641] active:scale-95 text-white font-black text-xs rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer"
                             >
                               <FileText size={16} />
                               <span>الانتقال للتقرير المالي الشهري (تقفيلة الشهر) 📊</span>
@@ -2950,9 +2950,9 @@ const ReportsPage = () => {
               {reportType === 'SHIFTS' && detailedData?.reportType === 'SHIFTS' && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-center">
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي عدد الورديات</div>
-                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.shiftsCount ?? detailedData.data.length}</div>
+                      <div className="text-2xl font-black text-[#007507]">{detailedData.summary?.shiftsCount ?? detailedData.data.length}</div>
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي النقدية الموردة للخزينة</div>
@@ -3001,7 +3001,7 @@ const ReportsPage = () => {
                             <td className={`p-3 ${s.discrepancy?.includes?.('عجز') ? 'text-red-600' : s.discrepancy?.includes?.('زيادة') ? 'text-green-600' : 'text-gray-600'}`}>
                               {s.discrepancy || 'مطابق للنظام'}
                             </td>
-                            <td className="p-3 text-indigo-700">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
+                            <td className="p-3 text-[#007507]">{Number(s.transferredCash || 0).toFixed(2)} ج</td>
                             <td className="p-3 text-emerald-700">{Number(s.remainingCash || 0).toFixed(2)} ج</td>
                           </tr>
                         ))}
@@ -3022,9 +3022,9 @@ const ReportsPage = () => {
               {reportType === 'SUPPLIERS' && detailedData?.reportType === 'SUPPLIERS' && Array.isArray(detailedData.data) && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-center">
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي الموردين</div>
-                      <div className="text-2xl font-black text-indigo-700">{detailedData.summary?.totalSuppliers ?? detailedData.data.length}</div>
+                      <div className="text-2xl font-black text-[#007507]">{detailedData.summary?.totalSuppliers ?? detailedData.data.length}</div>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 text-center">
                       <div className="text-xs text-gray-500 font-bold mb-1">إجمالي المشتريات التاريخية</div>
@@ -3145,31 +3145,31 @@ const ReportsPage = () => {
                                     className={`p-5 rounded-2xl border-2 text-center shadow-sm ${
                                       isHospital ? 'bg-amber-50 border-amber-200' :
                                       isSupplier ? 'bg-blue-50 border-blue-200' :
-                                      isPatient ? 'bg-indigo-50 border-indigo-200' :
-                                      'bg-purple-50 border-purple-200'
+                                      isPatient ? 'bg-emerald-50 border-emerald-200' :
+                                      'bg-slate-50 border-slate-200'
                                     }`}
                                   >
                                     <p className={`font-bold mb-1 text-xs ${
                                       isHospital ? 'text-amber-800' :
                                       isSupplier ? 'text-blue-800' :
-                                      isPatient ? 'text-indigo-800' :
-                                      'text-purple-800'
+                                      isPatient ? 'text-[#003607]' :
+                                      'text-slate-800'
                                     }`}>
                                       {cat.name}
                                     </p>
                                     <p className={`text-xl font-black ${
                                       isHospital ? 'text-amber-900' :
                                       isSupplier ? 'text-blue-900' :
-                                      isPatient ? 'text-indigo-900' :
-                                      'text-purple-900'
+                                      isPatient ? 'text-[#003607]' :
+                                      'text-slate-900'
                                     }`}>
                                       {cat.amount.toFixed(2)} ج.م
                                     </p>
                                     <p className={`text-[11px] font-bold mt-1 ${
                                       isHospital ? 'text-amber-700' :
                                       isSupplier ? 'text-blue-700' :
-                                      isPatient ? 'text-indigo-700' :
-                                      'text-purple-700'
+                                      isPatient ? 'text-[#007507]' :
+                                      'text-slate-700'
                                     }`}>
                                       {cardDesc} ({cat.percentage}%)
                                     </p>
@@ -3210,7 +3210,7 @@ const ReportsPage = () => {
                                 {key === 'totalRawValueConsumed' && 'إجمالي قيمة المواد الخام المستهلكة'}
                                 {key === 'totalMaterialsCount' && 'عدد خامات المطبخ والبوفيه'}
                               </p>
-                              <p className="text-xl font-black text-indigo-700">
+                              <p className="text-xl font-black text-[#007507]">
                                 {typeof val === 'number' && !['invoiceCount', 'purchaseCount', 'productCount', 'expenseCount', 'totalItems', 'uniqueProducts', 'lowStockCount', 'totalPatients', 'activePatients', 'totalMaterialsCount'].includes(key)
                                   ? `${Number(val || 0).toFixed(2)} ج.م` 
                                   : val}
@@ -3290,11 +3290,11 @@ const ReportsPage = () => {
                             <tr key={i} className="hover:bg-gray-50">
                               {reportType === 'PURCHASES' && (
                               <>
-                                <td className="p-3 font-mono font-black text-indigo-700">{row.id}</td>
+                                <td className="p-3 font-mono font-black text-[#007507]">{row.id}</td>
                                 <td className="p-3 font-mono" dir="ltr">{formatDateTime(row.date)}</td>
                                 <td className="p-3 font-black text-gray-900">{row.supplierName || 'غير محدد'}</td>
                                 <td className="p-3 text-gray-600 font-bold text-xs">{row.itemsSummary || '-'}</td>
-                                <td className="p-3 text-indigo-900 font-black">{Number(row.total || 0).toFixed(2)} ج</td>
+                                <td className="p-3 text-[#003607] font-black">{Number(row.total || 0).toFixed(2)} ج</td>
                                 <td className="p-3 text-emerald-700 font-black">{Number(row.paid || 0).toFixed(2)} ج</td>
                                 <td className="p-3 text-red-600 font-black">{Number(row.remaining || 0).toFixed(2)} ج</td>
                                 <td className="p-3">
@@ -3308,7 +3308,7 @@ const ReportsPage = () => {
                                   <button 
                                     type="button"
                                     onClick={() => setInspectingInvoice(row)}
-                                    className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs border border-indigo-200 transition-all flex items-center gap-1 shadow-sm"
+                                    className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-[#007507] rounded-lg font-bold text-xs border border-emerald-200 transition-all flex items-center gap-1 shadow-sm"
                                     title="عرض تفاصيل الفاتورة"
                                   >
                                     <FileText size={14} />
@@ -3327,8 +3327,8 @@ const ReportsPage = () => {
                                       : (row.category || '').includes('مورد') 
                                       ? 'bg-blue-100 text-blue-900 border border-blue-300' 
                                       : (row.category || '').includes('أمانات') 
-                                      ? 'bg-indigo-100 text-indigo-900 border border-indigo-300' 
-                                      : 'bg-purple-100 text-purple-900 border border-purple-300'
+                                      ? 'bg-emerald-100 text-[#003607] border border-emerald-300' 
+                                      : 'bg-slate-100 text-slate-900 border border-slate-300'
                                   }`}>
                                     {row.category || 'عام'}
                                   </span>
@@ -3347,7 +3347,7 @@ const ReportsPage = () => {
                               <>
                                 <td className="p-3 text-gray-900 font-black">{row.name}</td>
                                 <td className="p-3 text-gray-500">{row.category || row.unit || '-'}</td>
-                                <td className="p-3 text-indigo-700 font-black">{row.quantity ?? 0}</td>
+                                <td className="p-3 text-[#007507] font-black">{row.quantity ?? 0}</td>
                                 <td className="p-3 text-gray-700">{Number(row.purchasePrice || 0).toFixed(2)} ج</td>
                                 <td className="p-3 text-emerald-700 font-black">{Number(row.totalValue || row.estimatedCost || 0).toFixed(2)} ج</td>
                               </>
@@ -3381,7 +3381,7 @@ const ReportsPage = () => {
                                   <div className="font-black text-gray-900 flex items-center gap-1.5">
                                     <span>{row.name}</span>
                                     {row.isSandwichAuxiliary && (
-                                      <span className="text-[9px] bg-purple-100 text-purple-900 px-1.5 py-0.2 rounded font-black">
+                                      <span className="text-[9px] bg-slate-100 text-slate-900 px-1.5 py-0.2 rounded font-black">
                                         مكمل للسندوتشات
                                       </span>
                                     )}
@@ -3396,7 +3396,7 @@ const ReportsPage = () => {
                                     {row.currentStock} {row.unit}
                                   </span>
                                 </td>
-                                <td className="p-3 font-mono text-purple-700 font-black">{row.consumedQty} {row.unit}</td>
+                                <td className="p-3 font-mono text-slate-700 font-black">{row.consumedQty} {row.unit}</td>
                                 <td className="p-3 font-mono">
                                   {row.isSandwichAuxiliary ? (
                                     <div className="space-y-0.5">
@@ -3497,12 +3497,12 @@ const ReportsPage = () => {
             {/* Modal Header */}
             <div className="flex justify-between items-center pb-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-[#007507] flex items-center justify-center">
                   <FileText size={22} />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-gray-800">
-                    تفاصيل فاتورة شراء: <span className="font-mono text-indigo-600">{inspectingInvoice.id}</span>
+                    تفاصيل فاتورة شراء: <span className="font-mono text-[#007507]">{inspectingInvoice.id}</span>
                   </h3>
                   <p className="text-xs text-gray-500 font-bold mt-0.5" dir="ltr">
                     {formatDateTime(inspectingInvoice.date)}
@@ -3528,7 +3528,7 @@ const ReportsPage = () => {
               </div>
               <div>
                 <span className="text-gray-400 block font-bold mb-1">إجمالي الفاتورة:</span>
-                <span className="font-black text-indigo-700 text-sm">{Number(inspectingInvoice.total || 0).toFixed(2)} ج.م</span>
+                <span className="font-black text-[#007507] text-sm">{Number(inspectingInvoice.total || 0).toFixed(2)} ج.م</span>
               </div>
               <div>
                 <span className="text-gray-400 block font-bold mb-1">المدفوع:</span>
@@ -3561,7 +3561,7 @@ const ReportsPage = () => {
                       <tr key={idx} className="hover:bg-gray-50">
                         <td className="p-3 text-gray-400 font-mono text-xs">{idx + 1}</td>
                         <td className="p-3 font-black text-gray-800">{item.productName}</td>
-                        <td className="p-3 text-center font-bold text-indigo-600">{item.quantity}</td>
+                        <td className="p-3 text-center font-bold text-[#007507]">{item.quantity}</td>
                         <td className="p-3 text-center font-mono">{Number(item.unitPrice || 0).toFixed(2)} ج</td>
                         <td className="p-3 text-center">
                           {item.expiryDate ? (

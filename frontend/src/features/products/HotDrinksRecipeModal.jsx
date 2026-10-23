@@ -479,7 +479,7 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
                         </td>
 
                         {/* Cost Per Cup */}
-                        <td className="p-3 font-mono font-black text-purple-700">
+                        <td className="p-3 font-mono font-black text-slate-800">
                           {ing.costPerCup.toFixed(2)} ج.م
                         </td>
 
@@ -531,10 +531,10 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
           </div>
 
           {/* Live Real-time Profit & Stock Summary */}
-          <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-indigo-500/10 p-5 rounded-2xl border-2 border-amber-300/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-emerald-500/10 p-5 rounded-2xl border-2 border-amber-300/60 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
             <div>
               <div className="text-[11px] text-gray-500 font-bold">تكلفة تحضير الكوب الواحد</div>
-              <div className="text-xl font-black text-purple-700 font-mono mt-0.5">
+              <div className="text-xl font-black text-slate-800 font-mono mt-0.5">
                 {totalCostPerCup.toFixed(2)} ج.م
               </div>
             </div>
@@ -548,14 +548,14 @@ const HotDrinksRecipeModal = ({ isOpen, onClose, onSuccess, initialRecipe = null
 
             <div>
               <div className="text-[11px] text-gray-500 font-bold">صافي ربح الكوب الواحد</div>
-              <div className="text-xl font-black text-emerald-700 font-mono mt-0.5">
+              <div className="text-xl font-black text-[#007507] font-mono mt-0.5">
                 +{profitPerCup.toFixed(2)} ج.م <span className="text-xs">({profitMargin}%)</span>
               </div>
             </div>
 
             <div>
               <div className="text-[11px] text-gray-500 font-bold">أكواب جاهزة للبيع حالياً</div>
-              <div className="text-xl font-black text-indigo-700 font-mono mt-0.5">
+              <div className="text-xl font-black text-[#007507] font-mono mt-0.5">
                 {maxCupsPossible} كوب
               </div>
             </div>
