@@ -217,17 +217,17 @@ const BackupPage = () => {
 
   const handleOpenFileLocation = async (backup) => {
     try {
+      // 1. Tell server to open/select file in Windows Explorer on the host machine
       const res = await client.post(`/backups/${backup.id}/open-location`);
-      if (res.data?.success) {
-        toast.success(`تم فتح وتحديد مكان الملف في ويندوز 📂\n${backup.filename}`);
-        if (res.data.path && navigator.clipboard) {
-          navigator.clipboard.writeText(res.data.path).catch(() => {});
-        }
+      if (res.data?.path && navigator.clipboard) {
+        navigator.clipboard.writeText(res.data.path).catch(() => {});
       }
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'تعذر فتح مكان الملف');
+      console.warn('Server open-location warning:', err);
     }
+
+    // 2. Also trigger direct browser download so the user receives the file immediately on any client device
+    handleDownload(backup);
   };
 
   const handleDelete = async (backup) => {

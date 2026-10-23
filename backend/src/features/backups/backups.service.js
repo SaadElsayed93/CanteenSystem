@@ -597,19 +597,25 @@ exports.openInExplorer = (targetPath) => {
   const resolved = path.resolve(safeTarget);
   const isFile = fs.statSync(resolved).isFile();
 
-  // Escape single quotes for PowerShell
-  const escaped = resolved.replace(/'/g, "''");
-  const psCmd = isFile
-    ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
-    : `powershell -NoProfile -Command "Invoke-Item -LiteralPath '${escaped}'"`;
+  // Try direct Windows start command first, with PowerShell as robust fallback
+  const winCmd = isFile
+    ? `start explorer.exe /select,"${resolved}"`
+    : `start "" "${resolved}"`;
 
-  exec(psCmd, (err) => {
-    if (err) {
-      console.warn('[OpenInExplorer Warning]:', err.message);
-      // Fallback
-      exec(`start "" "${resolved}"`, () => {});
-    }
-  });
+  try {
+    exec(winCmd, (err) => {
+      if (err) {
+        console.warn('[OpenInExplorer Warning]:', err.message);
+        const escaped = resolved.replace(/'/g, "''");
+        const psCmd = isFile
+          ? `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '/select,\`\"${escaped}\`\"'"`
+          : `powershell -NoProfile -Command "Start-Process explorer.exe -ArgumentList '\`\"${escaped}\`\"'"`;
+        exec(psCmd, () => {});
+      }
+    });
+  } catch (e) {
+    console.warn('[OpenInExplorer Error]:', e.message);
+  }
 
   return {
     success: true,
