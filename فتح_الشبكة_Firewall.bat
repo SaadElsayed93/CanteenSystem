@@ -1,37 +1,27 @@
 @echo off
-chcp 65001 >nul
-title إعدادات جدار حماية ويندوز - منفذ 8000
+cd /d "%~dp0"
+title Windows Firewall - Port 8000
 color 0B
 
 echo ===============================================================================
-echo   المستشفى العسكري ق.م بالإسماعيلية - إعدادات جدار حماية ويندوز للشبكة
+echo   Configuring Windows Firewall for Port 8000...
 echo ===============================================================================
-echo.
-echo جاري إضافة قاعدة سماح للمنفذ 8000 في جدار الحماية Windows Firewall...
 echo.
 
 net session >nul 2>&1
-if errorlevel 1 goto :NOT_ADMIN
+if errorlevel 1 (
+    echo [ERROR] Please run this file as Administrator!
+    echo Right click this file and select: Run as administrator
+    echo.
+    pause
+    exit /b 1
+)
 
 netsh advfirewall firewall delete rule name="Canteen_System_Port_8000" >nul 2>&1
-netsh advfirewall firewall add rule name="Canteen_System_Port_8000" dir=in action=allow protocol=TCP localport=8000 profile=any >nul 2>&1
+netsh advfirewall firewall add rule name="Canteen_System_Port_8000" dir=in action=allow protocol=TCP localport=8000 profile=any
 
 echo.
-echo [نجاح] تم فتح المنفذ 8000 بنجاح في جدار حماية ويندوز!
-echo الآن يمكن لأي جهاز كمبيوتر أو شاشة كاشير أو موبايل على نفس الشبكة
-echo فتح المنظومة بكل سهولة وسرعة وبدون أي حظر.
-echo.
+echo [SUCCESS] Port 8000 is now open in Windows Firewall!
+echo You can now access the system from other PCs and mobile devices on the network.
 echo ===============================================================================
 pause
-exit /b 0
-
-:NOT_ADMIN
-echo.
-echo ===============================================================================
-echo [تنبيه هام] يرجى تشغيل هذا الملف كمسؤول Run as administrator!
-echo اضغط كليك يمين على هذا الملف واختر:
-echo "تشغيل كمسؤول / Run as administrator"
-echo ===============================================================================
-echo.
-pause
-exit /b 1

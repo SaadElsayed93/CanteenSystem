@@ -1,34 +1,25 @@
 @echo off
-chcp 65001 >nul
-title منظومة إدارة الكانتين والمطبخ - المستشفى العسكري
+cd /d "%~dp0"
+title Canteen System - Military Hospital
 color 0A
 
-cd /d "%~dp0"
-
-where node >nul 2>&1
-if errorlevel 1 goto :NO_NODE
-
 echo ===============================================================================
-echo        المستشفى العسكري ق.م بالإسماعيلية - منظومة إدارة الكانتين والمطبخ
+echo   Canteen System - Hospital Server
 echo ===============================================================================
 echo.
-echo جاري تشغيل السيرفر الموحد وفتح المتصفح تلقائيا...
+echo Starting Server and opening browser...
 echo.
 
 start "" http://localhost:8000
 node backend/src/index.js
 
-echo.
-echo تم إيقاف السيرفر.
-pause
-exit /b 0
+if errorlevel 1 (
+    echo.
+    echo ===============================================================================
+    echo [ERROR] Node.js is not recognized or server stopped!
+    echo Please make sure Node.js is installed on this PC.
+    echo ===============================================================================
+)
 
-:NO_NODE
-echo.
-echo ===============================================================================
-echo [تنبيه هام] محرك Node.js غير مثبت على هذا الجهاز!
-echo يرجى تثبيت Node.js أولا لتشغيل المنظومة.
-echo ===============================================================================
 echo.
 pause
-exit /b 1

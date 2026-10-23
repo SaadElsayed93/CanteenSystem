@@ -1,33 +1,10 @@
 @echo off
-chcp 65001 >nul
-title تشغيل نظام الكانتين - وضع التطوير
+cd /d "%~dp0"
+title Canteen System - Dev Mode
 color 0B
 
-cd /d "%~dp0"
-
-where node >nul 2>&1
-if errorlevel 1 goto :NO_NODE
-
-echo ======================================================
-echo       جاري تشغيل نظام إدارة الكانتين - وضع التطوير
-echo ======================================================
-echo 1. تشغيل خادم الباك إند على Port 8000...
+echo Starting Dev Server...
 start "Canteen Backend" cmd /k "cd /d "%~dp0backend" && npm run dev"
-
-echo 2. تشغيل واجهة الفرونت إند على Port 5173...
 start "Canteen Frontend" cmd /k "cd /d "%~dp0frontend" && npm run dev"
-
-echo.
-echo ======================================================
-echo تم تشغيل الباك إند والفرونت إند بنجاح!
-echo رابط النظام في المتصفح: http://localhost:5173
-echo ======================================================
 timeout /t 3 >nul
 start http://localhost:5173
-exit /b 0
-
-:NO_NODE
-echo.
-echo [تنبيه] محرك Node.js غير مثبت على هذا الجهاز!
-pause
-exit /b 1
