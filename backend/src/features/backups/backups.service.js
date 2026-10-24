@@ -221,7 +221,7 @@ exports.listBackups = async () => {
       totalSizeBytes,
       totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
       lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,
-      backupDir: BACKUP_DIR,
+      backupDir: fs.existsSync(ASCII_BACKUP_DIR) ? ASCII_BACKUP_DIR : BACKUP_DIR,
       externalPath: extSetting ? extSetting.value : null,
       schedule: scheduleSettings
     }
@@ -588,51 +588,62 @@ exports.initAutoBackupEngine = () => {
   }, 60 * 1000); // Check every 60 seconds
 };
 
-const BAT_PATH = path.resolve(__dirname, '../../../open_backups.bat');
+const ASCII_BACKUP_DIR = 'D:\\Canteen_Backups';
+
+function ensureAsciiJunctionAndShortcut() {
+  try {
+    const { execSync } = require('child_process');
+    if (!fs.existsSync(ASCII_BACKUP_DIR)) {
+      execSync(`powershell.exe -NoProfile -Command "New-Item -ItemType Junction -Path '${ASCII_BACKUP_DIR}' -Target '${path.resolve(BACKUP_DIR)}'"`, { stdio: 'ignore' });
+    }
+    const desktopLnk = path.join(process.env.USERPROFILE || 'C:\\Users\\SaadElsayed', 'Desktop', 'Canteen_Backups.lnk');
+    if (!fs.existsSync(desktopLnk)) {
+      const psCode = `
+        $wsh = New-Object -ComObject WScript.Shell
+        $lnk = $wsh.CreateShortcut('${desktopLnk.replace(/'/g, "''")}')
+        $lnk.TargetPath = '${ASCII_BACKUP_DIR}'
+        $lnk.Description = 'Canteen System Backups Directory'
+        $lnk.Save()
+      `;
+      const b64 = Buffer.from(psCode, 'utf16le').toString('base64');
+      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, { stdio: 'ignore' });
+    }
+  } catch (e) {}
+}
+
+ensureAsciiJunctionAndShortcut();
 
 exports.openInExplorer = (targetPath, filename = null) => {
-  const { execFile, exec } = require('child_process');
+  const { exec } = require('child_process');
+  ensureAsciiJunctionAndShortcut();
 
-  // 1. Primary: Use Windows batch launcher using native %~dp0
-  // %~dp0 is expanded by Windows NT kernel with zero character encoding or Arabic issues
-  if (fs.existsSync(BAT_PATH)) {
-    try {
-      const args = filename ? [filename] : [];
-      execFile(BAT_PATH, args, { shell: true }, (err) => {
-        if (err) console.warn('[OpenBackups Bat Warning]:', err.message);
-      });
+  const useJunction = fs.existsSync(ASCII_BACKUP_DIR);
+  const baseDir = useJunction ? ASCII_BACKUP_DIR : path.resolve(BACKUP_DIR);
 
-      const resolved = path.resolve(targetPath || BACKUP_DIR);
-      return {
-        success: true,
-        path: resolved,
-        folder: path.resolve(BACKUP_DIR),
-        isFile: Boolean(filename)
-      };
-    } catch (err) {
-      console.warn('[OpenBackups Bat Error]:', err.message);
-    }
+  let cmd;
+  let targetDisplay;
+
+  if (filename) {
+    const filePath = path.join(baseDir, filename);
+    targetDisplay = filePath;
+    cmd = `start explorer.exe /select,"${filePath}"`;
+  } else {
+    targetDisplay = baseDir;
+    cmd = `start "" "${baseDir}"`;
   }
 
-  // 2. Secondary: PowerShell ProcessStartInfo with UseShellExecute = true
-  const resolved = path.resolve(targetPath || BACKUP_DIR);
-  const targetFolder = fs.existsSync(resolved) && fs.statSync(resolved).isFile()
-    ? path.dirname(resolved)
-    : resolved;
-
-  const psScript = `
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = '${targetFolder.replace(/'/g, "''")}'
-    $psi.UseShellExecute = $true
-    [System.Diagnostics.Process]::Start($psi)
-  `;
-  const b64 = Buffer.from(psScript, 'utf16le').toString('base64');
-  exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, () => {});
+  try {
+    exec(cmd, (err) => {
+      if (err) console.warn('[OpenInExplorer Warning]:', err.message);
+    });
+  } catch (err) {
+    console.warn('[OpenInExplorer Error]:', err.message);
+  }
 
   return {
     success: true,
-    path: resolved,
-    folder: targetFolder,
+    path: targetDisplay,
+    folder: baseDir,
     isFile: Boolean(filename)
   };
 };

@@ -12,6 +12,13 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    console.log(`[HTTP ${new Date().toLocaleTimeString('ar-EG')}] ${req.method} ${req.originalUrl}`);
+  }
+  next();
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
