@@ -221,7 +221,7 @@ exports.listBackups = async () => {
       totalSizeBytes,
       totalSizeFormatted: `${(totalSizeBytes / (1024 * 1024)).toFixed(2)} MB`,
       lastBackupTime: enriched.length > 0 ? enriched[0].createdAt : null,
-      backupDir: fs.existsSync(ASCII_BACKUP_DIR) ? ASCII_BACKUP_DIR : BACKUP_DIR,
+      backupDir: BACKUP_DIR,
       externalPath: extSetting ? extSetting.value : null,
       schedule: scheduleSettings
     }
@@ -588,62 +588,15 @@ exports.initAutoBackupEngine = () => {
   }, 60 * 1000); // Check every 60 seconds
 };
 
-const ASCII_BACKUP_DIR = 'D:\\Canteen_Backups';
-
-function ensureAsciiJunctionAndShortcut() {
-  try {
-    const { execSync } = require('child_process');
-    if (!fs.existsSync(ASCII_BACKUP_DIR)) {
-      execSync(`powershell.exe -NoProfile -Command "New-Item -ItemType Junction -Path '${ASCII_BACKUP_DIR}' -Target '${path.resolve(BACKUP_DIR)}'"`, { stdio: 'ignore' });
-    }
-    const desktopLnk = path.join(process.env.USERPROFILE || 'C:\\Users\\SaadElsayed', 'Desktop', 'Canteen_Backups.lnk');
-    if (!fs.existsSync(desktopLnk)) {
-      const psCode = `
-        $wsh = New-Object -ComObject WScript.Shell
-        $lnk = $wsh.CreateShortcut('${desktopLnk.replace(/'/g, "''")}')
-        $lnk.TargetPath = '${ASCII_BACKUP_DIR}'
-        $lnk.Description = 'Canteen System Backups Directory'
-        $lnk.Save()
-      `;
-      const b64 = Buffer.from(psCode, 'utf16le').toString('base64');
-      execSync(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, { stdio: 'ignore' });
-    }
-  } catch (e) {}
-}
-
-ensureAsciiJunctionAndShortcut();
-
+/**
+ * Location info helpers: returns physical paths without relying on desktop explorer hooks
+ */
 exports.openInExplorer = (targetPath, filename = null) => {
-  const { exec } = require('child_process');
-  ensureAsciiJunctionAndShortcut();
-
-  const useJunction = fs.existsSync(ASCII_BACKUP_DIR);
-  const baseDir = useJunction ? ASCII_BACKUP_DIR : path.resolve(BACKUP_DIR);
-
-  let cmd;
-  let targetDisplay;
-
-  if (filename) {
-    const filePath = path.join(baseDir, filename);
-    targetDisplay = filePath;
-    cmd = `start explorer.exe /select,"${filePath}"`;
-  } else {
-    targetDisplay = baseDir;
-    cmd = `start "" "${baseDir}"`;
-  }
-
-  try {
-    exec(cmd, (err) => {
-      if (err) console.warn('[OpenInExplorer Warning]:', err.message);
-    });
-  } catch (err) {
-    console.warn('[OpenInExplorer Error]:', err.message);
-  }
-
+  const resolved = path.resolve(targetPath || BACKUP_DIR);
   return {
     success: true,
-    path: targetDisplay,
-    folder: baseDir,
+    path: resolved,
+    folder: fs.existsSync(resolved) && fs.statSync(resolved).isFile() ? path.dirname(resolved) : resolved,
     isFile: Boolean(filename)
   };
 };
@@ -652,7 +605,12 @@ exports.openBackupFolder = () => {
   if (!fs.existsSync(BACKUP_DIR)) {
     fs.mkdirSync(BACKUP_DIR, { recursive: true });
   }
-  return exports.openInExplorer(BACKUP_DIR);
+  return {
+    success: true,
+    path: BACKUP_DIR,
+    folder: BACKUP_DIR,
+    isFile: false
+  };
 };
 
 exports.openBackupFileLocation = async (backupId) => {
@@ -669,5 +627,11 @@ exports.openBackupFileLocation = async (backupId) => {
       throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
     }
   }
-  return exports.openInExplorer(target, backup.filename);
+  return {
+    success: true,
+    path: target,
+    folder: BACKUP_DIR,
+    filename: backup.filename,
+    isFile: true
+  };
 };

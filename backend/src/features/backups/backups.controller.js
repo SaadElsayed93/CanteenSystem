@@ -90,10 +90,8 @@ exports.setExternalPath = async (req, res, next) => {
 
 exports.openBackupFolder = async (req, res, next) => {
   try {
-    console.log('[Backups Controller] Request to openBackupFolder received from user:', req.user?.username || req.user?.id);
     const result = backupsService.openBackupFolder();
-    console.log('[Backups Controller] openBackupFolder result:', result);
-    res.json({ success: true, ...result, message: 'تم فتح مجلد النسخ الاحتياطية في ويندوز' });
+    res.json({ success: true, ...result, message: 'المسار الفعلي لمجلد النسخ الاحتياطية على السيرفر' });
   } catch (err) {
     console.error('[Backups Controller] openBackupFolder error:', err);
     next(err);
@@ -103,10 +101,8 @@ exports.openBackupFolder = async (req, res, next) => {
 exports.openBackupFileLocation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    console.log('[Backups Controller] Request to openBackupFileLocation received for id:', id, 'from user:', req.user?.username || req.user?.id);
     const result = await backupsService.openBackupFileLocation(id);
-    console.log('[Backups Controller] openBackupFileLocation result:', result);
-    res.json({ success: true, ...result, message: 'تم فتح مكان الملف وتحديده في ويندوز' });
+    res.json({ success: true, ...result, message: 'المسار الفعلي لملف النسخة الاحتياطية على السيرفر' });
   } catch (err) {
     console.error('[Backups Controller] openBackupFileLocation error:', err);
     next(err);

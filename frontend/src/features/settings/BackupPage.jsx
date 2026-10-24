@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { 
   Database, ShieldCheck, HardDrive, Download, Upload, RotateCcw, 
   Trash2, AlertTriangle, CheckCircle2, Clock, FileCheck, Save, 
-  RefreshCw, FolderOpen, Lock, ShieldAlert
+  RefreshCw, FolderOpen, Lock, ShieldAlert, Copy
 } from 'lucide-react';
 
 const formatDateTime = (dateString) => {
@@ -200,27 +200,29 @@ const BackupPage = () => {
     }
   };
 
-  const handleOpenFolder = async () => {
-    try {
-      const res = await client.post('/backups/open-folder');
-      if (res.data?.success) {
-        toast.success('تم فتح مجلد النسخ الاحتياطية في ويندوز 📂');
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'تعذر فتح المجلد');
+  const handleCopyFolderLocation = () => {
+    const dir = stats.backupDir || 'D:\\كانتين\\CanteenSystem\\backend\\backups';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(dir).then(() => {
+        toast.success('تم نسخ مسار مجلد النسخ الاحتياطية إلى الحافظة 📋');
+      }).catch(() => {
+        toast.success(`المسار الفعلي: ${dir}`);
+      });
+    } else {
+      toast.success(`المسار الفعلي: ${dir}`);
     }
   };
 
-  const handleOpenFileLocation = async (backup) => {
-    try {
-      const res = await client.post(`/backups/${backup.id}/open-location`);
-      if (res.data?.success) {
-        toast.success(`تم فتح مكان النسخة وتحديدها في ويندوز 📂\n${backup.filename}`);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || 'تعذر فتح مكان الملف');
+  const handleCopyFileLocation = (backup) => {
+    const filePath = backup.filepath || `${stats.backupDir || 'D:\\كانتين\\CanteenSystem\\backend\\backups'}\\${backup.filename}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(filePath).then(() => {
+        toast.success(`تم نسخ مسار النسخة: ${backup.filename} 📋`);
+      }).catch(() => {
+        toast.success(`المسار الفعلي: ${filePath}`);
+      });
+    } else {
+      toast.success(`المسار الفعلي: ${filePath}`);
     }
   };
 
@@ -325,12 +327,12 @@ const BackupPage = () => {
 
         <div className="z-10 flex flex-wrap items-center gap-2.5">
           <button 
-            onClick={handleOpenFolder}
+            onClick={handleCopyFolderLocation}
             className="flex items-center gap-2 bg-[#1bb641] hover:bg-emerald-600 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
-            title="فتح مجلد النسخ الاحتياطية في مستعرض ملفات ويندوز"
+            title="نسخ مسار مجلد النسخ الفعلي على السيرفر"
           >
-            <FolderOpen size={16} />
-            <span>فتح مجلد النسخ في الجهاز</span>
+            <Copy size={16} />
+            <span>نسخ مسار مجلد النسخ</span>
           </button>
 
           <button 
@@ -731,27 +733,27 @@ const BackupPage = () => {
 
                     <td className="p-4">
                       <div className="flex items-center justify-center gap-2">
-                        {/* Open File Location in Windows Explorer */}
-                        <button
-                          onClick={() => handleOpenFileLocation(backup)}
-                          title="فتح وتحديد مكان ملف النسخة في ويندوز"
-                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl transition-colors shadow-sm cursor-pointer"
-                        >
-                          <FolderOpen size={15} />
-                        </button>
-
                         {/* Download Button */}
                         <button
                           onClick={() => handleDownload(backup)}
                           disabled={downloadingId === backup.id}
-                          title="تنزيل النسخة إلى جهازك أو فلاشة"
-                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+                          title="تنزيل النسخة (.db) إلى جهازك مباشرة"
+                          className="p-2 bg-emerald-50 hover:bg-emerald-100 text-[#007507] border border-emerald-200 rounded-xl transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
                         >
                           {downloadingId === backup.id ? (
-                            <RotateCcw size={15} className="animate-spin text-slate-600" />
+                            <RotateCcw size={15} className="animate-spin text-emerald-600" />
                           ) : (
                             <Download size={15} />
                           )}
+                        </button>
+
+                        {/* Copy File Location on Server */}
+                        <button
+                          onClick={() => handleCopyFileLocation(backup)}
+                          title="نسخ المسار الفعلي لملف النسخة على السيرفر"
+                          className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl transition-colors shadow-sm cursor-pointer"
+                        >
+                          <Copy size={15} />
                         </button>
 
                         {/* Restore Button */}
@@ -792,17 +794,21 @@ const BackupPage = () => {
           </table>
         </div>
 
-        <div className="bg-gray-50/80 p-3.5 border-t border-gray-100 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-gray-500 gap-2">
-          <div className="flex items-center gap-1.5">
-            <FolderOpen size={15} className="text-emerald-600 flex-shrink-0" />
-            <span>المسار الأصلي لمجلد النسخ الاحتياطية على السيرفر:</span>
-            <span className="font-mono text-gray-800 font-black bg-white px-2 py-0.5 rounded border border-gray-200" dir="ltr">{stats.backupDir || 'مجلد backups داخل السيرفر'}</span>
+        <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center text-xs font-bold text-slate-600 gap-3">
+          <div className="flex items-center gap-2">
+            <FolderOpen size={16} className="text-[#007507] flex-shrink-0" />
+            <span>المكان الفعلي لمجلد النسخ الاحتياطية على السيرفر:</span>
+            <span className="font-mono text-slate-900 font-black bg-white px-2.5 py-1 rounded-lg border border-slate-300 shadow-sm" dir="ltr">
+              {stats.backupDir || 'D:\\كانتين\\CanteenSystem\\backend\\backups'}
+            </span>
           </div>
           <button 
-            onClick={handleOpenFolder}
-            className="text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 font-black transition-colors"
+            onClick={handleCopyFolderLocation}
+            className="flex items-center gap-1.5 text-[#007507] hover:text-[#003607] bg-emerald-50 hover:bg-emerald-100 px-3.5 py-1.5 rounded-xl border border-emerald-300 font-black transition-colors cursor-pointer shadow-sm"
+            title="نسخ مسار مجلد النسخ الاحتياطية إلى الحافظة"
           >
-            فتح المجلد في ويندوز 📂
+            <Copy size={14} />
+            <span>نسخ مسار المجلد</span>
           </button>
         </div>
       </div>
