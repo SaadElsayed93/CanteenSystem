@@ -589,16 +589,42 @@ exports.initAutoBackupEngine = () => {
 };
 
 exports.openInExplorer = (targetPath) => {
-  const { spawn } = require('child_process');
-  if (!targetPath || !fs.existsSync(targetPath)) {
-    throw new Error('المسار المحدد غير موجود على الجهاز');
+  const { exec } = require('child_process');
+  if (!targetPath) {
+    throw new Error('لم يتم تحديد أي مسار');
   }
-  const resolved = path.resolve(targetPath);
+
+  // Resolve and clean Windows path (strip any extended-path prefix \\?\)
+  let resolved = path.resolve(targetPath);
+  resolved = resolved.replace(/^\\\\\?\\/, '');
+
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`المسار المحدد غير موجود على الجهاز: ${resolved}`);
+  }
+
   const isFile = fs.statSync(resolved).isFile();
 
-  const args = isFile ? [`/select,${resolved}`] : [resolved];
-  const child = spawn('explorer.exe', args, { detached: true, stdio: 'ignore' });
-  child.unref();
+  // Escape single quotes for PowerShell script
+  const psTarget = resolved.replace(/'/g, "''");
+  const psArg = isFile ? `'/select,"' + $p + '"'` : `'"' + $p + '"'`;
+  const psScript = `$p = '${psTarget}'; Start-Process explorer.exe -ArgumentList (${psArg})`;
+
+  // Convert to Base64 UTF-16LE - prevents cmd.exe / OEM code page from corrupting Arabic characters
+  const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
+  const psCmd = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`;
+
+  exec(psCmd, (err) => {
+    if (err) {
+      console.warn('[OpenInExplorer PowerShell Warning]:', err.message);
+      // Fallback to cmd start
+      const fallbackCmd = isFile
+        ? `cmd.exe /c start "" explorer.exe /select,"${resolved}"`
+        : `cmd.exe /c start "" "${resolved}"`;
+      exec(fallbackCmd, (fallbackErr) => {
+        if (fallbackErr) console.warn('[OpenInExplorer Fallback Warning]:', fallbackErr.message);
+      });
+    }
+  });
 
   return {
     success: true,
