@@ -588,49 +588,52 @@ exports.initAutoBackupEngine = () => {
   }, 60 * 1000); // Check every 60 seconds
 };
 
-exports.openInExplorer = (targetPath) => {
-  const { exec } = require('child_process');
-  if (!targetPath) {
-    throw new Error('لم يتم تحديد أي مسار');
-  }
+const BAT_PATH = path.resolve(__dirname, '../../../open_backups.bat');
 
-  // Resolve and clean Windows path (strip any extended-path prefix \\?\)
-  let resolved = path.resolve(targetPath);
-  resolved = resolved.replace(/^\\\\\?\\/, '');
+exports.openInExplorer = (targetPath, filename = null) => {
+  const { execFile, exec } = require('child_process');
 
-  if (!fs.existsSync(resolved)) {
-    throw new Error(`المسار المحدد غير موجود على الجهاز: ${resolved}`);
-  }
-
-  const isFile = fs.statSync(resolved).isFile();
-
-  // Escape single quotes for PowerShell script
-  const psTarget = resolved.replace(/'/g, "''");
-  const psArg = isFile ? `'/select,"' + $p + '"'` : `'"' + $p + '"'`;
-  const psScript = `$p = '${psTarget}'; Start-Process explorer.exe -ArgumentList (${psArg})`;
-
-  // Convert to Base64 UTF-16LE - prevents cmd.exe / OEM code page from corrupting Arabic characters
-  const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
-  const psCmd = `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ${encodedCommand}`;
-
-  exec(psCmd, (err) => {
-    if (err) {
-      console.warn('[OpenInExplorer PowerShell Warning]:', err.message);
-      // Fallback to cmd start
-      const fallbackCmd = isFile
-        ? `cmd.exe /c start "" explorer.exe /select,"${resolved}"`
-        : `cmd.exe /c start "" "${resolved}"`;
-      exec(fallbackCmd, (fallbackErr) => {
-        if (fallbackErr) console.warn('[OpenInExplorer Fallback Warning]:', fallbackErr.message);
+  // 1. Primary: Use Windows batch launcher using native %~dp0
+  // %~dp0 is expanded by Windows NT kernel with zero character encoding or Arabic issues
+  if (fs.existsSync(BAT_PATH)) {
+    try {
+      const args = filename ? [filename] : [];
+      execFile(BAT_PATH, args, { shell: true }, (err) => {
+        if (err) console.warn('[OpenBackups Bat Warning]:', err.message);
       });
+
+      const resolved = path.resolve(targetPath || BACKUP_DIR);
+      return {
+        success: true,
+        path: resolved,
+        folder: path.resolve(BACKUP_DIR),
+        isFile: Boolean(filename)
+      };
+    } catch (err) {
+      console.warn('[OpenBackups Bat Error]:', err.message);
     }
-  });
+  }
+
+  // 2. Secondary: PowerShell ProcessStartInfo with UseShellExecute = true
+  const resolved = path.resolve(targetPath || BACKUP_DIR);
+  const targetFolder = fs.existsSync(resolved) && fs.statSync(resolved).isFile()
+    ? path.dirname(resolved)
+    : resolved;
+
+  const psScript = `
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = '${targetFolder.replace(/'/g, "''")}'
+    $psi.UseShellExecute = $true
+    [System.Diagnostics.Process]::Start($psi)
+  `;
+  const b64 = Buffer.from(psScript, 'utf16le').toString('base64');
+  exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${b64}`, () => {});
 
   return {
     success: true,
     path: resolved,
-    folder: isFile ? path.dirname(resolved) : resolved,
-    isFile
+    folder: targetFolder,
+    isFile: Boolean(filename)
   };
 };
 
@@ -655,5 +658,5 @@ exports.openBackupFileLocation = async (backupId) => {
       throw new Error(`ملف النسخة غير موجود على المسار: ${backup.filepath}`);
     }
   }
-  return exports.openInExplorer(target);
+  return exports.openInExplorer(target, backup.filename);
 };
